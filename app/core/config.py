@@ -10,9 +10,9 @@ class Settings(BaseSettings):
     
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = [
-        "http://localhost:3000",  # React app
-        "http://localhost:8000",  # Backend
-        "http://localhost",
+        "http://localhost:3000",  # React app development
+        "http://localhost:8000",  # Backend development
+        "https://avokati.vercel.app",  # Production frontend
     ]
 
     # Database
