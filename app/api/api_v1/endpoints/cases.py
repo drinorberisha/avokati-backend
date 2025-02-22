@@ -26,7 +26,7 @@ def create_case(
     print(f"Case status before validation: {case_in.status}")
     print(f"Case status type: {type(case_in.status)}")
 
-    if current_user.role not in [UserRole.ATTORNEY, UserRole.ADMIN]:
+    if current_user.role not in [UserRole.attorney, UserRole.admin]:
         print(f"Authorization failed. User role: {current_user.role}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
