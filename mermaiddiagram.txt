@@ -1,0 +1,117 @@
+erDiagram
+    USER {
+      int id PK
+      string fullName
+      string email
+      string password
+      string role "attorney, paralegal, admin"
+      string phone
+    }
+    CLIENT {
+      int id PK
+      string name
+      string email
+      string phone
+      string status "active, inactive"
+      string address
+    }
+    CASE {
+      int id PK
+      string caseNumber
+      string title
+      string type
+      string status "open, pending, closed"
+      string court
+      string judge
+      datetime createdAt
+      datetime nextHearing
+    }
+    DOCUMENT {
+      int id PK
+      string title
+      string type
+      string category
+      string status "draft, final, archived"
+      datetime lastModified
+      string size
+      int version
+      string filePath
+      text tags "array of tags"
+    }
+    DOCUMENT_COLLABORATOR {
+      int id PK
+      int documentId FK
+      int userId FK
+      string role "viewer, editor, owner"
+      datetime addedAt
+    }
+    APPOINTMENT {
+      int id PK
+      string title
+      string type "court, meeting, deadline"
+      datetime eventDatetime
+    }
+    TEMPLATE {
+      int id PK
+      string title
+      string description
+      string category
+      string language
+      datetime lastModified
+      string status "draft, published, archived"
+    }
+    TEMPLATE_VARIABLE {
+      int id PK
+      string name
+      string type "text, number, date, select, boolean"
+      boolean required
+      string defaultValue
+      text options "array"
+      string description
+    }
+    NOTIFICATION {
+      int id PK
+      string type "SMS, email"
+      string message
+      datetime sentAt
+      string status
+    }
+    TIMEENTRY {
+      int id PK
+      string description
+      datetime startTime
+      datetime endTime
+      int duration
+      decimal rate
+      boolean billable
+    }
+    INVOICE {
+      int id PK
+      string number
+      decimal amount
+      string status "draft, sent, paid, overdue"
+      datetime dueDate
+      datetime createdAt
+    }
+    SETTING {
+      string name PK
+      string value
+      string type "text, email, tel, number, select, toggle"
+      text options "array"
+      string description
+    }
+    
+    %% Relationships
+    CLIENT ||--o{ CASE : "has"
+    CASE ||--o{ DOCUMENT : "contains"
+    DOCUMENT ||--o{ DOCUMENT_COLLABORATOR : "has"
+    USER ||--o{ DOCUMENT_COLLABORATOR : "collaborates"
+    CASE ||--o{ APPOINTMENT : "schedules"
+    USER ||--o{ APPOINTMENT : "attends"
+    USER ||--o{ TIMEENTRY : "logs"
+    CASE ||--o{ TIMEENTRY : "records"
+    CLIENT ||--o{ INVOICE : "receives"
+    CASE ||--o{ INVOICE : "generates"
+    TEMPLATE ||--o{ TEMPLATE_VARIABLE : "defines"
+    USER ||--o{ NOTIFICATION : "receives"
+    CLIENT ||--o{ NOTIFICATION : "receives"

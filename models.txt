@@ -1,0 +1,164 @@
+1. Updated Model Definitions
+User
+
+    Fields:
+        id: primary key
+        fullName: full name (from registration)
+        email: unique email address
+        password: hashed password
+        role: enum ("attorney", "paralegal", "admin")
+        phone: contact number
+    Relationships:
+        Logs many TimeEntries
+        Receives Notifications
+        May be assigned to Cases (e.g. primary attorney)
+        May appear as a collaborator on Documents
+
+Client
+
+    Fields:
+        id: primary key
+        name: client name
+        email: email address
+        phone: contact number
+        status: enum ("active", "inactive")
+        address: (optional) mailing address
+    Relationships:
+        Owns many Cases
+        Receives Notifications
+        Linked to Invoices
+
+Case
+
+    Fields:
+        id: primary key
+        caseNumber: unique case identifier
+        title: case title
+        type: case type (could be free text or an enum)
+        status: enum ("open", "pending", "closed")
+        court: court details
+        judge: assigned judge
+        createdAt: creation timestamp
+        nextHearing: (optional) next hearing datetime
+    Relationships:
+        Belongs to one Client
+        Has many Documents
+        Has many Appointments/Events
+        Has many TimeEntries
+        May generate multiple Invoices
+
+Document
+
+    Fields:
+        id: primary key
+        title: document title
+        type: document type (e.g. contract, affidavit)
+        category: categorization (as per frontend)
+        status: enum ("draft", "final", "archived")
+        lastModified: timestamp of last change
+        size: file size (string format)
+        version: current version number
+        filePath: storage path or URL
+        tags: an array of strings (or can be modeled via a join table if you prefer normalized tags)
+    Relationships:
+        Belongs to a Case (or can be linked directly to a Client, if needed)
+        Has many DocumentCollaborators (see below)
+        Optionally, metadata can be stored in extra fields or a separate table
+        Version history can be stored in a related DocumentVersion table
+
+DocumentCollaborator (Join Table)
+
+    Fields:
+        id: primary key
+        documentId: foreign key to Document
+        userId: foreign key to User
+        role: enum ("viewer", "editor", "owner")
+        addedAt: timestamp when the collaborator was added
+
+Appointment / Event
+
+(You can combine both concepts as they share similar fields.)
+
+    Fields:
+        id: primary key
+        title: event/appointment title
+        type: enum ("court", "meeting", "deadline")
+        eventDatetime: full datetime (combining date and time)
+    Relationships:
+        Linked to a Case (and optionally to a Client if it involves the client)
+        Associated with one or more Users (attendees or organizers)
+
+Template
+
+    Fields:
+        id: primary key
+        title: template title
+        description: brief description
+        category: category of template
+        language: e.g. "en", "sq"
+        lastModified: timestamp
+        status: enum ("draft", "published", "archived")
+    Relationships:
+        Has many TemplateVariables
+
+TemplateVariable
+
+    Fields:
+        id: primary key
+        name: variable name
+        type: enum ("text", "number", "date", "select", "boolean")
+        required: boolean
+        defaultValue: (optional) default text
+        options: (optional) array of strings for select type
+        description: (optional) additional details
+    Relationships:
+        Belongs to a Template
+
+Notification
+
+    Fields:
+        id: primary key
+        type: e.g. "SMS" or "email"
+        message: content of the notification
+        sentAt: timestamp
+        status: status text (e.g., "delivered", "pending")
+    Relationships:
+        Can be linked to one or more Users and/or Clients
+
+TimeEntry
+
+    Fields:
+        id: primary key
+        description: brief description of the work
+        startTime: start datetime
+        endTime: (optional) end datetime
+        duration: calculated duration in minutes
+        rate: billing rate
+        billable: boolean flag
+    Relationships:
+        Belongs to a Case
+        Logged by a User
+
+Invoice
+
+    Fields:
+        id: primary key
+        number: invoice number
+        amount: monetary amount
+        status: enum ("draft", "sent", "paid", "overdue")
+        dueDate: due datetime
+        createdAt: creation datetime
+    Relationships:
+        Belongs to a Client
+        Optionally linked to a Case
+
+Setting
+
+    Fields:
+        name: primary key (serves as the key for the setting)
+        value: stored value (could be stringified JSON for numbers/booleans)
+        type: enum ("text", "email", "tel", "number", "select", "toggle")
+        options: (optional) array if type is "select"
+        description: (optional) details
+    Usage:
+        Stores application or user-specific configuration settings

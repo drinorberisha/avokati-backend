@@ -1,0 +1,574 @@
+from typing import List, Any, Optional
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query, Form
+from sqlalchemy.orm import Session
+from app.core.database import get_db
+from app.crud import document as document_crud
+from app.schemas.document import (
+    Document, 
+    DocumentCreate, 
+    DocumentUpdate, 
+    DocumentResponse,
+    DocumentVersion,
+    DocumentVersionResponse
+)
+from app.core.auth import get_current_user
+from app.schemas.user import User, UserRole
+from app.core.storage import upload_file, delete_file
+from app.core.s3 import s3, s3_client
+from app.core.supabase import supabase
+import uuid
+from app.db.models.user import User as DBUser  # Import the User model
+import json
+from datetime import datetime
+from app.core.constants import S3_BUCKET_NAME
+
+router = APIRouter()
+
+@router.get("/upload-url")
+async def get_upload_url(
+    file_name: str,
+    content_type: str,
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """
+    Get a pre-signed URL for uploading a file to S3.
+    """
+    try:
+        file_key = s3.generate_file_key(file_name, str(current_user.id))
+        upload_url = s3.generate_presigned_url(file_key, 'put_object', {
+            'ContentType': content_type
+        })
+        return {
+            "uploadUrl": upload_url,
+            "fileKey": file_key
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
+
+@router.post("/")
+async def create_document(
+    file: UploadFile = File(...),
+    data: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Parse the JSON data
+        document_data = json.loads(data)
+        
+        # Generate unique file key
+        file_key = f"documents/{current_user.id}/{uuid.uuid4()}-{file.filename}"
+        
+        # Upload file to S3
+        await s3_client.upload_fileobj(
+            file.file,
+            S3_BUCKET_NAME,
+            file_key,
+            ExtraArgs={
+                "ContentType": file.content_type
+            }
+        )
+        
+        # Generate presigned URL for download
+        download_url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={
+                'Bucket': S3_BUCKET_NAME,
+                'Key': file_key
+            },
+            ExpiresIn=3600
+        )
+        
+        # Create document record in Supabase
+        document = {
+            "title": document_data["title"],
+            "type": file.content_type,
+            "category": document_data["category"],
+            "status": "draft",
+            "size": str(file.size),
+            "version": 1,
+            "file_path": file_key,
+            "file_name": file.filename,
+            "file_size": file.size,
+            "mime_type": file.content_type,
+            "download_url": download_url,
+            "tags": document_data.get("tags", []),
+            "case_id": document_data.get("case_id"),
+            "client_id": document_data.get("client_id"),
+            "created_by": current_user.id,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat(),
+            "metadata": {
+                "author": current_user.full_name,
+                "createdAt": datetime.utcnow().isoformat(),
+                "lastModifiedBy": current_user.full_name,
+                "versionHistory": [{
+                    "version": 1,
+                    "modifiedAt": datetime.utcnow().isoformat(),
+                    "modifiedBy": current_user.full_name,
+                    "changes": "Initial document creation"
+                }]
+            },
+            "collaborators": [{
+                "id": current_user.id,
+                "name": current_user.full_name,
+                "email": current_user.email,
+                "role": "owner",
+                "addedAt": datetime.utcnow().isoformat()
+            }]
+        }
+        
+        response = supabase.table('documents').insert(document).execute()
+        
+        if response.error:
+            # Clean up S3 if Supabase insert fails
+            await s3_client.delete_object(
+                Bucket=S3_BUCKET_NAME,
+                Key=file_key
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to create document: {response.error.message}"
+            )
+            
+        return response.data[0]
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create document: {str(e)}"
+        )
+
+@router.get("/")
+async def get_documents(
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        response = supabase.table('documents')\
+            .select('*')\
+            .execute()
+            
+        # The response is already a dict with 'data' key in newer versions
+        if not response.data:
+            return []
+            
+        # Update download URLs for all documents
+        documents = response.data
+        for doc in documents:
+            if doc.get('file_path'):
+                doc['download_url'] = s3_client.generate_presigned_url(
+                    'get_object',
+                    Params={
+                        'Bucket': S3_BUCKET_NAME,
+                        'Key': doc['file_path']
+                    },
+                    ExpiresIn=3600
+                )
+                
+        return documents
+        
+    except Exception as e:
+        print(f"Error fetching documents: {str(e)}")  # Add logging
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch documents: {str(e)}"
+        )
+
+@router.get("/{document_id}")
+async def read_document(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """
+    Get document by ID.
+    """
+    try:
+        # Get document from Supabase
+        response = supabase.table('documents')\
+            .select('*')\
+            .eq('id', document_id)\
+            .single()\
+            .execute()
+            
+        if response.error:
+            raise HTTPException(
+                status_code=404,
+                detail="Document not found"
+            )
+            
+        document = response.data
+        
+        # Check if user has access (is collaborator)
+        if not any(collab['id'] == current_user.id for collab in document['collaborators']):
+            raise HTTPException(
+                status_code=403,
+                detail="Not enough permissions"
+            )
+        
+        # Update download URL
+        if document['file_path']:
+            document['download_url'] = s3_client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': S3_BUCKET_NAME,
+                    'Key': document['file_path']
+                },
+                ExpiresIn=3600
+            )
+        
+        return document
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch document: {str(e)}"
+        )
+
+@router.get("/{document_id}/versions", response_model=List[DocumentVersionResponse])
+async def get_document_versions(
+    document_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """
+    Get all versions of a document.
+    """
+    document = document_crud.get_document(db, document_id=document_id)
+    if not document:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Document not found"
+        )
+    
+    # Check if user has access
+    if not document_crud.has_access(db, document_id, current_user.id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions"
+        )
+    
+    versions = document.versions
+    
+    # Generate download URLs for each version
+    for version in versions:
+        version.download_url = s3.generate_presigned_url(
+            version.file_key,
+            'get_object'
+        )
+    
+    return versions
+
+@router.put("/{document_id}")
+async def update_document(
+    document_id: str,
+    file: Optional[UploadFile] = File(None),
+    data: str = Form(...),
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """
+    Update document and optionally create new version.
+    """
+    try:
+        # Parse update data
+        update_data = json.loads(data)
+        
+        # Get existing document
+        response = supabase.table('documents')\
+            .select('*')\
+            .eq('id', document_id)\
+            .single()\
+            .execute()
+            
+        if response.error:
+            raise HTTPException(
+                status_code=404,
+                detail="Document not found"
+            )
+            
+        document = response.data
+        
+        # Check if user has edit access
+        has_edit_access = any(
+            collab['id'] == current_user.id and collab['role'] in ['owner', 'editor']
+            for collab in document['collaborators']
+        )
+        if not has_edit_access:
+            raise HTTPException(
+                status_code=403,
+                detail="Not enough permissions"
+            )
+        
+        # Handle file update if provided
+        if file:
+            # Generate new file key
+            file_key = f"documents/{current_user.id}/{uuid.uuid4()}-{file.filename}"
+            
+            # Upload new file to S3
+            await s3_client.upload_fileobj(
+                file.file,
+                S3_BUCKET_NAME,
+                file_key,
+                ExtraArgs={
+                    "ContentType": file.content_type
+                }
+            )
+            
+            # Generate new download URL
+            download_url = s3_client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': S3_BUCKET_NAME,
+                    'Key': file_key
+                },
+                ExpiresIn=3600
+            )
+            
+            # Delete old file if exists
+            if document['file_path']:
+                await s3_client.delete_object(
+                    Bucket=S3_BUCKET_NAME,
+                    Key=document['file_path']
+                )
+            
+            # Update file-related fields
+            update_data.update({
+                "file_path": file_key,
+                "file_name": file.filename,
+                "file_size": file.size,
+                "mime_type": file.content_type,
+                "download_url": download_url,
+            })
+        
+        # Update version and metadata
+        current_version = document['version']
+        update_data.update({
+            "version": current_version + 1,
+            "updated_at": datetime.utcnow().isoformat(),
+            "metadata": {
+                **document['metadata'],
+                "lastModifiedBy": current_user.full_name,
+                "versionHistory": [
+                    {
+                        "version": current_version + 1,
+                        "modifiedAt": datetime.utcnow().isoformat(),
+                        "modifiedBy": current_user.full_name,
+                        "changes": update_data.get("changes_description", "Document updated")
+                    },
+                    *document['metadata']['versionHistory']
+                ]
+            }
+        })
+        
+        # Update document in Supabase
+        update_response = supabase.table('documents')\
+            .update(update_data)\
+            .eq('id', document_id)\
+            .execute()
+            
+        if update_response.error:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to update document: {update_response.error.message}"
+            )
+        
+        return update_response.data[0]
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to update document: {str(e)}"
+        )
+
+@router.delete("/{document_id}")
+async def delete_document(
+    document_id: str,
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """
+    Delete document and its file from S3.
+    Only document owner or admin can delete.
+    """
+    try:
+        # Get document from Supabase
+        response = supabase.table('documents')\
+            .select('*')\
+            .eq('id', document_id)\
+            .single()\
+            .execute()
+            
+        if response.error:
+            raise HTTPException(
+                status_code=404,
+                detail="Document not found"
+            )
+            
+        document = response.data
+        
+        # Check if user is owner or admin
+        is_owner = any(
+            collab['id'] == current_user.id and collab['role'] == 'owner' 
+            for collab in document['collaborators']
+        )
+        if not is_owner and current_user.role != 'admin':
+            raise HTTPException(
+                status_code=403,
+                detail="Only document owner or admin can delete documents"
+            )
+        
+        # Delete file from S3
+        if document['file_path']:
+            await s3_client.delete_object(
+                Bucket=S3_BUCKET_NAME,
+                Key=document['file_path']
+            )
+        
+        # Delete document from Supabase
+        delete_response = supabase.table('documents')\
+            .delete()\
+            .eq('id', document_id)\
+            .execute()
+            
+        if delete_response.error:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to delete document: {delete_response.error.message}"
+            )
+        
+        return {"message": "Document deleted successfully"}
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to delete document: {str(e)}"
+        )
+
+@router.post("/{document_id}/versions")
+async def create_version(
+    document_id: str,
+    file: UploadFile = File(...),
+    data: str = Form(...),
+    current_user: User = Depends(get_current_user)
+):
+    try:
+        # Parse the JSON data
+        version_data = json.loads(data)
+        
+        # Get existing document
+        doc_response = supabase.table('documents')\
+            .select('*')\
+            .eq('id', document_id)\
+            .single()\
+            .execute()
+            
+        if doc_response.error:
+            raise HTTPException(
+                status_code=404,
+                detail="Document not found"
+            )
+            
+        document = doc_response.data
+        
+        # Check if user has edit access
+        has_edit_access = any(
+            collab['id'] == current_user.id and collab['role'] in ['owner', 'editor']
+            for collab in document['collaborators']
+        )
+        if not has_edit_access:
+            raise HTTPException(
+                status_code=403,
+                detail="Not enough permissions"
+            )
+        
+        # Generate unique file key for the new version
+        file_key = f"documents/{current_user.id}/versions/{document_id}/{uuid.uuid4()}-{file.filename}"
+        
+        # Upload new version to S3
+        await s3_client.upload_fileobj(
+            file.file,
+            S3_BUCKET_NAME,
+            file_key,
+            ExtraArgs={
+                "ContentType": file.content_type
+            }
+        )
+        
+        # Generate download URL for the new version
+        download_url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={
+                'Bucket': S3_BUCKET_NAME,
+                'Key': file_key
+            },
+            ExpiresIn=3600
+        )
+        
+        # Create version record
+        new_version = {
+            "document_id": document_id,
+            "version_number": document['version'] + 1,
+            "file_path": file_key,
+            "file_name": file.filename,
+            "file_size": file.size,
+            "mime_type": file.content_type,
+            "download_url": download_url,
+            "changes_description": version_data.get('changes_description', ''),
+            "created_by_id": current_user.id,
+            "created_at": datetime.utcnow().isoformat(),
+            "updated_at": datetime.utcnow().isoformat()
+        }
+        
+        version_response = supabase.table('document_versions').insert(new_version).execute()
+        
+        if version_response.error:
+            # Clean up S3 if version creation fails
+            await s3_client.delete_object(
+                Bucket=S3_BUCKET_NAME,
+                Key=file_key
+            )
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to create version: {version_response.error.message}"
+            )
+        
+        # Update document with new version number
+        update_data = {
+            "version": document['version'] + 1,
+            "updated_at": datetime.utcnow().isoformat(),
+            "metadata": {
+                **document['metadata'],
+                "lastModifiedBy": current_user.full_name,
+                "versionHistory": [
+                    {
+                        "version": document['version'] + 1,
+                        "modifiedAt": datetime.utcnow().isoformat(),
+                        "modifiedBy": current_user.full_name,
+                        "changes": version_data.get('changes_description', '')
+                    },
+                    *document['metadata']['versionHistory']
+                ]
+            }
+        }
+        
+        doc_update_response = supabase.table('documents')\
+            .update(update_data)\
+            .eq('id', document_id)\
+            .execute()
+            
+        if doc_update_response.error:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Failed to update document: {doc_update_response.error.message}"
+            )
+            
+        return {
+            "document": doc_update_response.data[0],
+            "version": version_response.data[0]
+        }
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to create version: {str(e)}"
+        ) 
