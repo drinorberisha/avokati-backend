@@ -156,4 +156,128 @@ async def delete_client(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e)
+        )
+
+@router.get("/{client_id}/cases")
+async def get_client_cases(
+    client_id: str,
+    current_user: User = Depends(get_current_user),
+    supabase = Depends(get_supabase_client)
+) -> Any:
+    """
+    Get all cases associated with a specific client.
+    """
+    try:
+        # First verify the client exists
+        client_response = supabase.table('clients').select("*").eq('id', client_id).single().execute()
+        if not client_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Client not found"
+            )
+
+        # Get all cases for this client
+        cases_response = supabase.table('cases')\
+            .select(
+                "*",
+                count="exact"
+            )\
+            .eq('client_id', client_id)\
+            .execute()
+
+        # Get metrics for each case
+        cases_with_metrics = []
+        for case in cases_response.data:
+            # Calculate response time (example metric)
+            response_time = "24h"  # This should be calculated based on your business logic
+            
+            # Calculate document submission status
+            docs_response = supabase.table('documents')\
+                .select("*")\
+                .eq('case_id', case['id'])\
+                .execute()
+            
+            doc_submission = "timely"
+            if not docs_response.data:
+                doc_submission = "incomplete"
+            
+            # Calculate payment status
+            payment_status = "paid"  # This should be fetched from your payments table
+            
+            # Calculate client engagement
+            engagement = "high"  # This should be based on interaction metrics
+            
+            # Add metrics to case
+            case['metrics'] = {
+                "responseTime": response_time,
+                "documentSubmission": doc_submission,
+                "paymentStatus": payment_status,
+                "clientEngagement": engagement,
+                "satisfaction": 5  # This should be calculated from actual ratings
+            }
+            
+            cases_with_metrics.append(case)
+
+        return cases_with_metrics
+
+    except Exception as e:
+        print(f"Error fetching client cases: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+@router.get("/{client_id}/metrics")
+async def get_client_metrics(
+    client_id: str,
+    current_user: User = Depends(get_current_user),
+    supabase = Depends(get_supabase_client)
+) -> Any:
+    """
+    Get metrics for a specific client.
+    """
+    try:
+        # First verify the client exists
+        client_response = supabase.table('clients').select("*").eq('id', client_id).single().execute()
+        if not client_response.data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Client not found"
+            )
+
+        # Get all cases for this client
+        cases_response = supabase.table('cases')\
+            .select("*")\
+            .eq('client_id', client_id)\
+            .execute()
+
+        total_cases = len(cases_response.data)
+        active_cases = len([c for c in cases_response.data if c['status'] == 'open'])
+        completed_cases = len([c for c in cases_response.data if c['status'] == 'closed'])
+
+        # Calculate average response time (this should be based on your actual data)
+        avg_response_time = "24h"
+
+        # Calculate payment history (this should be based on your actual payment records)
+        payment_history = "excellent"
+
+        # Calculate satisfaction (this should be based on actual ratings)
+        satisfaction = 4.5
+
+        metrics = {
+            "totalCases": total_cases,
+            "activeCases": active_cases,
+            "completedCases": completed_cases,
+            "averageResponseTime": avg_response_time,
+            "paymentHistory": payment_history,
+            "satisfaction": satisfaction
+        }
+
+        return metrics
+
+    except Exception as e:
+        print(f"Error fetching client metrics: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
         ) 

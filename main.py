@@ -2,9 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.api.api_v1.api import api_router
+from app.core.s3 import s3
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
+    version=settings.VERSION,
+    description=settings.DESCRIPTION,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 

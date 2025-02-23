@@ -30,6 +30,34 @@ class S3Service:
         """
         return await self.session.client('s3')
 
+    async def configure_cors(self):
+        """
+        Configure CORS for the S3 bucket.
+        """
+        try:
+            async with self.session.client('s3') as s3_client:
+                cors_configuration = {
+                    'CORSRules': [{
+                        'AllowedHeaders': ['*'],
+                        'AllowedMethods': ['GET', 'PUT', 'POST', 'DELETE', 'HEAD'],
+                        'AllowedOrigins': [
+                            'http://localhost:3000',  # Development
+                            'https://avokati.vercel.app',  # Production
+                            '*'  # Allow all origins (be careful with this in production)
+                        ],
+                        'ExposeHeaders': ['ETag'],
+                        'MaxAgeSeconds': 3000
+                    }]
+                }
+                await s3_client.put_bucket_cors(
+                    Bucket=self.bucket_name,
+                    CORSConfiguration=cors_configuration
+                )
+                return True
+        except Exception as e:
+            print(f"Error configuring CORS for S3: {e}")
+            return False
+
     async def generate_presigned_url(
         self,
         file_key: str,
@@ -38,22 +66,29 @@ class S3Service:
         expiration: int = 3600
     ) -> Optional[str]:
         """
-        Generate a presigned URL for S3 operations.
+        Generate a presigned URL for S3 operations with content-disposition.
         """
         try:
             async with self.session.client('s3') as s3_client:
+                # Get the file name from the key
+                file_name = file_key.split("/")[-1]
+                
+                # Set up parameters with content disposition and type
                 params = {
                     'Bucket': self.bucket_name,
                     'Key': file_key,
+                    'ResponseContentDisposition': f'attachment; filename="{file_name}"',
+                    'ResponseContentType': 'application/octet-stream',  # Force download
                     **(extra_args or {})
                 }
+                
                 url = await s3_client.generate_presigned_url(
                     ClientMethod=action,
                     Params=params,
                     ExpiresIn=expiration
                 )
                 return url
-        except ClientError as e:
+        except Exception as e:
             print(f"Error generating presigned URL: {e}")
             return None
 
