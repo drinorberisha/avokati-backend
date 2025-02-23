@@ -39,8 +39,16 @@ async def get_current_user(
     )
     try:
         # Verify the token with Supabase
-        user = supabase.auth.get_user(token)
-        if not user:
+        try:
+            user = supabase.auth.get_user(token)
+            if not user:
+                raise credentials_exception
+        except Exception as e:
+            if "timeout" in str(e).lower():
+                raise HTTPException(
+                    status_code=status.HTTP_504_GATEWAY_TIMEOUT,
+                    detail="Authentication service timeout. Please try again."
+                )
             raise credentials_exception
             
         # Get user from our database

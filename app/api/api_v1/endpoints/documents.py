@@ -14,13 +14,14 @@ from app.schemas.document import (
 from app.core.auth import get_current_user
 from app.schemas.user import User, UserRole
 from app.core.storage import upload_file, delete_file
-from app.core.s3 import s3, s3_client
+from app.core.s3 import s3
 from app.core.supabase import supabase
 import uuid
 from app.db.models.user import User as DBUser  # Import the User model
 import json
 from datetime import datetime
 from app.core.constants import S3_BUCKET_NAME
+import asyncio
 
 router = APIRouter()
 
@@ -58,28 +59,52 @@ async def create_document(
         # Parse the JSON data
         document_data = json.loads(data)
         
+        # Validate that either case_id or client_id is provided, but not both
+        case_id = document_data.get("case_id")
+        client_id = document_data.get("client_id")
+        
+        if not case_id and not client_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Either case_id or client_id must be provided"
+            )
+            
+        if case_id and client_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Document cannot be associated with both a case and a client"
+            )
+        
         # Generate unique file key
-        file_key = f"documents/{current_user.id}/{uuid.uuid4()}-{file.filename}"
+        file_key = s3.generate_file_key(file.filename, str(current_user.id))
         
         # Upload file to S3
-        await s3_client.upload_fileobj(
+        upload_success = await s3.upload_file(
             file.file,
-            S3_BUCKET_NAME,
             file_key,
-            ExtraArgs={
-                "ContentType": file.content_type
-            }
+            content_type=file.content_type
         )
         
-        # Generate presigned URL for download
-        download_url = s3_client.generate_presigned_url(
+        if not upload_success:
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to upload file to S3"
+            )
+        
+        # Generate presigned URL
+        download_url = await s3.generate_presigned_url(
+            file_key,
             'get_object',
-            Params={
-                'Bucket': S3_BUCKET_NAME,
-                'Key': file_key
-            },
-            ExpiresIn=3600
+            expiration=3600
         )
+        
+        if not download_url:
+            # Clean up S3 if URL generation fails
+            await s3.delete_file(file_key)
+            raise HTTPException(
+                status_code=500,
+                detail="Failed to generate download URL"
+            )
         
         # Create document record in Supabase
         document = {
@@ -95,9 +120,9 @@ async def create_document(
             "mime_type": file.content_type,
             "download_url": download_url,
             "tags": document_data.get("tags", []),
-            "case_id": document_data.get("case_id"),
-            "client_id": document_data.get("client_id"),
-            "created_by": current_user.id,
+            "case_id": str(case_id) if case_id else None,
+            "client_id": str(client_id) if client_id else None,
+            "created_by": str(current_user.id),
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat(),
             "metadata": {
@@ -112,7 +137,7 @@ async def create_document(
                 }]
             },
             "collaborators": [{
-                "id": current_user.id,
+                "id": str(current_user.id),
                 "name": current_user.full_name,
                 "email": current_user.email,
                 "role": "owner",
@@ -120,22 +145,24 @@ async def create_document(
             }]
         }
         
+        # Insert document into Supabase
         response = supabase.table('documents').insert(document).execute()
         
-        if response.error:
+        if not response.data:
             # Clean up S3 if Supabase insert fails
-            await s3_client.delete_object(
-                Bucket=S3_BUCKET_NAME,
-                Key=file_key
-            )
+            await s3.delete_file(file_key)
             raise HTTPException(
                 status_code=400,
-                detail=f"Failed to create document: {response.error.message}"
+                detail="Failed to create document in database"
             )
             
         return response.data[0]
         
     except Exception as e:
+        print(f"Error creating document: {str(e)}")  # Add logging
+        # Clean up S3 file if it was uploaded
+        if 'file_key' in locals():
+            await s3.delete_file(file_key)
         raise HTTPException(
             status_code=500,
             detail=f"Failed to create document: {str(e)}"
@@ -146,6 +173,7 @@ async def get_documents(
     current_user: User = Depends(get_current_user)
 ):
     try:
+        # Execute Supabase query without await
         response = supabase.table('documents')\
             .select('*')\
             .execute()
@@ -158,13 +186,11 @@ async def get_documents(
         documents = response.data
         for doc in documents:
             if doc.get('file_path'):
-                doc['download_url'] = s3_client.generate_presigned_url(
+                # Generate presigned URL
+                doc['download_url'] = await s3.generate_presigned_url(
+                    doc['file_path'],
                     'get_object',
-                    Params={
-                        'Bucket': S3_BUCKET_NAME,
-                        'Key': doc['file_path']
-                    },
-                    ExpiresIn=3600
+                    expiration=3600
                 )
                 
         return documents
@@ -209,7 +235,7 @@ async def read_document(
         
         # Update download URL
         if document['file_path']:
-            document['download_url'] = s3_client.generate_presigned_url(
+            document['download_url'] = s3.generate_presigned_url(
                 'get_object',
                 Params={
                     'Bucket': S3_BUCKET_NAME,
@@ -306,31 +332,22 @@ async def update_document(
             file_key = f"documents/{current_user.id}/{uuid.uuid4()}-{file.filename}"
             
             # Upload new file to S3
-            await s3_client.upload_fileobj(
+            await s3.upload_file(
                 file.file,
-                S3_BUCKET_NAME,
                 file_key,
-                ExtraArgs={
-                    "ContentType": file.content_type
-                }
+                content_type=file.content_type
             )
             
             # Generate new download URL
-            download_url = s3_client.generate_presigned_url(
+            download_url = s3.generate_presigned_url(
+                file_key,
                 'get_object',
-                Params={
-                    'Bucket': S3_BUCKET_NAME,
-                    'Key': file_key
-                },
-                ExpiresIn=3600
+                expiration=3600
             )
             
             # Delete old file if exists
             if document['file_path']:
-                await s3_client.delete_object(
-                    Bucket=S3_BUCKET_NAME,
-                    Key=document['file_path']
-                )
+                await s3.delete_file(document['file_path'])
             
             # Update file-related fields
             update_data.update({
@@ -419,10 +436,7 @@ async def delete_document(
         
         # Delete file from S3
         if document['file_path']:
-            await s3_client.delete_object(
-                Bucket=S3_BUCKET_NAME,
-                Key=document['file_path']
-            )
+            await s3.delete_file(document['file_path'])
         
         # Delete document from Supabase
         delete_response = supabase.table('documents')\
@@ -485,23 +499,17 @@ async def create_version(
         file_key = f"documents/{current_user.id}/versions/{document_id}/{uuid.uuid4()}-{file.filename}"
         
         # Upload new version to S3
-        await s3_client.upload_fileobj(
+        await s3.upload_file(
             file.file,
-            S3_BUCKET_NAME,
             file_key,
-            ExtraArgs={
-                "ContentType": file.content_type
-            }
+            content_type=file.content_type
         )
         
         # Generate download URL for the new version
-        download_url = s3_client.generate_presigned_url(
+        download_url = s3.generate_presigned_url(
+            file_key,
             'get_object',
-            Params={
-                'Bucket': S3_BUCKET_NAME,
-                'Key': file_key
-            },
-            ExpiresIn=3600
+            expiration=3600
         )
         
         # Create version record
@@ -523,10 +531,7 @@ async def create_version(
         
         if version_response.error:
             # Clean up S3 if version creation fails
-            await s3_client.delete_object(
-                Bucket=S3_BUCKET_NAME,
-                Key=file_key
-            )
+            await s3.delete_file(file_key)
             raise HTTPException(
                 status_code=400,
                 detail=f"Failed to create version: {version_response.error.message}"
