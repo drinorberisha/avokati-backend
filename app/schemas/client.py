@@ -29,4 +29,8 @@ class Client(ClientBase):
     updated_at: datetime
 
     class Config:
-        from_attributes = True 
+        from_attributes = True
+
+class ClientInDB(Client):
+    """Database representation of a client, with any additional DB-specific fields."""
+    pass 

@@ -58,6 +58,10 @@ class Case(CaseBase):
     class Config:
         from_attributes = True
 
+class CaseInDB(Case):
+    """Database representation of a case, with any additional DB-specific fields."""
+    pass
+
 class ClientInfo(BaseModel):
     id: UUID
     name: str

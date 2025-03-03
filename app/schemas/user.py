@@ -8,6 +8,7 @@ class UserRole(str, Enum):
     attorney = "attorney"
     paralegal = "paralegal"
     admin = "admin"
+    client = "client"
 
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None

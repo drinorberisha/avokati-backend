@@ -10,6 +10,7 @@ class UserRole(str, Enum):
     attorney = "attorney"
     paralegal = "paralegal"
     admin = "admin"
+    client = "client"
 
 class User(Base):
     __tablename__ = "users"
@@ -22,7 +23,7 @@ class User(Base):
     is_superuser = Column(Boolean, server_default='false', nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
     updated_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
-    role = Column(ENUM('attorney', 'paralegal', 'admin', name='user_role', create_type=False), nullable=False, server_default='paralegal')
+    role = Column(ENUM('attorney', 'paralegal', 'admin', 'client', name='user_role', create_type=False), nullable=False, server_default='paralegal')
     phone = Column(Text, nullable=True)
 
     # Relationships

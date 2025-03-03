@@ -53,6 +53,10 @@ class Document(DocumentBase):
     class Config:
         from_attributes = True
 
+class DocumentInDB(Document):
+    """Database representation of a document, with any additional DB-specific fields."""
+    pass
+
 class DocumentResponse(Document):
     download_url: Optional[HttpUrl] = None
     versions: Optional[List['DocumentVersionResponse']] = None
