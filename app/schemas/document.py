@@ -1,9 +1,10 @@
 from enum import Enum
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from uuid import UUID
 from datetime import datetime
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, Field
 from .base import BaseSchema
+import uuid
 
 class DocumentStatus(str, Enum):
     draft = "draft"
@@ -16,8 +17,12 @@ class CollaboratorRole(str, Enum):
     owner = "owner"
 
 class DocumentBase(BaseModel):
+    """Base document schema."""
     title: str
-    type: str
+    document_type: str = Field(
+        default="other", 
+        description="Type of document (law, regulation, case_law, contract, article, other)"
+    )
     category: str
     status: DocumentStatus = DocumentStatus.draft
     file_key: str  # S3 file key
@@ -30,13 +35,26 @@ class DocumentBase(BaseModel):
     client_id: Optional[UUID] = None
 
 class DocumentCreate(DocumentBase):
-    pass
+    """Schema for creating a document."""
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    user_id: str
+    status: str = Field(
+        default="pending", 
+        description="Status of document processing (pending, processing, processed, failed)"
+    )
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    file_path: Optional[str] = None
+    original_filename: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
-class DocumentUpdate(DocumentBase):
+class DocumentUpdate(BaseModel):
+    """Schema for updating a document."""
     title: Optional[str] = None
-    type: Optional[str] = None
+    document_type: Optional[str] = None
     category: Optional[str] = None
-    status: Optional[DocumentStatus] = None
+    status: Optional[str] = None
+    updated_at: datetime = Field(default_factory=datetime.now)
     file_key: Optional[str] = None
     file_name: Optional[str] = None
     file_size: Optional[int] = None
@@ -44,6 +62,7 @@ class DocumentUpdate(DocumentBase):
     tags: Optional[List[str]] = None
     case_id: Optional[UUID] = None
     client_id: Optional[UUID] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 class Document(DocumentBase):
     id: UUID
@@ -57,9 +76,52 @@ class DocumentInDB(Document):
     """Database representation of a document, with any additional DB-specific fields."""
     pass
 
-class DocumentResponse(Document):
-    download_url: Optional[HttpUrl] = None
-    versions: Optional[List['DocumentVersionResponse']] = None
+class DocumentResponse(DocumentBase):
+    """Schema for document response."""
+    id: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+    message: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+    class Config:
+        orm_mode = True
+
+class DocumentList(BaseModel):
+    """Schema for listing documents."""
+    id: str
+    title: str
+    document_type: str
+    status: str
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+class DocumentContent(BaseModel):
+    """Schema for document content."""
+    id: str
+    title: str
+    content: str
+    document_type: str
+    document_metadata: Dict[str, Any] = Field(default_factory=dict)
+
+class DocumentSearchResult(BaseModel):
+    """Schema for document search result."""
+    id: str
+    title: str
+    content: str
+    document_type: str
+    score: float
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+class DocumentSearchResponse(BaseModel):
+    """Schema for document search response."""
+    query: str
+    results: List[DocumentSearchResult]
+    total: int
 
 class DocumentVersionBase(BaseModel):
     document_id: UUID

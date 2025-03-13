@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Text, DateTime, Enum as SQLEnum, ForeignKey
+from sqlalchemy import Column, Text, DateTime, Enum as SQLEnum, ForeignKey, CheckConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -17,7 +17,7 @@ class Case(Base):
     case_number = Column(Text, nullable=False, unique=True)
     title = Column(Text, nullable=False)
     type = Column(Text, nullable=False)
-    status = Column(SQLEnum(CaseStatus), nullable=False, server_default=CaseStatus.open.value)
+    status = Column(Text, nullable=False, server_default='open')
     court = Column(Text, nullable=False)
     judge = Column(Text, nullable=False)
     next_hearing = Column(DateTime(timezone=True), nullable=True)
@@ -25,6 +25,14 @@ class Case(Base):
     primary_attorney_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
     updated_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
+
+    # Add check constraint to ensure valid status values
+    __table_args__ = (
+        CheckConstraint(
+            status.in_(['open', 'pending', 'closed']),
+            name='check_valid_case_status'
+        ),
+    )
 
     # Relationships
     client = relationship("Client", back_populates="cases")

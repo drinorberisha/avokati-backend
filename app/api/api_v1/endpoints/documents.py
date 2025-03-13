@@ -17,7 +17,7 @@ from app.core.storage import upload_file, delete_file
 from app.core.s3 import s3
 from app.core.supabase import supabase
 import uuid
-from app.db.models.user import User as DBUser  # Import the User model
+from app.db.models.user import User as DBUser
 import json
 from datetime import datetime
 from app.core.constants import S3_BUCKET_NAME
@@ -251,40 +251,6 @@ async def read_document(
             status_code=500,
             detail=f"Failed to fetch document: {str(e)}"
         )
-
-@router.get("/{document_id}/versions", response_model=List[DocumentVersionResponse])
-async def get_document_versions(
-    document_id: str,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-) -> Any:
-    """
-    Get all versions of a document.
-    """
-    document = document_crud.get_document(db, document_id=document_id)
-    if not document:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Document not found"
-        )
-    
-    # Check if user has access
-    if not document_crud.has_access(db, document_id, current_user.id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough permissions"
-        )
-    
-    versions = document.versions
-    
-    # Generate download URLs for each version
-    for version in versions:
-        version.download_url = s3.generate_presigned_url(
-            version.file_key,
-            'get_object'
-        )
-    
-    return versions
 
 @router.put("/{document_id}")
 async def update_document(

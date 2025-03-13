@@ -82,26 +82,36 @@ async def get_client_cases(db: AsyncSession, client_id: str) -> List[Case]:
 
 async def create_case(db: AsyncSession, case: CaseCreate) -> Optional[Case]:
     """
-    Create a new case with auto-generated case number.
+    Create a new case with auto-generated case number if not provided.
     """
     logger.info("Starting case creation in CRUD layer")
     
     try:
-        # Generate a unique case number
-        result = await db.execute(select(Case).order_by(Case.case_number.desc()))
-        latest_case = result.scalar_one_or_none()
+        # Use provided case number or generate a unique one
+        case_number = case.case_number
         
-        if latest_case:
-            last_number = int(latest_case.case_number.split('-')[1])
-            new_number = f"CASE-{str(last_number + 1).zfill(6)}"
+        # If case_number is empty or None, generate a new one
+        if not case_number:
+            # Generate a unique case number
+            result = await db.execute(select(Case).order_by(Case.case_number.desc()))
+            # Use first() instead of scalar_one_or_none() to avoid the "Multiple rows found" error
+            latest_case = result.first()
+            
+            if latest_case:
+                # Extract the case from the result row
+                latest_case = latest_case[0]
+                last_number = int(latest_case.case_number.split('-')[1])
+                case_number = f"CASE-{str(last_number + 1).zfill(6)}"
+            else:
+                case_number = "CASE-000001"
+            
+            logger.info(f"Generated case number: {case_number}")
         else:
-            new_number = "CASE-000001"
-        
-        logger.info(f"Generated case number: {new_number}")
+            logger.info(f"Using provided case number: {case_number}")
         
         # Create the case object
         db_case = Case(
-            case_number=new_number,
+            case_number=case_number,
             title=case.title,
             type=case.type,
             status=case.status,
