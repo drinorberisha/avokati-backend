@@ -1,0 +1,41 @@
+# Core dependencies with compatible versions
+fastapi==0.115.12
+uvicorn==0.34.0
+pydantic==2.10.6
+pydantic-settings==2.8.1
+sqlalchemy==2.0.39
+asyncpg==0.29.0
+python-dotenv==1.1.0
+
+# Authentication and security
+python-jose[cryptography]==3.4.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.5
+
+# Supabase related - carefully pinned for compatibility
+httpx==0.23.3
+supabase==1.0.3
+gotrue==1.2.0
+realtime==1.0.0
+postgrest==0.10.7
+storage3==0.5.3
+websockets==10.4
+
+# LangChain with compatible versions
+langchain==0.3.21
+langchain-community==0.3.20
+langchain-core==0.3.48
+langchain-openai==0.3.10
+langchain-pinecone==0.2.0
+langchain-text-splitters==0.3.7
+openai==1.68.2
+pinecone-client==5.3.1
+
+# Task queue
+celery==5.4.0
+redis==4.6.0
+
+# Utility packages
+aiofiles==23.2.1
+alembic==1.15.1
+email_validator==2.2.0 
