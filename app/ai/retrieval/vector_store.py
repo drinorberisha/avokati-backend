@@ -5,12 +5,78 @@ import datetime
 from typing import List, Dict, Any, Optional, Tuple
 from pinecone import Pinecone, ServerlessSpec
 from langchain_pinecone import PineconeVectorStore
-from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+# Try to import FAISS, but make it optional
+try:
+    from langchain_community.vectorstores import FAISS
+    HAVE_FAISS = True
+except ImportError:
+    HAVE_FAISS = False
+
 from app.core.config import settings
 from app.ai.embedding import multi_provider_embeddings
+
+logger = logging.getLogger(__name__)
+
+# Simple in-memory vector store fallback
+class SimpleVectorStore:
+    """Simple in-memory vector store as fallback when FAISS is not available."""
+    
+    def __init__(self, embeddings):
+        self.embeddings = embeddings
+        self.documents = []
+        self.vectors = []
+        self.metadatas = []
+    
+    def add_texts(self, texts, metadatas=None, ids=None):
+        """Add texts to the vector store."""
+        if metadatas is None:
+            metadatas = [{}] * len(texts)
+        
+        for i, text in enumerate(texts):
+            vector = self.embeddings.embed_query(text)
+            self.documents.append(text)
+            self.vectors.append(vector)
+            self.metadatas.append(metadatas[i] if i < len(metadatas) else {})
+        
+        return ids or [f"doc_{len(self.documents)-len(texts)+i}" for i in range(len(texts))]
+    
+    def similarity_search_with_score(self, query, k=5, filter=None):
+        """Search for similar documents."""
+        if not self.documents:
+            return []
+        
+        query_vector = self.embeddings.embed_query(query)
+        
+        # Simple cosine similarity
+        similarities = []
+        for i, doc_vector in enumerate(self.vectors):
+            # Cosine similarity
+            dot_product = sum(a * b for a, b in zip(query_vector, doc_vector))
+            norm_a = sum(a * a for a in query_vector) ** 0.5
+            norm_b = sum(b * b for b in doc_vector) ** 0.5
+            
+            if norm_a * norm_b == 0:
+                similarity = 0
+            else:
+                similarity = dot_product / (norm_a * norm_b)
+            
+            similarities.append((i, similarity))
+        
+        # Sort by similarity and get top k
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        results = []
+        
+        for i, score in similarities[:k]:
+            doc = Document(
+                page_content=self.documents[i],
+                metadata=self.metadatas[i]
+            )
+            results.append((doc, score))
+        
+        return results
 
 logger = logging.getLogger(__name__)
 
@@ -114,10 +180,14 @@ class VectorStoreClient:
             text_key="text"  # Required parameter for the new PineconeVectorStore
         )
     
-    def _get_faiss_store(self) -> FAISS:
-        """Get a FAISS vector store as fallback."""
-        # Create an empty FAISS index
-        return FAISS.from_texts(["Initial document"], embeddings)
+    def _get_faiss_store(self):
+        """Get a FAISS vector store as fallback, or simple in-memory store if FAISS unavailable."""
+        if HAVE_FAISS:
+            # Create an empty FAISS index
+            return FAISS.from_texts(["Initial document"], embeddings)
+        else:
+            logger.warning("FAISS not available, using simple in-memory vector store")
+            return SimpleVectorStore(embeddings)
     
     async def add_documents(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> List[str]:
         """
@@ -165,9 +235,13 @@ class VectorStoreClient:
                     ids=all_doc_ids
                 )
             else:
-                # For FAISS, we need to recreate the index
-                new_faiss = FAISS.from_texts(all_chunks, embeddings, metadatas=all_metadatas)
-                self.vector_store = new_faiss
+                # For FAISS or SimpleVectorStore fallback
+                if HAVE_FAISS:
+                    new_faiss = FAISS.from_texts(all_chunks, embeddings, metadatas=all_metadatas)
+                    self.vector_store = new_faiss
+                else:
+                    # SimpleVectorStore handles add_texts directly
+                    self.vector_store.add_texts(all_chunks, all_metadatas, all_doc_ids)
             
             return all_doc_ids
         except Exception as e:
