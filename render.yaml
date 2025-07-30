@@ -2,12 +2,5 @@ services:
   - type: web
     name: law-office-backend
     env: python
-    buildCommand: |
-      # Install Poetry
-      curl -sSL https://install.python-poetry.org | python3 -
-      export PATH="$HOME/.local/bin:$PATH"
-      # Configure Poetry
-      poetry config virtualenvs.create false
-      # Install dependencies
-      poetry install --only=main
+    buildCommand: poetry install --only=main
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT 
