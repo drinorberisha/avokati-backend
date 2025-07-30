@@ -25,7 +25,16 @@ class VectorStoreClient:
         """Initialize the vector store client."""
         self.index_name = settings.PINECONE_INDEX_NAME
         self.namespace = settings.PINECONE_NAMESPACE
-        self.use_pinecone = bool(settings.PINECONE_API_KEY and settings.PINECONE_API_KEY != "your-api-key")
+        
+        # Enhanced logging for debugging
+        logger.info(f"Pinecone configuration:")
+        logger.info(f"  Index name: {self.index_name}")
+        logger.info(f"  Namespace: {self.namespace}")
+        logger.info(f"  API key present: {bool(settings.PINECONE_API_KEY)}")
+        logger.info(f"  API key starts with: {settings.PINECONE_API_KEY[:10] + '...' if settings.PINECONE_API_KEY else 'None'}")
+        
+        self.use_pinecone = bool(settings.PINECONE_API_KEY and settings.PINECONE_API_KEY != "your-api-key" and settings.PINECONE_API_KEY != "")
+        
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=100,
