@@ -7,6 +7,7 @@ import uuid
 import tempfile
 import shutil
 from datetime import datetime
+from pydantic import BaseModel
 
 from app.core.database import get_db
 from app.core.auth import get_current_active_user
@@ -454,30 +455,44 @@ async def search_legal_documents(
         top_k=query.limit
     )
     
-    # Format results
+    # Format results directly from vector store results without database lookup
     search_results = []
     for result in results:
-        # Get document from database
-        doc_id = result["metadata"].get("id")
-        if doc_id:
-            if hasattr(crud, 'get_legal_document'):
-                db_document = await crud.get_legal_document(db, doc_id)
-            else:
-                db_document = await legal_document_service.get_document(doc_id, current_user.id)
-                
-            if db_document:
-                search_results.append({
-                    "document": db_document,
-                    "score": result["score"]
-                })
+        metadata = result["document_metadata"]
+        
+        # Create document object directly from vector store metadata
+        document = {
+            "id": metadata.get("id", "unknown"),
+            "title": metadata.get("law_name", metadata.get("title", "Unknown Document")),
+            "content": result["content"],
+            "document_type": metadata.get("document_type", "other"),
+            "document_metadata": metadata,
+            # Add default created_at if missing
+            "created_at": metadata.get("created_at", datetime.now().isoformat()),
+            # Add other required fields with defaults
+            "user_id": current_user.id,
+            "status": metadata.get("status", "active"),
+            "vector_id": metadata.get("id", "unknown"),
+            # Add any other required fields
+            "updated_at": metadata.get("updated_at", datetime.now().isoformat())
+        }
+        
+        search_results.append({
+            "document": document,
+            "score": result["score"]
+        })
     
     return search_results
 
 
+class AskQuestionRequest(BaseModel):
+    query: str
+    document_type: Optional[str] = None
+    top_k: Optional[int] = 5
+
 @router.post("/ask", response_model=Dict[str, Any])
 async def ask_legal_question(
-    query: str = Query(..., description="The legal question to answer"),
-    document_type: Optional[str] = Query(None, description="Filter by document type"),
+    request: AskQuestionRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
@@ -486,13 +501,14 @@ async def ask_legal_question(
     """
     # Create filter if document type is specified
     filter_dict = None
-    if document_type:
-        filter_dict = {"document_type": document_type}
+    if request.document_type:
+        filter_dict = {"document_type": request.document_type}
     
     # Answer the question
     result = await langchain_service.answer_question(
-        question=query,
-        filter=filter_dict
+        question=request.query,
+        filter=filter_dict,
+        top_k=request.top_k
     )
     
     return result

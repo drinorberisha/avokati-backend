@@ -83,6 +83,8 @@ class LangChainService:
         Returns:
             Dictionary with answer and source documents
         """
+        import datetime
+        
         # Retrieve relevant documents
         docs_and_scores = await self.vector_store.search(
             query=question,
@@ -113,18 +115,57 @@ class LangChainService:
             | StrOutputParser()
         )
         
-        # Run the chain
-        answer = qa_chain.invoke(question)
+        # Run the chain with error handling
+        try:
+            answer = qa_chain.invoke(question)
+        except Exception as e:
+            error_msg = str(e).lower()
+            logger.error(f"Error generating answer: {e}")
+            
+            # Check for OpenAI quota errors
+            if "quota" in error_msg or "rate limit" in error_msg or "capacity" in error_msg:
+                # Provide a fallback answer based on the retrieved documents
+                answer = (
+                    "I'm unable to generate a detailed answer at the moment due to service limitations. "
+                    "However, I've found some relevant legal documents that might help answer your question. "
+                    "Please review the sources below for information related to your query."
+                )
+            else:
+                # For other errors, provide a generic fallback
+                answer = (
+                    "I encountered an issue while processing your question. "
+                    "Here are the most relevant documents I found that might help answer your query."
+                )
         
         # Format source documents
         sources = []
+        now_iso = datetime.datetime.now().isoformat()
+        
         for i, doc in enumerate(docs):
             metadata = doc.metadata.copy()
+            
             # Remove chunk-specific metadata
             if "chunk" in metadata:
                 del metadata["chunk"]
             if "total_chunks" in metadata:
                 del metadata["total_chunks"]
+            
+            # Ensure required fields are present
+            if "created_at" not in metadata:
+                metadata["created_at"] = now_iso
+            if "updated_at" not in metadata:
+                metadata["updated_at"] = now_iso
+            if "id" not in metadata:
+                metadata["id"] = metadata.get("chunk_id", "unknown")
+            if "title" not in metadata:
+                metadata["title"] = metadata.get("law_name", metadata.get("chunk_title", "Unknown Document"))
+            if "document_type" not in metadata:
+                if "law_number" in metadata:
+                    metadata["document_type"] = "law"
+                else:
+                    metadata["document_type"] = "other"
+            if "status" not in metadata:
+                metadata["status"] = "active"
             
             sources.append({
                 "content": doc.page_content,
@@ -155,6 +196,8 @@ class LangChainService:
         Returns:
             List of documents with metadata and similarity scores
         """
+        import datetime
+        
         docs_and_scores = await self.vector_store.search(
             query=query,
             filter=filter,
@@ -163,9 +206,38 @@ class LangChainService:
         
         results = []
         for doc, score in docs_and_scores:
+            # Ensure all required metadata fields are present
+            metadata = doc.metadata.copy()
+            
+            # Add current timestamp for any missing date fields
+            now_iso = datetime.datetime.now().isoformat()
+            if "created_at" not in metadata:
+                metadata["created_at"] = now_iso
+            if "updated_at" not in metadata:
+                metadata["updated_at"] = now_iso
+                
+            # Ensure ID field is present and valid
+            if "id" not in metadata:
+                metadata["id"] = metadata.get("chunk_id", "unknown")
+                
+            # Ensure title field has appropriate value
+            if "title" not in metadata:
+                metadata["title"] = metadata.get("law_name", metadata.get("chunk_title", "Unknown Document"))
+                
+            # Ensure document_type is set
+            if "document_type" not in metadata:
+                if "law_number" in metadata:
+                    metadata["document_type"] = "law"
+                else:
+                    metadata["document_type"] = "other"
+                    
+            # Ensure status field is present
+            if "status" not in metadata:
+                metadata["status"] = "active"
+            
             results.append({
                 "content": doc.page_content,
-                "document_metadata": doc.metadata,
+                "document_metadata": metadata,
                 "score": score
             })
         

@@ -1,22 +1,21 @@
 import os
 import logging
+import re
+import datetime
 from typing import List, Dict, Any, Optional, Tuple
 from pinecone import Pinecone, ServerlessSpec
-from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.core.config import settings
+from app.ai.embedding import multi_provider_embeddings
 
 logger = logging.getLogger(__name__)
 
-# Initialize embeddings model
-embeddings = OpenAIEmbeddings(
-    model=settings.OPENAI_EMBEDDING_MODEL,
-    openai_api_key=settings.OPENAI_API_KEY
-)
+# Use our multi-provider embeddings instead of OpenAI
+embeddings = multi_provider_embeddings
 
 
 class VectorStoreClient:
@@ -60,14 +59,33 @@ class VectorStoreClient:
             
             if self.index_name not in existing_indexes:
                 logger.info(f"Creating Pinecone index: {self.index_name}")
-                # Create the index
+                
+                # Get dimension from embeddings to ensure correct dimension
+                # Use a safe approach to get dimension
+                try:
+                    # Try to get dimension from providers if available
+                    if hasattr(embeddings, 'providers') and embeddings.providers:
+                        dimension = embeddings.providers[0].dimension
+                    # Fallback to generating a test embedding to determine dimension
+                    else:
+                        test_embedding = embeddings.embed_query("Test query")
+                        dimension = len(test_embedding)
+                    
+                    logger.info(f"Using embedding dimension: {dimension}")
+                except Exception as e:
+                    logger.warning(f"Could not determine embedding dimension from provider: {e}")
+                    # Default to standard OpenAI dimension as fallback
+                    dimension = 1536
+                    logger.info(f"Using default embedding dimension: {dimension}")
+                
+                # Create the index with the correct dimension
                 self.pc.create_index(
                     name=self.index_name,
-                    dimension=1536,  # OpenAI embeddings dimension
+                    dimension=dimension,
                     metric="cosine",
                     spec=ServerlessSpec(
-                        cloud=settings.PINECONE_CLOUD,
-                        region=settings.PINECONE_REGION
+                        cloud="aws",
+                        region="us-east-1"
                     )
                 )
                 logger.info(f"Created Pinecone index: {self.index_name}")
@@ -165,18 +183,53 @@ class VectorStoreClient:
             List of (document, score) tuples
         """
         try:
+            logger.info(f"Searching for: {query} with filter: {filter}, top_k: {top_k}")
+            
+            # Generate embedding for query
+            query_embedding = embeddings.embed_query(query)
+            
             if self.use_pinecone:
-                return self.vector_store.similarity_search_with_score(
-                    query=query,
-                    k=top_k,
-                    filter=filter
-                )
+                try:
+                    # Query Pinecone index directly
+                    index = self.pc.Index(self.index_name)
+                    results = index.query(
+                        namespace=self.namespace,
+                        vector=query_embedding,
+                        top_k=top_k,
+                        include_metadata=True,
+                        filter=filter
+                    )
+                    
+                    # Format results
+                    formatted_results = []
+                    for match in results.matches:
+                        metadata = match.metadata or {}
+                        
+                        # Use content field if available, fall back to text
+                        text = metadata.get("content") or metadata.get("text") or "[No text available]"
+                        
+                        doc = Document(page_content=text, metadata=metadata)
+                        doc, score = self._normalize_document_metadata(doc, match.score)
+                        formatted_results.append((doc, score))
+                    
+                    return formatted_results
+                except Exception as e:
+                    logger.error(f"Error searching Pinecone directly: {e}")
+                    
+                    # Fallback to langchain interface
+                    results = self.vector_store.similarity_search_with_score(
+                        query=query,
+                        k=top_k,
+                        filter=filter
+                    )
+                    return [self._normalize_document_metadata(doc, score) for doc, score in results]
             else:
-                # FAISS doesn't support filtering in the same way
-                return self.vector_store.similarity_search_with_score(
+                # FAISS search
+                results = self.vector_store.similarity_search_with_score(
                     query=query,
                     k=top_k
                 )
+                return [self._normalize_document_metadata(doc, score) for doc, score in results]
         except Exception as e:
             logger.error(f"Error searching vector store: {e}")
             return []
@@ -210,6 +263,63 @@ class VectorStoreClient:
             index.delete(delete_all=True, namespace=self.namespace)
         except Exception as e:
             logger.error(f"Error deleting all documents from vector store: {e}")
+
+    def _normalize_document_metadata(self, doc: Document, score: float) -> Tuple[Document, float]:
+        """
+        Normalize document metadata to ensure it meets schema requirements.
+        
+        Args:
+            doc: The document with metadata to normalize
+            score: The relevance score for this document
+            
+        Returns:
+            Tuple containing the document with normalized metadata and the score
+        """
+        metadata = doc.metadata
+
+        # Handle document_type field
+        if "document_type" in metadata and metadata["document_type"] == "unknown":
+            if "law_number" in metadata:
+                metadata["document_type"] = "law"
+            else:
+                metadata["document_type"] = "other"
+        elif "document_type" not in metadata:
+            if "law_number" in metadata:
+                metadata["document_type"] = "law"
+            else:
+                metadata["document_type"] = "other"
+        
+        # Handle created_at field
+        if "created_at" not in metadata:
+            created_at = datetime.datetime.now().isoformat()
+            
+            if "law_name" in metadata:
+                date_match = re.search(r'(\d{1,2})\.(\d{1,2})\.(\d{4})', metadata.get("law_name", ""))
+                if date_match:
+                    day, month, year = date_match.groups()
+                    try:
+                        created_at = datetime.datetime(int(year), int(month), int(day)).isoformat()
+                    except ValueError:
+                        pass
+            
+            metadata["created_at"] = created_at
+            
+        # Handle ID field - prioritize using the chunk_id from metadata 
+        if "id" not in metadata and "chunk_id" in metadata:
+            metadata["id"] = metadata["chunk_id"]
+        elif "id" not in metadata:
+            metadata["id"] = "unknown"
+            
+        # Handle title field - prioritize using chunk_title or law_name
+        if "title" not in metadata:
+            if "chunk_title" in metadata:
+                metadata["title"] = metadata["chunk_title"]
+            elif "law_name" in metadata:
+                metadata["title"] = metadata["law_name"]
+            else:
+                metadata["title"] = "Unknown Document"
+
+        return doc, score
 
 
 # Singleton instance
