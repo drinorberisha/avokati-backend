@@ -1,0 +1,369 @@
+{
+  "timestamp": "2026-05-06T23:22:16.797086Z",
+  "index": "lawvector",
+  "namespace": "default",
+  "total_vectors": 45120,
+  "sampled": 50,
+  "counts": {
+    "with_uni_artifact": 0,
+    "missing_diacritics": 0,
+    "very_short": 12,
+    "looks_clean": 38
+  },
+  "examples": {
+    "uni_artifact": [],
+    "missing_diacritics": []
+  },
+  "samples": [
+    {
+      "id": "doc-594.pdf_chunk_20",
+      "law_number": "02/L-37",
+      "article_number": null,
+      "text_len": 36,
+      "text": "# Ligji Nr. 02/L-37 \n\n27 korrik 2006"
+    },
+    {
+      "id": "doc-57.pdf_chunk_24",
+      "law_number": "08/L-168",
+      "article_number": null,
+      "text_len": 35,
+      "text": "## Ligji Nr.08/L-168\n\n26 tetor 2023"
+    },
+    {
+      "id": "doc-111.pdf_chunk_5",
+      "law_number": "08/L-171",
+      "article_number": null,
+      "text_len": 36,
+      "text": "## Ligji Nr. 08/L-171\n\n14 tetor 2022"
+    },
+    {
+      "id": "doc-7.pdf_chunk_76",
+      "law_number": "NR.08/L-275",
+      "article_number": null,
+      "text_len": 35,
+      "text": "## Ligji Nr.08/L-275\n\n30 tetor 2024"
+    },
+    {
+      "id": "doc-247.pdf_chunk_126",
+      "law_number": "06/L-098",
+      "article_number": null,
+      "text_len": 36,
+      "text": "## NENI 12\n\nDispozitat përfundimtare"
+    },
+    {
+      "id": "doc-247.pdf_chunk_107",
+      "law_number": "06/L-098",
+      "article_number": null,
+      "text_len": 48,
+      "text": "## NENI 10\n\nRaste të mosplotësimit të detyrimeve"
+    },
+    {
+      "id": "doc-597.pdf_chunk_3",
+      "law_number": "02/L-53",
+      "article_number": null,
+      "text_len": 261,
+      "text": "# Neni 2 \n\n## Qëllimi i ligjit\n\nRuajtja e tërësisë së ekosistemit dhe baraspeshës ekologjike, mbrojtja adekuate e kafshëve të egra, sigurimi i mirëqenies dhe kushteve për shfrytëzim ekonomik të resurseve, nevoja për siguri dhe standardin e etikës së gjahtarëve."
+    },
+    {
+      "id": "doc-502.pdf_chunk_3",
+      "law_number": "03/L-233",
+      "article_number": null,
+      "text_len": 1358,
+      "text": "## Neni 2 Qëllimi\n\n1. Ky ligj rregullon mbrojtjen e natyrës, shfrytëzimin e qëndrueshëm të sajë dhe veçanërisht:\n1.1. mbrojtjen, ruajtjen, përtëritjen dhe shfrytëzimin e qëndrueshëm të resurseve natyrore, në gjendje të baraspeshës natyrore;\n1.2. përtëritja e natyrës në zonat e dëmtuara ose pjesëve të tyre dhe kompensimi për dëmet e shkaktuara;\n1.3. vendosjen e rrjetit të zonave të mbrojtura, sistemit për planifikim, udhëheqje, inventarizim, monitorim, informim dhe financim me qëllim të mbrojtjes së natyrës;\n1.4. pengimin e shfrytëzimit të tepërt, rrezikimit të llojeve të florës dhe faunës e sidomos i atyre me rëndësi të veçantë, të rralla dhe të rrezikuara, si dhe vendbanimeve të tyre;\n1.5. sigurimin e të drejtës së publikut për informim për gjendjen e natyrës dhe pjesëmarrje në vendim marrje për mbrojtjen e natyrës;\n1.6. sigurimin e ushtrimit e të drejtës së qytetarëve për jetesë të shëndoshë, pushim dhe rekreacion në natyrë;\n1.7. parandalimin e veprimeve të dëmshme të personave juridik dhe fizik në natyrë si pasojë e aktiviteteve ekonomike;\n1.8. mirëmbajtjen ose sanimin në statusin e favorshëm të ruajtjes të vendbanimeve natyrore dhe llojeve me interes për Kosovën sipas standardeve të BE-së;\n1.9. ruajtjen e të gjitha llojeve të zogjve te cilët natyrshëm jetojnë në gjendje të egër (zogjtë, vezët e tyre, çerdhet dhe vendbanimet e tyre)."
+    },
+    {
+      "id": "doc-447.pdf_chunk_58",
+      "law_number": "04/L-077",
+      "article_number": null,
+      "text_len": 857,
+      "text": "## VII. KUSHTI\n\nNeni 59\nKushtet dhe efektet e tyre\n\n1. Kontrata quhet e lidhur me kusht, në qoftë se krijimi ose shuarja e saj varen nga një fakt i pasigurt.\n\n2. Në qoftë se kontrata lidhet nên kusht shtyrës (pezullues) dhe kushti plotësohet, efekti i kontratës fillon që nga lidhja e saj, përveç nëse nga ligji, karakteri i punës ose vullneti i palëve del diç tjetër.\n3. Në qoftë se kontrata lidhet nên kushtin zgjidhës, kontrata pushon të vlejë në qoftë se kushti plotësohet.\n4. Konsiderohet se kushti është realizuar në qoftë se realizimi i tij, në kundërshtim me parimin e ndërgjegjshmërisë dhe të ndershmërisë, e parandalon pala në dëm të së cilës është caktuar, ndërsa konsiderohet se nuk është realizuar në qoftë se realizimi i tij, në kundërshtim me parimin e ndërgjegjshmërisë dhe të ndershmërisë, e shkakton pala në dobi të së cilës është caktuar."
+    },
+    {
+      "id": "doc-55.pdf_chunk_6",
+      "law_number": "08/L-251",
+      "article_number": null,
+      "text_len": 33,
+      "text": "## Kontrata Financiare\n\nndërrojet"
+    },
+    {
+      "id": "doc-447.pdf_chunk_628",
+      "law_number": "04/L-077",
+      "article_number": null,
+      "text_len": 504,
+      "text": "## KREU 9\n\n## SHUARJA E KONTRATËS\n\n## Neni 644 <br> Zgjidhja e kontratês me vullnetin e porositësit\n\nDerisa vepra e porositësit nuk është kryer, porositësi mund ta zgjidhê kontratên kur tê dojê, por nê atë rast ka për detyrë t'i paguajë kryerësit shpêrblimin e kontraktuar, të zvogëluar për shumën e shpenzimeve që ky nuk i ka bërë e që do të kishte për detyrë t'i bënte po të mos zgjidhej kontrata si edhe për shumën e fitimit që e ka realizuar në anên tjetêr ose që me qëllim e ka lëshuar ta realizojë."
+    },
+    {
+      "id": "doc-55.pdf_chunk_126",
+      "law_number": "08/L-251",
+      "article_number": null,
+      "text_len": 1110,
+      "text": "kuptuar, për shmangien pa dyshim, se dëshlimi nga Huamarrësi për të përmbushur këtë kusht brenda 6 (gjashtë) muajve nga data e kësaj kontrate (ose një datë e mëvonshme nëse njoftohet nga Banka) do të rezultojë në përfundimin e kësaj Kontrate. 12.04 Përshkrimel, planet, dhe shtojca (1) Pörshktenel dhe planel o mépoaktine pörhëj̉né pjese̋ te̋ kësaj kontrale: | Plani A | Speciikat e pojektit dhe raportimi | | :-- | :-- | | Plani B | Përkofizimi i EURIBOR | | Plani C | Forma e Ofetës/Pranimit të Disbursimit | | Plani D | Kushlet paraprijese dhe certifikatat e Huamarnësit | | Plani E | Format AfB | Palèt kanè bèrè që kj̇n Kontratè te elzzekutubet nè 4 (kater) originals nè gjubrin angleze, çulo fage lè shènohot me iniciale, pèrlatësisht, nga pèrfagësues te Bankës dhe Huamarnisit. Nè Prishtinè, këtë $\\qquad$ 2022 Nè Luksemburg, këtë $\\qquad$ 2022 Nènsikuar për dhe nè emër lè Nènsikuar për dhe nè emër lè BANKĖS EVROPIANE PĖR INVESTIME Hekuran Murati $x x x$ $x x x$ Ministër i Financove, Punès dhe Transfereve Njohur dhe pajluar INFRASTRUKTURA E HEKURUDHAVE TË KOSOVËS Sh.A Kryeshefi Ekzekutiv Uran Mulaj"
+    },
+    {
+      "id": "doc-546.pdf_chunk_19",
+      "law_number": "03/L-054",
+      "article_number": null,
+      "text_len": 125,
+      "text": "## Neni 18\n\nVulëpunuesi është i detyruar të punojë vulën, vetëm sipas porosisë së dhënë, në të kundërtën i merret autorizimi."
+    },
+    {
+      "id": "doc-497.pdf_chunk_21",
+      "law_number": "03/L-212",
+      "article_number": null,
+      "text_len": 1068,
+      "text": "## Neni 18 <br> Sistemimi i përkohshëm\n\n1. I punësuari mund të sistemohet përkohësisht në punë dhe detyra tjera, pa pëlqimin paraprak, kryerja e të cilave kërkon përgatitje më të ulët profesionale nga përgatitja të cilin e posedon, në këto raste:\n1.1. kur është krijuar gjendje e jashtëzakonshme si pasojë e tërmetit, zjarrit, vërshimeve ose fatkeqësive tjera natyrore elementare;\n1.2. kur ekziston nevoja që të zëvendësohet i punësuari i cili mungon nga puna ;\n1.3. kur ka rritje të menjëhershme të vëllimit të punës, por jo më gjatë se tridhjetë (30) ditë pune;\n1.4. në raste tjera të caktuara me Kontratë Kolektive.\n2. I punësuari është i detyruar t'i kryejë punët nga paragrafi 1, nën-paragrafi 1.1, i këtij neni derisa të ekzistojnë këto rrethana, ndërsa sipas nën - paragrafit 1.2. dhe 1.3. më së shumti deri në tridhjetë (30) ditë pune.\n3. Të punësuari i cili është sistemuar, në kuptim të paragrafit 1. të këtij neni, i takon e drejta në diferencë të pagës të cilin e kishte në vendin paraprak të punës, nëse është më e volitshme për të punësuarit e sistemuar."
+    },
+    {
+      "id": "doc-447.pdf_chunk_199",
+      "law_number": "04/L-077",
+      "article_number": null,
+      "text_len": 270,
+      "text": "## KREU 4\n\n## GJERIMI I PUNËVE TË HUAJA PA POROSI\n\n## NËNKREU 1 <br> RREGULLA TË PËRGJITHSHME\n\n## Neni 203\n\nPërkufizimi dhe kushtet\nNjë punë e huaj mund të kryhet pa porosi vetëm në qoftë se puna nuk duron shtyrje dhe mund të shkaktohet dëmi ose humbet qartazi një dobi."
+    },
+    {
+      "id": "doc-54.pdf_chunk_46",
+      "law_number": "08/L-221",
+      "article_number": null,
+      "text_len": 18,
+      "text": "## Emri:\n\nTituili:"
+    },
+    {
+      "id": "doc-54.pdf_chunk_47",
+      "law_number": "08/L-221",
+      "article_number": null,
+      "text_len": 18,
+      "text": "## Emri:\n\nTituili:"
+    },
+    {
+      "id": "doc-247.pdf_chunk_50",
+      "law_number": "06/L-098",
+      "article_number": null,
+      "text_len": 16,
+      "text": "## NENI 2\n\nHUAJA"
+    },
+    {
+      "id": "doc-54.pdf_chunk_48",
+      "law_number": "08/L-221",
+      "article_number": null,
+      "text_len": 72,
+      "text": "## Operator Sistemi, Transmisioni dhe Tregu sh. a. KOSTT\n\nEmri:\nTituili:"
+    },
+    {
+      "id": "doc-605.pdf_chunk_8",
+      "law_number": "",
+      "article_number": null,
+      "text_len": 87,
+      "text": "# Bazat për thirrjen në trashëgimi \n\nNeni 8\n\nTrashëgimia fitohet me ligj ose testament."
+    },
+    {
+      "id": "doc-605.pdf_chunk_2",
+      "law_number": "",
+      "article_number": null,
+      "text_len": 107,
+      "text": "## Objekti i trashëgimit\n\nNeni 2\n\nMund të trashëgohen sendet dhe të drejtat të cilat i përkasin individëve."
+    },
+    {
+      "id": "doc-605.pdf_chunk_11",
+      "law_number": "",
+      "article_number": null,
+      "text_len": 59,
+      "text": "## KREU I DYTË\n\nTRASHËGIMIA ME LIGJ\n\nTrashëgimtarët ligjorë"
+    },
+    {
+      "id": "doc-346.pdf_chunk_81",
+      "law_number": "05/L-069",
+      "article_number": null,
+      "text_len": 33,
+      "text": "## KAPITULLI III\n\nTRAFIKU TRANSIT"
+    },
+    {
+      "id": "doc-312.pdf_chunk_65",
+      "law_number": "05/L-112",
+      "article_number": null,
+      "text_len": 63,
+      "text": "# NPK TRAFIKU URBAN \n\nNga: $\\qquad$\nEmri:\nTitulli: K. Ekzekutiv"
+    },
+    {
+      "id": "doc-39.pdf_chunk_12",
+      "law_number": "08/L-186",
+      "article_number": null,
+      "text_len": 1755,
+      "text": "me dispozitat e trafikut, me të cilin një pjesëmarrës e detyron pjesëmarrësin tjetër ta ndërrojë mënyrën e deriatëhershme të pjesëmarrjes në trafik; 1.60. Përballëkalim - kalim me mjetin rrugor pranë mjetit tjetër i cili lëviz nga kahu i kundërt nëpër të njëjtën rrugë; 1.61. Pjesëmarrës në aksident trafiku - person i cili është i përfshirë në çfarëdo mënyre në aksident në trafikun rrugor; 1.62. Pjesëmarrës në trafik - person i cili në çfarëdo mënyre merr pjesë në trafikun rrugor; 1.63. Qerre - mjet rrugor që shërben për transport dhe që tërhiqet nga kafshët; 1.64. Raporti evropian i aksidentit - dokument publik i cili përdoret gjatë shkaktimit të aksidenteve në trafikun rrugor me dëme të vogla materiale, i cili lëshohet nga organi kompetent; 1.65. Rimorkio e lehtë - mjet i bashkëngjitur, masa më e madhe e lejuar e të cilit nuk është më e madhe se shtatëqindepesëdhjetë (750) kg; 1.66. Rimorkio - mjet rrugor i bashkëngjitur, i konstruktuar në atë mënyrë që masën e tërësishme nëpërmjet akseve të veta ta mbartë mbi rrugën qarkulluese; 1.67. Rrezikim i trafikut - mënyrë e sjelljes në trafik për shkak të së cilës vjen deri te rreziku i drejtpërdrejtë për të shkaktuar aksident në trafik; 1.68. Rrip i sigurisë - mekanizëm i cili e ka një shirit me kapëse të sigurt që lidhet me pajisje të bashkëngjitur e cila është e përforcuar në automjet. Është i konstruktuar në atë mënyrë që ta kufizojë lëvizjen e trupit në rast të ngadalësimit të vrullshëm të automjetit apo në rast të një aksidenti, duke e zvogëluar rrezikun e lëndimit të përdoruesit të tij; 1.69. Rrjedhë e trafikut - lëvizje e mjeteve të cilat nëpër rrugë lëvizin në të njëjtin kah; 1.70. Rrugë e pashtruar / rrugë dheu - rrugë pa sipërfaqe të ndërtuar rrugore dhe pa shtresë rruge,"
+    },
+    {
+      "id": "doc-39.pdf_chunk_13",
+      "law_number": "08/L-186",
+      "article_number": null,
+      "text_len": 1760,
+      "text": "në rast të një aksidenti, duke e zvogëluar rrezikun e lëndimit të përdoruesit të tij; 1.69. Rrjedhë e trafikut - lëvizje e mjeteve të cilat nëpër rrugë lëvizin në të njëjtin kah; 1.70. Rrugë e pashtruar / rrugë dheu - rrugë pa sipërfaqe të ndërtuar rrugore dhe pa shtresë rruge, e cila madje as në pikën e lidhjes me rrugën publike nuk ka sipërfaqe të ndërtuar rruge; 1.71. Rrugë qarkulluese - pjesa e sipërfaqes rrugore që shërben në rend të parë për lëvizje të mjeteve rrugore; 1.72. Shenjat e trafikut rrugor - sistemi i shenjave të trafikut, si: semaforët, sinjalet ndriçuese, shënimet në rrugë, pajisjet dhe pajimet e tjera për rregullim teknik dhe menaxhim të trafikut si sistem unik e të ngjashme; 1.73. Shiriti për biçikleta - është pjesë e rrugës qarkulluese e destinuar për lëvizjen e biçikletave që shtrihet përgjatë rrugës e cila është e shënuar me një vijë gjatësore në rrugë dhe me shenjë përkatëse të trafikut; 1.74. Shirit i trafikut - sipërfaqja e paraparë për qarkullim, gjerësia e së cilës është e mjaftueshme për zhvillim normal të trafikut të një rendi mjetesh rrugore; 1.75. Shirit i trafikut anësor - pjesa e rrugës qarkulluese në rrugët nacionale ku shiritat rrugorë janë të ndarë fizikisht, që shërben për lëvizje të mjeteve pa motor dhe të mjeteve të ngadalshme me veprim motorik, si: traktori, makinat e punës, motokultivatori apo të ngjashme të cilat nuk mund të lëvizin më shpejtë se tridhjetë (30) km/h për shkak të konstruksionit të tyre; 1.76. Shirit i trafikut për mjete të ngadalshme - pjesa gjatësore e shënuar, që shërben për mjete të rënda dhe për mjete të tjera, të cilat me lëvizje të ngadalshme e zvogëlojnë rrjedhën e trafikut; 1.77. Shirit i trafikut për ngadalësim - pjesa e rrugës qarkulluese që shërben për dalje të"
+    },
+    {
+      "id": "doc-564.pdf_chunk_127",
+      "law_number": "03/L-051",
+      "article_number": null,
+      "text_len": 50,
+      "text": "## PJESA 10 <br> Mbrojtja e konsumatorëve\n\nNeni 94"
+    },
+    {
+      "id": "doc-123.pdf_chunk_12",
+      "law_number": "08/L-120",
+      "article_number": null,
+      "text_len": 413,
+      "text": "# Neni 8 <br> Mbrojtje e interesit të konsumatorit \n\n1. Qëllimi i këtij ligji është mbrojtja e interesave të konsumatorëve dhe krijimin e mundësisë për konsumatorët që në bazë të informatës të bëjnë përzgjedhjen e ushqimit që e konsumojnë.\n2. Ky ligj synon parandalimin e:\n2.1. praktikave mashtruese;\n2.2. falsifikimeve të ushqimit, dhe\n2.3. çdo praktikë tjetër e cila mund të çorientoj dhe mashtroj konsumatorin."
+    },
+    {
+      "id": "doc-317.pdf_chunk_101",
+      "law_number": "05/L-085",
+      "article_number": null,
+      "text_len": 1871,
+      "text": "# Neni 48 ## Mbrojtja e konsumatorit 1. Konsumatori fundor gëzon mbrojtjen e të drejtave të tij në pajtim me këtë Ligj, aktet nënligjore të nxjerra sipas këtij Ligj, si dhe legjislacionin që rregullon mbrojtjen e konsumatorit. 2. Ndalohen sjelljet e pahijshme dhe të padrejta dhe aktivitetet mashtruese në kuptimin e mbrojtjes së konsumatorit, derisa kushtet dhe afatet e ofruara për nënshkrim të kontratës të jenë transparente dhe të shkruara në gjuhë të qartë dhe të kuptueshme. 3. Derisa kryen aktivitetet e punës së tij, furnizuesi duhet të veprojë në atë mënyrë që të sigurojë pozitë të barabartë të konsumatorëve të energjisë elektrike. 4. Konsumatori ka të drejtë të: 4.1. marrë të gjitha informatat e përcaktuara sipas këtij ligji; 4.2. marrë njoftimin adekuat për synimin e modifikimit të kushteve të kontratës, si dhe informimin për të drejtën e tyre të tërheqjes kur jepet ai njoftim. Ofruesit e shërbimit i njoftojnë drejtpërdrejt konsumatorët e tyre, për çfarëdo rritje në shpenzime, në kohën e përshtatshme, jo më vonë se tridhjetë (30) ditë pasi rritja ka hyrë në fuqi, në mënyrë transparente dhe gjithëpërfshirëse. Konsumatorët kanë të drejtë të tërhiqen nga kontrata nëse nuk i pranojnë kushtet e reja që iu njoftohen atyre nga ofruesi i shërbimit të energjisë elektrike; 4.3. pranojë informata transparente për çmimet dhe tarifat e vlefshme dhe kushtet e afatet standarde, në lidhje me qasjen dhe përdorimin e shërbimeve të energjisë elektrike; 4.4. marrë ofertën për një zgjedhje të gjerë të metodave të pagesës, të cilat nuk bëjnë diskriminim të paarsyeshëm mes konsumatorëve. Sistemi i parapagimit duhet të jetë i drejtë dhe të reflektojë në masë adekuate konsumin e mundshëm. Secili dallim në kushte e afate duhet të reflektojë shpenzimet e furnizuesit në sisteme të ndryshme të pagesës. Kushtet dhe afatet e përgjithshme duhet të jenë të drejta dhe"
+    },
+    {
+      "id": "doc-263.pdf_chunk_7",
+      "law_number": "06/L-034",
+      "article_number": null,
+      "text_len": 1956,
+      "text": "## LIGJ PËR MBROJTJEN E KONSUMATORIT ## KREU I <br> DISPOZITAT E PËRGJITHSHME ## Neni 1 <br> Qëllimi 1. Ky ligj ka për qëllim rregullimin e: 1.1. kushteve të tregut në marrëdhëniet biznes me konsumator, duke përfshirë etiketimin e produkteve, treguesit e çmimeve, shërbimet publike dhe praktikat e padrejta tregtare; 1.2. të drejtat e konsumatorëve në lidhje me kontratat, duke përfshirë kushtet e padrejta të kontratës, shitjeve në distancë dhe jashtë mjedisit biznesorë, kontratave jo-komforë, kontratave të kredive për konsumatorë dhe kontratave të produkteve turistike; 1.3. mbrojtjen administrative dhe gjyqësore të interesave të konsumatorëve; 1.4. kuadrit institucional për mbrojtjen e konsumatorit në Republikën e Kosovës. 2. Ky ligj është në përputhje me Direktivat e mëposhtme të BE-së në rendin juridik të Republikës së Kosovës: 2.1. Direktiva 93/13 / EEC e 5 prillit 1993 Mbi kushtet e padrejta në kontrata. 21.4.93 Gazeta Zyrtare e Komuniteteve Evropiane Nr.L95/29; 2.2. Direktiva 98/6 / EC E Parlamentit Evropian dhe e Këshillit e 16 shkurtit 1998, për mbrojtjen e konsumatorit në tregues të çmimeve të produkteve të ofruara për konsumatorët. 18.3.98 EN Gazeta Zyrtare e Komuniteteve Evropiane L 80/27; 2.3. Direktiva 1999/44 / EC e Parlamentit Evropian dhe e Këshillit e 25 majit 1999 në aspekte të caktuara të shitjes së mallrave të konsumit dhe garancive ndërlidhëse. L171/12 EN Gazeta Zyrtare e Komuniteteve Evropiane 7.7.1999; 2.4. Direktiva 2002/65 / EC e Parlamentit Evropian dhe e Këshillit e 23 shtatorit të vitit 2002 në lidhje me marketingun në distancë të shërbimeve financiare duke ndryshuar Direktivën e Këshillit 90/619 / EEC dhe Direktivën 97/7/EC dhe 98/27/ EC L271/16 EN Gazeta Zyrtare e Komuniteteve Evropiane 9.10.2002; 2.5. Direktiva 2005/29 / EC e Parlamentit Evropian dhe e Këshillit e 11 majit të vitit 2005 në lidhje me praktikat e padrejta komerciale biznes-konsumator në tregun e brendshëm duke ndryshuar Direktivën"
+    },
+    {
+      "id": "doc-442.pdf_chunk_44",
+      "law_number": "04/L-066",
+      "article_number": null,
+      "text_len": 1477,
+      "text": "ARSIMORE | NR. <br> VENDIMIT | KOHA | VÊREJTJE | | 1. | Shkolla e mesme L. Antoni | $460 / 70$ | $X X$ | Lagje Nênkalaja | | 2. | Shk.fill. Lidhja e Prizrenit | $460 / 70$ | $X X$ | Pranê kishês katolike | | 3. | Shkolla mesme mjeksisê (tani gjimnazi) | | XIX | Pranê kishês katolike | | 4. | Leximorja (biblioteka) e Suziut | 10299-9 | XVI | Kompleksi i Tabakhanes (Suziut) - rr. Rrasat e Koshares | | Nr.re | RARITETE NATYRORE | NR. <br> VENDIMIT | KOHA | VÊREJTJE | | 1. | Rapi i vjetêr \"platanus\" nê Marash | | XVI | Nê kompleksin Marash | | Nr.re | KOMPLEKSET ARKITEKTURALE | NR. <br> VENDIMIT | KOHA | VÊREJTJE | | 1. | Mahalla e Marashit | | | | | 2. | Nênkalaja | | | | | 3. | Pantelia | | | | | 4. | Potokmahalla | | | | # Total 104 objekte dhe 4 komplekse arkitekturale Po ashtu nê kuadêr tê zones sê vjetêr janê edhe komplekse tê mbrojtura me ligj dhe qê kanê vendim (para lufte). Ato janê: Kompleksi Marash, Nênkalaja, Pantelia dhe Potokmahalla. Nê kuadêr tê kêtyre komplekseve pêrfshihen tê gjitha objekte mbrenda saj dhe ato kanê automatikisht vendimin nên mbrojtje. # Statusi i objektit nên mbrojtie Edhe objektet e rralla ose objekte me vlerë të veçantë marrin statusin e objektit nên mbrojtje si psh. trupat ndriçuese nga shekulli XX, puntori të vjetra, kinema, etj. Andaj nuk mund të rrumbullaksohen me numra objekte me vlerë dhe se ato që nuk janë në listë nuk kanë vlerë. Nuk duhet haruar se procesi i vlersimit është në vazhdimësi dhe nuk është përfunduar."
+    },
+    {
+      "id": "doc-282.pdf_chunk_597",
+      "law_number": "06/L-020",
+      "article_number": null,
+      "text_len": 1230,
+      "text": "arsim | 2,539,460 | 2,155,954 | 1,743,113 | 1,762,481 | 1,815,365 | | Bashke-pagesat per shendetesi | 1,691,537 | 1,877,608 | 1,847,785 | 1,815,400 | 1,847,558 | | Ngarkesat tjera komunale | 3,601,188 | 2,946,514 | 2,220,549 | 2,376,052 | 2,467,520 | | Te hyrat tjera | 14,313,931 | 9,940,101 | 6,512,895 | 6,733,828 | 6,555,334 | | Shitja e aseteve | 27,500 | 36,465 | 9,500 | 9,500 | 9,500 | | Grantet dhe Donacionet | | | | | | | Vendore | | | | | | | Te huaja | | | | | | | Transferet Qeveritare | 345,350,559 | 360,917,376 | 401,196,507 | 429,856,590 | 462,535,958 | | Granti i përgjithshëm | 138,043,037 | 149,149,602 | 179,503,591 | 196,438,006 | 213,842,811 | | Granti për Arsim | 161,332,015 | 163,432,015 | 169,300,839 | 176,592,054 | 185,525,355 | | Granti për Shëndetësi | 42,085,036 | 44,112,683 | 48,144,000 | 52,578,453 | 58,919,715 | | Financimi për Shërbime Rezidenciale | 1,287,394 | 1,620,000 | 1,645,000 | 1,645,000 | 1,645,000 | | Financimi për Shëndetesi Sekondare | 2,603,077 | 2,603,077 | 2,603,077 | 2,603,077 | 2,603,077 | | Financime tjera | | | | | | | Financimi nga Huamarrja | 200,000 | 1,150,000 | 4,004,752 | 4,318,671 | | | Financimi nga Huamarrja | 200,000 | 1,150,000 | 4,004,752 | 4,318,671 | |"
+    },
+    {
+      "id": "doc-202.pdf_chunk_635",
+      "law_number": "07/L-001",
+      "article_number": null,
+      "text_len": 1610,
+      "text": "## 9. ARSIMI\n\n9.1. Në kuadër të këtij sektori synohet krijimi i një shoqërie të bazuar në dije dhe shkathtësi konkurruese, e integruar në rrjedhat evropiane, me mundësi të barabarta për avancimin e secilit individ që të përgatiten e të kontribuojnë në zhvillimin e qëndrueshëm shoqëror, ekonomik dhe politik në vend.\n9.2. Objektivat kryesor në kuadër të sektorit të arsimit për periudhën e ardhshme trevjeçare janë:\n\n- Rritja e përfshirjes dhe parandalimi i braktisjes në arsimin para universitar;\n- Menaxhimi cilësor dhe efikas i sistemit të arsimit, i bazuar në transparencë dhe në llogaridhënie;\n- Zhvillimi i një sistemi funksional për sigurimin e cilësisë, në përputhje me standardet ndërkombëtare;\n- Ngritja e cilësisë së mësimdhënies përmes sistemit të qëndrueshëm për përgatitjen dhe zhvillimin profesional të mësimdhënësve;\n- Avancimi i të nxënit përmes mësimdhënies cilësore, duke zbatuar kurrikulën e bazuar në kompetenca dhe me metoda të avancuara;\n- Arsimi dhe aftësimi profesional në përputhje me kërkesat e tregut të punës në vend dhe më gjerë;\n- Ngritja e cilësisë dhe konkurrueshmërisë së arsimit të lartë përmes nxitjes së përsosmërisë në mësimdhënie, kërkimeve shkencore, inovacionit dhe ndërkombëtarizimit.\n9.3. Treguesit kryesorë të performances\n\n| Treguesit kryesorë të performancës | Niveli bazë (viti) | Caku (viti) |\n| :-- | :-- | :-- |\n| PISA | $71(2015)$ | Përmirësuar (2018) |\n| Rritja e numrit të fëmijëve në institucionet <br> parashkollore | $92,4 \\%(2017)$ | $95 \\%$ |\n| Numri i mësimdhënësve të trajnuar për zbatim të <br> kurrikulit të ri | $9300(2017)$ | $27000(2017-2021)$ |"
+    },
+    {
+      "id": "doc-168.pdf_chunk_608",
+      "law_number": "08/L-066",
+      "article_number": null,
+      "text_len": 1613,
+      "text": "# 9. ARSIMI \n\n9.1. Në kuadër të këtij sektori synohet krijimi i një shoqërie të bazuar në dije dhe shkathtësi konkurruese, e integruar në rrjedhat evropiane, me mundësi të barabarta për avancimin e secilit individ që të përgatiten e të kontribuojnë në zhvillimin e qëndrueshëm shoqëror, ekonomik dhe politik në vend.\n9.2. Objektivat kryesor në kuadër të sektorit të arsimit janë:\n\n- Rritja e përfshirjes dhe parandalimi i braktisjes në arsimin parauniversitar;\n- Menaxhimi cilësor dhe efikas i sistemit të arsimit, i bazuar në transparencë dhe në llogaridhënie;\n- Zhvillimi i një sistemi funksional për sigurimin e cilësisë, në përputhje me standardet ndërkombëtare;\n- Ngritja e cilësisë së mësimdhënies përmes sistemit të qëndrueshëm për përgatitjen dhe zhvillimin profesional të mësimdhënësve;\n- Avancimi i të nxënit përmes mësimdhënies cilësore, duke zbatuar kurrikulën e bazuar në kompetenca dhe duke shfrytëzuar resurse mësimore të cilësisë së lartë;\n\n- Arsimi dhe aftësimi profesional në përputhje me kërkesat e tregut të punës në vend dhe më gjerë dhe\n- Ngritja e cilësisë dhe konkurrueshmërisë së arsimit të lartë përmes nxitjes së përsosmërisë në mësimdhënie, kërkimit shkencor, inovacionit dhe ndërkombëtarizimit.\n9.3. Treguesit kryesorë të performances\n\n| Treguesit kryesorë të performancës | Niveli bazë (viti) | Caku (viti) |\n| :-- | :-- | :-- |\n| PISA | $71(2015)$ | Përmirësuar (2022) |\n| Rritja e numrit të fëmijëve në institucionet <br> parashkollore | $92,4 \\%(2017)$ | $95 \\%(2022)$ |\n| Numri i mësimdhënësve të trajnuar për zbatim të <br> kurrikulit të ri | $9300(2017)$ | $27000(2017-2022)$ |"
+    },
+    {
+      "id": "doc-4.pdf_chunk_804",
+      "law_number": "08/L-332",
+      "article_number": null,
+      "text_len": 1985,
+      "text": "# 15. SHËNDETI 15.1. Në kuadër të këtij sektori synohet ruajtja e shëndetit, promovimi i mënyrave të shëndetshme të jetesës dhe ofrimi i shërbimeve cilësore të sigurta, me qasje të lehtë, të barabartë, pa rrezik financiar dhe kosto-efektive. Për arritjen e këtyre objektivave, do të ndërmerren veprime të tilla si Zhvillimi i kornizës ligjore për riorganizimin e sektorit të shëndetësisë, Funksionalizimi i mekanizmave për parandalimin mbikëqyrjen dhe kontrollin e sëmundjeve jo-ngjitëse, Funksionalizimi i mekanizmave për parandalimin, mbikëqyrjen dhe kontrollin e sëmundjeve ngjitëse;Riorganizimi i shërbimeve shëndetësore, Zhvillimi i Sistemit të Informimit Shëndetësor; Promovimi i aktivitetit fizik dhe mënyrës së shëndetshme të jetesës; Përmirësimi i shërbimeve të vaksinimit për popullatën me theks tek grupet e cenueshme të shoqërisë, Mbulimi i plotë i imunizimit për moshën 24-35 muaj, Identifikimi dhe plotësim/ndryshimi i kornizës ligjore (akteve ligjore dhe nënligjore) si dhe procedurave të brendshme administrative për zbatimin e skemës së sigurimit shëndetësor, Prioritizimi i sëmundjeve - patologjive për reduktimin e listave të pritjes, zvogëlimi i mbetjeve spitalore. 15.2 Objektivat kryesore të këtij sektori, janë: - Përmirësimi i cilësisë dhe qasjes në shërbime shëndetësore; - Mbrojtja e shëndetit dhe përmirësimi i cilësisë së shërbimeve të ofruara shëndetësore; - Riorganizimi i sektorit shëndetësor dhe - Sigurimi i financimit të qëndrueshëm shëndetësor. 15.3.Treguesit kryesorë të performances | Treguesit kryesorë të performancës | Niveli bazë (viti) | Caku (viti 2025) | | :-- | :-- | :-- | | Përqindja e popullsisë me qasje në kujdesin <br> shëndetësor | 4 komuna | Deri në $70 \\%$ të <br> komunave | | Shkalla e shpërndarjes së shërbimeve të vizitave <br> në shtëpi | $66 \\%$ | $80 \\%$ | | Koha aktive për person (TUS) <br> (min/ditë) | $24 \\mathrm{~min} /$ ditë <br> $(2016)$ | $30 \\mathrm{~min} /$ ditë | | Mbulueshmëria e plotë e imunizimit | $72.5 \\%$"
+    },
+    {
+      "id": "doc-345.pdf_chunk_16",
+      "law_number": "",
+      "article_number": null,
+      "text_len": 41,
+      "text": "## Imet Rrahmani\n\nMinistër i Shëndetësisë"
+    },
+    {
+      "id": "doc-550.pdf_chunk_3",
+      "law_number": "02/L-78",
+      "article_number": null,
+      "text_len": 2077,
+      "text": "i shëndetit. i) Edukimi shëndetësor: kompleks i masave për të mësuar, për te ngritur mundësitë e njohurive shëndetësore si dhe shkathtësive jetësore të individëve dhe bashkësisë që kanë për qëllim ndërrimin e sjelljeve për të ruajtur shëndetin. j) Parandalimi i sëmundjes: kompleks i masave me qëllim të parandalimit të zhvillimit, përhapjes së sëmundjes, parandalimit të përparimit të sëmundjes dhe pasojave të saja. k) Imunizimi: parandalimi i sëmundjeve ngjitëse me preparate imunologjike - vaksina dhe serume: mase efikase profilaktike dhe kundër epidemike, qëllimi i të cilës është që të zhvilloj mbrojtjen aktive dhe pasive kundër sëmundjeve. I) Komunikimi shëndetësor: aktivitet për të realizuar informimin e popullatës lidhur me brengat shëndetësore si dhe mbajtjen e qëndrueshme të çështjeve shëndetësore në agjendat e vendimmarrësve dhe publikut. m) Avokimi për shëndet: çdo aktivitet i ndërmarrë nga individi apo përfaqësuesit e grupeve të interesit me qëllim të ngritjes së çështjes shëndetësore me interes të bashkësisë para vendimmarrësve e për të realizuar përparimin, parandalimin dhe trajtimin adekuat shëndetësor. n) Sjelljet shëndetësore: aktivitet me qëllim të përparimit, parandalimit dhe mbrojtjes shëndetësore pa dallim se a është fjala për gjendjen shëndetësore të vlerësuar apo ekzistuese. o) Shëndeti mjedisor: kontrolli i të gjithë faktorëve në mjedisin fizik të njeriut të cilët ushtrojnë ose mund të ushtrojnë një efekt negativ në zhvillimin e tij fizik dhe psikik, shëndetin apo kushtet jetësore. p) Ndotja: ndryshimet jonormale të padëshirueshme në karakteristikat fizike, kimike, biologjike të ujit, ajrit, tokës dhe ushqimit që ndikojnë apo mund të ndikojnë negativisht në shëndetin e njeriut dhe organizmave tjerë të gjallë. q) Ndotësi: elementi, material, substanca (fizike, kimike, biologjike me origjinë natyrale ose sintetike) që nuk është përbërës i strukturës normale (huaj) ose \"mbi vlerat maksimale të lejuara\"(VML). r) Sanitacioni: tërësia e masave higjienike sanitare që ka të bëjë me ruajtjen dhe përparimin e shëndetit mjedisor. s)"
+    },
+    {
+      "id": "doc-50.pdf_chunk_779",
+      "law_number": "08/L-260",
+      "article_number": null,
+      "text_len": 1043,
+      "text": "# 7. SHËNDETËSIA \n\n7.1. Në kuadër të këtij sektori synohet synohet ruajtja e shëndetit, promovimi i mënyrave të shëndetshme të jetesës dhe ofrimi i shërbimeve cilësore të sigurta, me qasje të lehtë, të barabartë, pa rrezik financiar dhe kosto-efektive.\n7.2. Objektivat kryesorë të këtij sektori, janë:\n\n- Përmirësimi i kualitetit dhe qasjes në shërbime shëndetësore.\n- Mbrojtja e shëndetit dhe përmirësimi i cilësisë së shërbimeve të ofruara shëndetësore,\n- Riorganizimi i sektorit shëndetësor dhe\n- Sigurimi i financimit të qëndrueshëm shëndetësor.\n7.3. Treguesit kryesorë të performances\n\n| Treguesit kryesorë të performancës | Niveli bazë (viti) | Caku (viti 2024) |\n| :-- | :-- | :-- |\n|  |  |  |\n| Përqindja e popullsisë me qasje në kujdesin <br> shëndetësor | N/A | $70 \\%$ |\n| Shkalla e shpërndarjes së shërbimeve të vizitave <br> në shtëpi | N/A | $20 \\%$ |\n| Koha aktive për person (TUS) | $24 \\mathrm{~min} /$ ditë <br> $(2016)$ | $30 \\mathrm{~min} /$ ditë |\n| Mbulueshmëria e plotë e imunizimit | $72.5 \\%$ <br> $(2019)$ | $85 \\%$ |"
+    },
+    {
+      "id": "doc-457.pdf_chunk_12",
+      "law_number": "04/L-076",
+      "article_number": null,
+      "text_len": 740,
+      "text": "## KREU II <br> DETYRAT DHE AUTORIZIMET E POLICISË\n\n## Neni 10 <br> Detyrat dhe autorizimet e përgjithshme të policisë\n\n1. Detyrat e përgjithshme të policisë janë të:\n1.1. mbroj jetën, pronën dhe të ofroj siguri për të gjithë personat;\n1.2. mbroj të drejtat dhe liritë themelore të të gjithë personave;\n1.3. parandaloj rrezikun ndaj qytetarëve dhe ta mbajë rendin dhe sigurinë publike;\n1.4. parandaloj dhe t'i zbuloj veprat penale dhe kryesit e tyre;\n1.5. hetoj veprat penale dhe kryesit e tyre;\n1.6. mbikëqyrë dhe kontrolloj sigurinë në komunikacion;\n1.7. menaxhoj dhe kontrolloj kufirin shtetëror;\n1.8. ofroj ndihmë gjatë fatkeqësive natyrore dhe në raste të tjera emergjente; dhe\n1.9. kryej detyra të tjera të parapara me ligjin në fuqi."
+    },
+    {
+      "id": "doc-142.pdf_chunk_11",
+      "law_number": "08/L-113",
+      "article_number": null,
+      "text_len": 630,
+      "text": "# Neni 9 <br> Detyrat e Policisë Ushtarake \n\n1.PU-ja ka për detyrë të:\n1.1. mbajë rendin dhe disiplinën ushtarake në FSK;\n1.2. sigurojë mbarëvajtjen e trafikut ushtarak;\n1.3. parandalojë, hetojë dhe zbulojë krimet të cilat ndiqen sipas detyrës zyrtare, të kryera nga pjesëtarët e FSK dhe punonjës të tjerë të FSK-së dhe Ministrisë së Mbrojtjes, brenda objekteve ushtarake apo që lidhen me aktivitetet ushtarake, në përputhje me legjislacionin në fuqi;\n1.4. mbrojë personelin, delegacionet dhe personat me rëndësi të veçantë;\n1.5. mbrojë pronën, komandën dhe njësitë ushtarake;\n1.6. mbrojë objektet ose zonat me rëndësi të veçantë."
+    },
+    {
+      "id": "doc-120.pdf_chunk_96",
+      "law_number": "08/L-032",
+      "article_number": null,
+      "text_len": 1822,
+      "text": "## Neni 71 <br> Autorizimet e policisë 1. Pas pranimit të informatës për një vepër penale të dyshuar, policia ndërmerr veprime sipas këtij neni për të përcaktuar nëse ka dyshim të arsyeshëm se është kryer një vepër penale e cila ndiqet sipas detyrës zyrtare. 2. Pas pranimit të propozimit për ndjekje penale të paraqitur nga i dëmtuari, policia do të ndërmarrë veprime sipas këtij neni për të përcaktuar nëse ekziston një dyshim i arsyeshëm se është kryer një vepër penale e cila ndiqet sipas propozimit. 3. Policia ndërmerr të gjitha masat e nevojshme që të zbulojë vendndodhjen e kryerësit, të ndalojë kryerësin ose ndihmësin e tij nga fshehja ose arratisja, të zbulojë dhe të ruajë gjurmët dhe provat tjera të veprës penale dhe sendet të cilat mund të shërbejnë si prova, dhe të mbledhë të gjitha informacionet të cilat mund të përdoren në procedurë penale. 4. Për të kryer detyrat nga ky nen, policia është e autorizuar që: 4.1. të mbledhë informata nga personat; 4.2. të kryejë kontroll të përkohshëm të automjeteve, udhëtarëve dhe valixheve të tyre; 4.3. të kufizojë lëvizjen në zona të caktuara për kohën kur ky veprim është urgjentisht i nevojshëm; 4.4. të ndërmarrë hapat e nevojshëm për të vërtetuar identitetin e personave dhe të sendeve; 4.5. të organizojë kontrollimin për të zbuluar vendndodhjen e individit ose të sendit që kërkohet; 4.6. të kontrollojë nën praninë e personit përgjegjës objektet e caktuara dhe lokalet e organeve publike dhe të shqyrtojë dokumentet e caktuara që u përkasin atyre në pajtim me këtë Kod.; 4.7. të sekuestrojë përkohësisht prova, pasuri të specifikuar ose ekzekutojë urdhrin ndalues të përkohshëm; 4.8. të sigurojë ekzaminimin fizik të të dëmtuarit ose viktimës, në pajtim me nenin 142 të këtij Kodi; 4.9. të zbulojë, mbledhë dhe ruajë gjurmët dhe provat nga vendi i ngjarjes"
+    },
+    {
+      "id": "doc-100.pdf_chunk_59",
+      "law_number": "08/L-196",
+      "article_number": null,
+      "text_len": 1155,
+      "text": "| roje, kopəhtar, shtëpiak, autolarës, rrobalarës dhe pozita të ngizohme | ![img-1.jpeg](img-1.jpeg) | SHTOJCA NR. 5 - POLICIA E KOSOVĖS, INSPEKTORATI POLICOR I KOSOVĖS DHE ZJARRĖFIKĖSIT | | | | | | | :--: | :--: | :--: | :--: | :--: | :--: | | SHTOJCA NR. 5.1. - POLICIA E KOSOVĖS | | | | | | | NR. | EMĖRTIMI I POZITĖS | GRUPI | KLASA | KOEFICINETI | FUSHA E ZBATIMIT | | 1 | Drejtoo'e i/e Përgjithshëm | S | S1 | 14.5 | Poztat me numër vendor 1, 2 dhe 3 pagphen në bazë të funksionit dhe jo gradës. | | 2 | Zëvendës Drejtoo'e i/e Përgjithshëm | | S2 | 12.8 | | | 3 | Drejtoo'e i/e Departamentit në Polici | | S3 | 11.2 | | | 4 | Kolonel | | | | | | 5 | Nëtkolonel | | S4 | 10.2 | | | 6 | Major | | S5 | 9.2 | | | 7 | Kapiten | | S6 | 8.2 | | | 8 | Toger | | S7 | 7.4 | | | 9 | Rreshter | | S8 | 7 | | | 10 | Polic i Lartë | | S9 | 6.4 | | | 11 | Polic | | S10 | 5.9 | | | 12 | | | S11 | 5 | | | 13 | Kadet Policor | | S12 | 4.5 | | | SHTOJCA NR. 5.2. - INSPEKTORATI POLICOR I KOSOVĖS | | | | | | | NR. | EMĖRTIMI I POZITĖS | GRUPI | KLASA | KOEFICINETI | FUSHA E ZBATIMIT | | 1 | Drejtnes'e i/e lartë | F | F1 | 12 | | | 2 | Drejtnes'e i/e mesëm | | F2"
+    },
+    {
+      "id": "doc-63.pdf_chunk_12",
+      "law_number": "GJK-KO216/22",
+      "article_number": null,
+      "text_len": 62,
+      "text": "## Kryetarja e Gjykatës Kushtetuese\n\n![img-1.jpeg](img-1.jpeg)"
+    },
+    {
+      "id": "doc-120.pdf_chunk_10",
+      "law_number": "08/L-032",
+      "article_number": null,
+      "text_len": 231,
+      "text": "## Neni 8 <br> Parimi i pavarësisë së gjykatës\n\n1. Gijykata në punën e saj është e pavarur dhe vendos në bazë të Kushtetutës dhe ligjit.\n2. Gijykata merr vendim në bazë të provave që shqyrtohen dhe verifikohen në shqyrtim gjyqësor."
+    },
+    {
+      "id": "doc-351.pdf_chunk_50",
+      "law_number": "05/L-027",
+      "article_number": null,
+      "text_len": 97,
+      "text": "## Neni 20\n\nAnkesa\n\nKundër Vendimit të KM, pala e pakënaqur ushtron padi në Gijykatën kompetente."
+    },
+    {
+      "id": "doc-311.pdf_chunk_57",
+      "law_number": "05/L-087",
+      "article_number": null,
+      "text_len": 352,
+      "text": "## Neni 51\n\nParimi i së vërtetës\n\nGjykata është e detyruar që saktësisht dhe në mënyrë të plotë t'i konstatoj të gjitha faktet të cilat janë të rëndësishme për marrjen e vendimit të ligjshëm dhe të drejtë për kundërvajtjen, si dhe me kujdes të barabartë t'i provoj dhe verifikoj faktet që e ngarkojnë të pandehurin, si dhe faktet që i shkojnë në favor."
+    },
+    {
+      "id": "doc-524.pdf_chunk_111",
+      "law_number": "NR.03/L-154",
+      "article_number": null,
+      "text_len": 116,
+      "text": "## Neni 110 <br> Posedimi pronësor\n\nPersoni i cili e posedon një send që është pronë e tij, është posedues pronësor."
+    },
+    {
+      "id": "doc-524.pdf_chunk_104",
+      "law_number": "NR.03/L-154",
+      "article_number": null,
+      "text_len": 130,
+      "text": "## PJESA IV <br> POSEDIMI\n\nNeni 103\nPosedimi\nPersoni i cili e ushtron pushtet faktik mbi një send është posedues i drejtpërdrejtë."
+    },
+    {
+      "id": "doc-281.pdf_chunk_7",
+      "law_number": "06/L-005",
+      "article_number": null,
+      "text_len": 2070,
+      "text": "paluajtshme e cila shfrytëzohet apo është planifikuar të shfrytëzohet për qëllime bujqësore; 1.25. Pronë e paluajtshme - nënkupton tokën dhe ndërtesat, stabilimentet, strukturat dhe pjesët aksesore, mbi ose nën sipërfaqen e tokës, që janë trupëzuar në mënyrë të qëndrueshme dhe të vazhdueshme me tokën ose objektin, përfshirë ndërtimet notuese të lidhura në mënyrë të përhershme me tokën dhe njësitë e veçanta të parcelave dhe objekteve; 1.26. Pronë publike në shfrytëzim të përbashkët (pronë publike) - nënkupton çdo pronë të paluajtshme e cila nuk është pronë bujqësore, pyjore, rezidenciale, komerciale ose industriale. Pronat publike përfshijnë: 1.26.1. pronat fetare të cilat mbahen dhe shfrytëzohen vetëm për qëllime fetare; 1.26.2. varrezat; 1.26.3. monumentet; 1.26.4. sheshet, parqet dhe fushat e lojërave që përdoren nga publiku; 1.26.5. autostradat, rrugët, rrugët e nëndheshme, tunelet, urat dhe këmbët e urave, hekurudhat, shinat hekurudhore në qytet apo çdo pronë tjetër e paluajtshme që përdoret në mënyrë të drejtpërdrejtë për funksionimin e transportit publik; 1.26.6. strukturat e ndriçimit dhe ndarëset; dhe 1.26.7. prona të tjera të ngjashme jo private në përdorim të përbashkët (të një natyre publike). 1.27. Pronë industriale - nënkupton çdo pronë të paluajtshme e cila shfrytëzohet apo është planifikuar të shfrytëzohet për qëllime të nxjerrjes, prodhimit, përpunimit, transportimit ose magazinimit të të mirave, duke përfshirë, por duke mos u kufizuar në fabrikat, depot dhe punëtoritë; 1.28. Pronë komerciale - nënkupton çdo pronë të paluajtshme e cila shfrytëzohet apo është planifikuar të shfrytëzohet për qëllime biznesi, si çdo qëllim komercial, shitjeje me pakicë dhe/ose me shumicë, tregtie, shërbime rekreacioni, artistik, sportiv, edukimi, qëllime mjekësore apo ndonjë qëllim tjetër komercial. Për qëllimin e zbatimit të këtij Ligji, si prona komerciale klasifikohen edhe pronat e paluajtshme në pronësinë ose posedimin e komunës dhe Republikës së Kosovës që përdoren nga autoritet publike për të ushtruar funksionin e tyre publik; 1.29."
+    },
+    {
+      "id": "doc-524.pdf_chunk_52",
+      "law_number": "NR.03/L-154",
+      "article_number": null,
+      "text_len": 341,
+      "text": "# KAPITULLI V <br> PRONËSIA E DISA PERSONAVE \n\n## NËN-KAPITULLI 1 BASHKËPRONËSIA\n\n## Neni 51 <br> Bashkëpronësia\n\n1. Në qoftë se pronësia në një send u takon disa personave në pjesë të caktuara (alikuote) ata kanë bashkëpronësi në send.\n2. Në qoftë se pjesët e bashkëpronarëve janë të pacaktuara, atëherë prezumohet se ato janë të barabarta."
+    }
+  ]
+}

@@ -21,6 +21,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -29,19 +30,20 @@ async def lifespan(app: FastAPI):
     """
     # Startup
     logger.info("Starting application...")
-    
+
     # Initialize database connection
     await initialize_db()
     logger.info("Database connection initialized")
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down application...")
-    
+
     # Close database connection
     await close_db_connection()
     logger.info("Database connection closed")
+
 
 # Create FastAPI application
 app = FastAPI(
@@ -68,13 +70,14 @@ if settings.ENABLE_RESPONSE_COMPRESSION:
 # Include API router
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+
 @app.get("/")
 async def root():
     """
     Root endpoint that returns basic API information.
     """
     return {
-        "message": "Welcome to Juris Automation API",
+        "message": "Welcome to Avokati AI API",
         "version": settings.VERSION,
-        "documentation": "/docs"
-    } 
+        "documentation": "/docs",
+    }

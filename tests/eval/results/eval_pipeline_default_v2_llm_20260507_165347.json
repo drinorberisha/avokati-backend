@@ -1,0 +1,1700 @@
+{
+  "timestamp": "2026-05-07T16:53:47.444625Z",
+  "namespace": "default_v2",
+  "use_llm": true,
+  "overall": {
+    "count": 40,
+    "routing_accuracy": 1.0,
+    "recall_at_5_loose": 0.8,
+    "recall_at_10_loose": 0.8,
+    "recall_at_5_strict": 0.8,
+    "mrr_loose": 0.767,
+    "mrr_strict": 0.767,
+    "abolishment_surfaced_when_relevant": 1.0,
+    "abolishment_relevant_count": 24,
+    "citation_verified_rate": 0.982,
+    "citation_total": 165,
+    "p50_latency_ms": 20349,
+    "p95_latency_ms": 74610,
+    "total_llm_cost_usd": 0.048867
+  },
+  "by_category": {
+    "article_content": {
+      "count": 8,
+      "routing_correct": 1.0,
+      "recall_at_5_loose": 0.75,
+      "recall_at_5_strict": 0.75,
+      "mrr_loose": 0.75
+    },
+    "direct_citation": {
+      "count": 12,
+      "routing_correct": 1.0,
+      "recall_at_5_loose": 1.0,
+      "recall_at_5_strict": 1.0,
+      "mrr_loose": 1.0
+    },
+    "status": {
+      "count": 8,
+      "routing_correct": 1.0,
+      "recall_at_5_loose": 1.0,
+      "recall_at_5_strict": 1.0,
+      "mrr_loose": 1.0
+    },
+    "topic": {
+      "count": 12,
+      "routing_correct": 1.0,
+      "recall_at_5_loose": 0.5,
+      "recall_at_5_strict": 0.5,
+      "mrr_loose": 0.389
+    }
+  },
+  "per_query": [
+    {
+      "id": "q001",
+      "category": "topic",
+      "query": "Më trego ligjin që rregullon kontratës.",
+      "expected_law_numbers": [
+        "04/L-077",
+        "02/L-99",
+        "03/L-241",
+        "04/L-042",
+        "04/L-121"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 33993,
+      "answer_preview": "Në bazë të kontekstit ligjor që keni dhënë, ligji kryesor që rregullon kontratat është **Ligji 04/L-077 për Marrëdhëniet e Detyrimeve**.\n\nKy ligj përmban dispozita thelbësore për kontratat, siç është ",
+      "warnings": [
+        "Ligji 04/L-121 është shfuqizuar plotësisht nga: 06/L-034"
+      ],
+      "citation_summary": {
+        "citations_total": 8,
+        "citations_verified": 8,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 2309,
+        "completion_tokens": 952,
+        "cached_tokens": 2304,
+        "usd_cost_estimate": 0.000839,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q002",
+      "category": "topic",
+      "query": "Më trego ligjin që rregullon gjuhën.",
+      "expected_law_numbers": [
+        "04/L-046",
+        "02/L-37"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 3,
+      "rank_strict": 3,
+      "elapsed_ms": 37088,
+      "answer_preview": "Nuk kam informacion të mjaftueshëm në bazën e të dhënave për të dhënë një përgjigje të verifikueshme për këtë pyetje.",
+      "warnings": [
+        "Ligji 04/L-123 është shfuqizuar plotësisht nga: KUV-08/L-032-KOD, 06/L-054"
+      ],
+      "citation_summary": {
+        "citations_total": 0,
+        "citations_verified": 0,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 1883,
+        "completion_tokens": 1175,
+        "cached_tokens": 1792,
+        "usd_cost_estimate": 0.001068,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q003",
+      "category": "topic",
+      "query": "Cilat janë dispozitat ligjore për mallrat?",
+      "expected_law_numbers": [
+        "KUV-08/L-247-KOD",
+        "03/L-109",
+        "03/L-170",
+        "04/L-163",
+        "04/L-198"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 74610,
+      "answer_preview": "Në bazën e të dhënave të ofruar, dispozitat ligjore për mallrat shfaqen në disa kontekste të ndryshme. Më poshtë po i përmbledh sipas burimeve përkatëse, duke respektuar paralajmërimet për ligjet e sh",
+      "warnings": [
+        "Ligji 03/L-203 është shfuqizuar plotësisht nga: 06/L-037",
+        "Ligji 03/L-016 është shfuqizuar plotësisht nga: 08/L-120"
+      ],
+      "citation_summary": {
+        "citations_total": 11,
+        "citations_verified": 11,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 2792,
+        "completion_tokens": 2496,
+        "cached_tokens": 2688,
+        "usd_cost_estimate": 0.002227,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q004",
+      "category": "topic",
+      "query": "Çfarë thotë legjislacioni për arkitektëve?",
+      "expected_law_numbers": [
+        "08/L-217",
+        "08/L-012"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 44534,
+      "answer_preview": "Bazuar në legjislacionin e ofruar, Ligji Nr. 08/L-012 për Odat e Arkitektëve dhe Inxhinierëve në Fushën e Ndërtimit përcakton kornizën ligjore për arkitektët si më poshtë:\n\n*   **Rregullimi i Profesio",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 7,
+        "citations_verified": 7,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 4535,
+        "completion_tokens": 1423,
+        "cached_tokens": 4480,
+        "usd_cost_estimate": 0.001278,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q005",
+      "category": "direct_citation",
+      "query": "Çfarë përcakton Neni 34 i ligjit 04/L-175?",
+      "expected_law_numbers": [
+        "04/L-175"
+      ],
+      "expected_article_numbers": [
+        "34"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 14406,
+      "answer_preview": "Neni 34 i Ligjit 04/L-175 përcakton se gjatë një procedure inspektuese, inspektori ka të drejtë të kërkojë mendim dhe bashkëpunim profesional nga institucionet relevante, me kushtin që kjo të jetë e n",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 2,
+        "citations_verified": 2,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 2147,
+        "completion_tokens": 424,
+        "cached_tokens": 2048,
+        "usd_cost_estimate": 0.000419,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "04/L-175",
+          "article_number": "34"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "04/L-175"
+      }
+    },
+    {
+      "id": "q006",
+      "category": "direct_citation",
+      "query": "Më trego përmbajtjen e Nenit 2 të Ligjit 03/L-203.",
+      "expected_law_numbers": [
+        "03/L-203"
+      ],
+      "expected_article_numbers": [
+        "2"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 18575,
+      "answer_preview": "⚠️ KUJDES: Ligji 03/L-203 është shfuqizuar nga Ligji 06/L-037. Përgjigja e mëposhtme është për referencë historike.\n\nPërmbajtja e Nenit 2 të Ligjit 03/L-203 është si vijon:\n\n\"Ky ligj zbatohet ne fusha",
+      "warnings": [
+        "Ligji 03/L-203 është shfuqizuar plotësisht nga: 06/L-037"
+      ],
+      "citation_summary": {
+        "citations_total": 4,
+        "citations_verified": 4,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 4123,
+        "completion_tokens": 587,
+        "cached_tokens": 4096,
+        "usd_cost_estimate": 0.000537,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "03/L-203",
+          "article_number": "2"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "03/L-203"
+      }
+    },
+    {
+      "id": "q007",
+      "category": "topic",
+      "query": "Çfarë thotë legjislacioni për qeveritare?",
+      "expected_law_numbers": [
+        "08/L-016",
+        "05/L-109",
+        "06/L -133",
+        "06/L-020",
+        "07/L-001"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 38984,
+      "answer_preview": "Legjislacioni në fuqi për trupat qeveritare përcaktohet kryesisht nga Ligji për Qeverinë e Republikës së Kosovës. Sipas këtij ligji:\n\n*   Qeveria ka autoritetin t'i themelojë këto trupa për të ndihmua",
+      "warnings": [
+        "Ligji 03/L-189 është shfuqizuar plotësisht nga: 06/L-113"
+      ],
+      "citation_summary": {
+        "citations_total": 7,
+        "citations_verified": 7,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 3054,
+        "completion_tokens": 1245,
+        "cached_tokens": 2944,
+        "usd_cost_estimate": 0.001142,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q008",
+      "category": "status",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 04/L-223?",
+      "expected_law_numbers": [
+        "04/L-223",
+        "08/L-257"
+      ],
+      "expected_article_numbers": null,
+      "intent": "status_lookup",
+      "expected_intent": "status_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0,
+      "answer_preview": "Ligji 04/L-223 është shfuqizuar plotësisht. Ai është zëvendësuar me ligjin/ligjet: 08/L-257.",
+      "warnings": [
+        "Ligji 04/L-223 është shfuqizuar plotësisht nga: 08/L-257"
+      ],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": null,
+      "trace": {
+        "intent": "status_lookup",
+        "reason": "citation+status_keyword",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "04/L-223",
+          "article_number": null
+        },
+        "abolishment_status": "fully_abolished"
+      }
+    },
+    {
+      "id": "q009",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Ndihma dhe mbrojtja e viktimave të trafikuara me njerëz?",
+      "expected_law_numbers": [
+        "04/L-218"
+      ],
+      "expected_article_numbers": [
+        "20"
+      ],
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 69144,
+      "answer_preview": "Bazuar në legjislacionin e dhënë, ndihma dhe mbrojtja e viktimave të trafikimit me njerëz garantohet në mënyrë të detajuar, duke filluar nga parimet themelore e deri te të drejtat specifike.\n\n**Parime",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 23,
+        "citations_verified": 23,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 6043,
+        "completion_tokens": 2356,
+        "cached_tokens": 6016,
+        "usd_cost_estimate": 0.002083,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q010",
+      "category": "direct_citation",
+      "query": "Çfarë përcakton Neni 19 i ligjit 06/L-124?",
+      "expected_law_numbers": [
+        "06/L-124"
+      ],
+      "expected_article_numbers": [
+        "19"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 17401,
+      "answer_preview": "Sipas **Nenit 19 të Ligjit 06/L-124**, përcaktohet se:\n\n1. Shërbimi në Forcën e Sigurisë së Kosovës mund të ndërpritet në dy mënyra: **vullnetare** dhe **të detyrueshme** [Neni 19, par. 1, Ligji 06/L-",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 3,
+        "citations_verified": 3,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 1616,
+        "completion_tokens": 514,
+        "cached_tokens": 1536,
+        "usd_cost_estimate": 0.000488,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "06/L-124",
+          "article_number": "19"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "06/L-124"
+      }
+    },
+    {
+      "id": "q011",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Ky Ligj ka për qëllim që të ratifikojë Marrëveshjen për financim ndërmjet Republikës së Kosovës?",
+      "expected_law_numbers": [
+        "07/L-003"
+      ],
+      "expected_article_numbers": [
+        "1"
+      ],
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 78979,
+      "answer_preview": "Në bazë të kontekstit të dhënë, disa ligje të Republikës së Kosovës kanë si qëllim ratifikimin e marrëveshjeve të financimit me Asociacionin Ndërkombëtar për Zhvillim (IDA), por secili ligj mbulon një",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 5,
+        "citations_verified": 5,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 1488,
+        "completion_tokens": 2650,
+        "cached_tokens": 1408,
+        "usd_cost_estimate": 0.002345,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q012",
+      "category": "topic",
+      "query": "Më trego ligjin që rregullon regjistrimit.",
+      "expected_law_numbers": [
+        "04/L-006",
+        "02/L-123",
+        "03/L-237",
+        "04/L-127",
+        "04/L-136"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 14163,
+      "answer_preview": "Nuk kam informacion të mjaftueshëm në bazën e të dhënave për të dhënë një përgjigje të verifikueshme për këtë pyetje.",
+      "warnings": [
+        "Ligji 02/L-70 është shfuqizuar plotësisht nga: 05/L-132, 05/L-064",
+        "Ligji 04/L-160 është shfuqizuar plotësisht nga: 08/L-240"
+      ],
+      "citation_summary": {
+        "citations_total": 0,
+        "citations_verified": 0,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 2139,
+        "completion_tokens": 366,
+        "cached_tokens": 2048,
+        "usd_cost_estimate": 0.000365,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q013",
+      "category": "direct_citation",
+      "query": "Çfarë thotë Neni 2 i Ligjit 06/L-139?",
+      "expected_law_numbers": [
+        "06/L-139"
+      ],
+      "expected_article_numbers": [
+        "2"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 9361,
+      "answer_preview": "Sipas Nenit 2 të Ligjit 06/L-139, përcaktohet se: \"Ky ligj vlen për ratifikimin e Marrëveshjes ndërmjet Ambasadës së Francës në Prishtinë dhe Ministrisë së Arsimit, Shkencës dhe Teknologjisë.\" [Neni 2",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 2,
+        "citations_verified": 2,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 1413,
+        "completion_tokens": 264,
+        "cached_tokens": 1408,
+        "usd_cost_estimate": 0.000237,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "06/L-139",
+          "article_number": "2"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "06/L-139"
+      }
+    },
+    {
+      "id": "q014",
+      "category": "topic",
+      "query": "Çfarë thotë legjislacioni për shkollës?",
+      "expected_law_numbers": [
+        "03/L-018",
+        "2002/2"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 41690,
+      "answer_preview": "⚠️ KUJDES: Ligji 2002/2 është shfuqizuar plotësisht nga Ligji 04/L-032. Përgjigja e mëposhtme bazohet në legjislacionin në fuqi.\n\nNë legjislacionin e aplikueshëm, dispozitat kryesore për rregullat e s",
+      "warnings": [
+        "Ligji 2002/2 është shfuqizuar plotësisht nga: 04/L-032"
+      ],
+      "citation_summary": {
+        "citations_total": 9,
+        "citations_verified": 9,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 4881,
+        "completion_tokens": 1363,
+        "cached_tokens": 4864,
+        "usd_cost_estimate": 0.001211,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q015",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Autorizim për furnizim me banderola me rastin e importit dhe prodhimit të?",
+      "expected_law_numbers": [
+        "08/L-115"
+      ],
+      "expected_article_numbers": [
+        "11"
+      ],
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 51196,
+      "answer_preview": "Në bazë të kontekstit ligjor të dhënë, dispozitat për autorizimin e furnizimit me banderola ndryshojnë në varësi të llojit të produktit. Më poshtë janë parashikimet përkatëse:\n\n**Për produktet e duhan",
+      "warnings": [
+        "Ligji 03/L-232 është shfuqizuar plotësisht nga: 04/L-198"
+      ],
+      "citation_summary": {
+        "citations_total": 7,
+        "citations_verified": 7,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 7612,
+        "completion_tokens": 1673,
+        "cached_tokens": 7552,
+        "usd_cost_estimate": 0.001509,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q016",
+      "category": "status",
+      "query": "A është abroguar Ligji 03/L-082?",
+      "expected_law_numbers": [
+        "03/L-082",
+        "06/L-124"
+      ],
+      "expected_article_numbers": null,
+      "intent": "status_lookup",
+      "expected_intent": "status_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0,
+      "answer_preview": "Ligji 03/L-082 është shfuqizuar plotësisht. Ai është zëvendësuar me ligjin/ligjet: 06/L-124.",
+      "warnings": [
+        "Ligji 03/L-082 është shfuqizuar plotësisht nga: 06/L-124"
+      ],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": null,
+      "trace": {
+        "intent": "status_lookup",
+        "reason": "citation+status_keyword",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "03/L-082",
+          "article_number": null
+        },
+        "abolishment_status": "fully_abolished"
+      }
+    },
+    {
+      "id": "q017",
+      "category": "direct_citation",
+      "query": "Cila është dispozita e Nenit 54 në Ligjin 08/L-275?",
+      "expected_law_numbers": [
+        "08/L-275"
+      ],
+      "expected_article_numbers": [
+        "54"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 43238,
+      "answer_preview": "Neni 54 i Ligjit Nr. 08/L-275 për Rrugët përcakton detyrat dhe të drejtat e inspektorit gjatë ushtrimit të aktiviteteve inspektuese të rrugëve publike. Dispozita shtjellon këto përgjegjësi:\n\n1.  **Ins",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 11,
+        "citations_verified": 11,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 5750,
+        "completion_tokens": 1433,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.003472,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "08/L-275",
+          "article_number": "54"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "08/L-275"
+      }
+    },
+    {
+      "id": "q018",
+      "category": "direct_citation",
+      "query": "Çfarë përcakton Neni 4 i ligjit 08/L-299?",
+      "expected_law_numbers": [
+        "08/L-299"
+      ],
+      "expected_article_numbers": [
+        "4"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 15412,
+      "answer_preview": "Sipas Nenit 4 të Ligjit Nr. 08/L-299, përcaktohet hyrja në fuqi e këtij ligji. Neni parasheh se:\n\n\"Ky ligj hyn në fuqi ditën e publikimit në Gazetën Zyrtare të Republikës së Kosovës.\" [Neni 4, Ligji 0",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 1608,
+        "completion_tokens": 460,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.000824,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "08/L-299",
+          "article_number": "4"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "08/L-299"
+      }
+    },
+    {
+      "id": "q019",
+      "category": "status",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 04/L-106?",
+      "expected_law_numbers": [
+        "04/L-106",
+        "08/L-245"
+      ],
+      "expected_article_numbers": null,
+      "intent": "status_lookup",
+      "expected_intent": "status_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0,
+      "answer_preview": "Ligji 04/L-106 është shfuqizuar plotësisht. Ai është zëvendësuar me ligjin/ligjet: 08/L-245.",
+      "warnings": [
+        "Ligji 04/L-106 është shfuqizuar plotësisht nga: 08/L-245"
+      ],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": null,
+      "trace": {
+        "intent": "status_lookup",
+        "reason": "citation+status_keyword",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "04/L-106",
+          "article_number": null
+        },
+        "abolishment_status": "fully_abolished"
+      }
+    },
+    {
+      "id": "q020",
+      "category": "direct_citation",
+      "query": "Më trego përmbajtjen e Nenit 5 të Ligjit 03/L-001.",
+      "expected_law_numbers": [
+        "03/L-001"
+      ],
+      "expected_article_numbers": [
+        "5"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 20162,
+      "answer_preview": "Neni 5 i Ligjit 03/L-001 përcakton procedurën për marrjen e përfitimeve nga ish-funksionarët e lartë. Përmbajtja e tij është si më poshtë:\n\n*   Institucioni përkatës e zhvillon procedurën për realizim",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 4,
+        "citations_verified": 4,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 1827,
+        "completion_tokens": 642,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.001077,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "03/L-001",
+          "article_number": "5"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "03/L-001"
+      }
+    },
+    {
+      "id": "q021",
+      "category": "topic",
+      "query": "Cili ligj flet për ndërmjet?",
+      "expected_law_numbers": [
+        "06/L-161",
+        "04/L-271",
+        "05/L -011",
+        "05/L -012",
+        "05/L -056"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 42485,
+      "answer_preview": "Ligji aktual që rregullon ndërmjetësimin në Kosovë është **Ligji Nr. 06/L-009 për Ndërmjetësim**.\n\n⚠️ KUJDES: Ligji i mëparshëm për ndërmjetësim, Ligji 03/L-057, është shfuqizuar plotësisht nga Ligji ",
+      "warnings": [
+        "Ligji 03/L-057 është shfuqizuar plotësisht nga: 06/L-009"
+      ],
+      "citation_summary": {
+        "citations_total": 5,
+        "citations_verified": 5,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 3205,
+        "completion_tokens": 1393,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.00233,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q022",
+      "category": "topic",
+      "query": "Cili ligj flet për aftësi?",
+      "expected_law_numbers": [
+        "03/L-022",
+        "03/L-019",
+        "05/L-078"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 25890,
+      "answer_preview": "Në kuadër të kontekstit ligjor të dhënë, Ligji nr. 03/L-019 është ai që rregullon çështjen e aftësive në mënyrë specifike. Ai titullohet dhe përmbajtja e tij i dedikohet aftësimit, riaftësimit profesi",
+      "warnings": [
+        "Ligji 04/L-141 është shfuqizuar plotësisht nga: 08/L-033",
+        "Ligji 03/L-149 është shfuqizuar plotësisht nga: 08/L-197"
+      ],
+      "citation_summary": {
+        "citations_total": 3,
+        "citations_verified": 3,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 3152,
+        "completion_tokens": 819,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.001808,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q023",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: 1. Kur produktet e përpunuara, të përftuara në kuadër të përpunimit te brendshëm, lëshohen?",
+      "expected_law_numbers": [
+        "KUV-08/L-247-KOD"
+      ],
+      "expected_article_numbers": [
+        "138"
+      ],
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 49918,
+      "answer_preview": "Bazuar në kontekstin ligjor të dhënë, Neni 138 i Kodit Nr. 08/L-247 për Doganor dhe të Akcizave trajton masat e politikës tregtare në rastin kur produktet e përpunuara të marra nga përpunimi i brendsh",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 3,
+        "citations_verified": 0,
+        "citations_unverified": 3,
+        "verified_rate": 0.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 3797,
+        "completion_tokens": 1661,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.002821,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q024",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Anëtar korrespondent i Akademisë mund të zgjidhet punonjësi i shkencës ose i artit, shtetas i?",
+      "expected_law_numbers": [
+        "05/L-038"
+      ],
+      "expected_article_numbers": [
+        "20"
+      ],
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 19109,
+      "answer_preview": "⚠️ KUJDES: Ligji 2004/19 është shfuqizuar plotësisht nga Ligji 05/L-038. Përgjigja e mëposhtme bazohet në ligjin në fuqi.\n\nSipas legjislacionit në fuqi, \"Anëtar korrespondent i Akademisë mund të zgjid",
+      "warnings": [
+        "Ligji 2004/19 është shfuqizuar plotësisht nga: 05/L-038"
+      ],
+      "citation_summary": {
+        "citations_total": 3,
+        "citations_verified": 3,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 1988,
+        "completion_tokens": 595,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.001106,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q025",
+      "category": "status",
+      "query": "A është ende në fuqi Ligji 2004/22?",
+      "expected_law_numbers": [
+        "2004/22",
+        "08/L-202"
+      ],
+      "expected_article_numbers": null,
+      "intent": "status_lookup",
+      "expected_intent": "status_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0,
+      "answer_preview": "Ligji 2004/22 është shfuqizuar plotësisht. Ai është zëvendësuar me ligjin/ligjet: 08/L-202.",
+      "warnings": [
+        "Ligji 2004/22 është shfuqizuar plotësisht nga: 08/L-202"
+      ],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": null,
+      "trace": {
+        "intent": "status_lookup",
+        "reason": "citation+status_keyword",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "2004/22",
+          "article_number": null
+        },
+        "abolishment_status": "fully_abolished"
+      }
+    },
+    {
+      "id": "q026",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: 42.1. Kjo pjesë e ligjit vendos kushtet që do të pl otësohen nëse mënyrat e reja të pagesës?",
+      "expected_law_numbers": [
+        "02/L-23"
+      ],
+      "expected_article_numbers": [
+        "42"
+      ],
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 20536,
+      "answer_preview": "⚠️ KUJDES: Ligji 02/L-23 është shfuqizuar plotësisht nga Ligji 04/L-094. Përgjigja e mëposhtme është për referencë historike.\n\nSipas ligjit të shfuqizuar, neni 42.1 përcaktonte se kjo pjesë e ligjit v",
+      "warnings": [
+        "Ligji 02/L-23 është shfuqizuar plotësisht nga: 04/L-094",
+        "Ligji 04/L-094 është shfuqizuar pjesërisht nga: 08/L-022"
+      ],
+      "citation_summary": {
+        "citations_total": 4,
+        "citations_verified": 4,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 4028,
+        "completion_tokens": 608,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.002005,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q027",
+      "category": "status",
+      "query": "A është ende në fuqi Ligji 03/L-120?",
+      "expected_law_numbers": [
+        "03/L-120",
+        "08/L-275"
+      ],
+      "expected_article_numbers": null,
+      "intent": "status_lookup",
+      "expected_intent": "status_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0,
+      "answer_preview": "Ligji 03/L-120 është shfuqizuar plotësisht. Ai është zëvendësuar me ligjin/ligjet: 08/L-275.",
+      "warnings": [
+        "Ligji 03/L-120 është shfuqizuar plotësisht nga: 08/L-275"
+      ],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": null,
+      "trace": {
+        "intent": "status_lookup",
+        "reason": "citation+status_keyword",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "03/L-120",
+          "article_number": null
+        },
+        "abolishment_status": "fully_abolished"
+      }
+    },
+    {
+      "id": "q028",
+      "category": "topic",
+      "query": "Cilat janë dispozitat ligjore për vepron?",
+      "expected_law_numbers": [
+        "08/L-082",
+        "02/L-127"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 113026,
+      "answer_preview": "⚠️ KUJDES: Ligji 2004/24 është shfuqizuar plotësisht nga Ligji 04/L-147, dhe Ligji 02/L-1 është shfuqizuar nga Ligji 03/L-181. Përgjigjja e mëposhtme për dispozitat e shfuqizuara jepet vetëm për refer",
+      "warnings": [
+        "Ligji 02/L-1 është shfuqizuar plotësisht nga: 03/L-181",
+        "Ligji 2004/24 është shfuqizuar plotësisht nga: 04/L-147"
+      ],
+      "citation_summary": {
+        "citations_total": 11,
+        "citations_verified": 11,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 4363,
+        "completion_tokens": 3773,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.004904,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q029",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Kuota e Republikës së Kosovës në Fondin Monetar Ndërkombëtar do të rritet nga pesëdhjetë e nëntë?",
+      "expected_law_numbers": [
+        "04/L-152"
+      ],
+      "expected_article_numbers": [
+        "2"
+      ],
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 23119,
+      "answer_preview": "Sipas ligjit në fuqi, kuota e Republikës së Kosovës në Fondin Monetar Ndërkombëtar rritet në vlerë numerike si më poshtë:\n\n\"Kuota e Republikës së Kosovës në Fondin Monetar Ndërkombëtar do të rritet ng",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 2506,
+        "completion_tokens": 678,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.001404,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q030",
+      "category": "direct_citation",
+      "query": "Cila është dispozita e Nenit 3 në Ligjin 05/L-113?",
+      "expected_law_numbers": [
+        "05/L-113"
+      ],
+      "expected_article_numbers": [
+        "3"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 13570,
+      "answer_preview": "Sipas dispozitës së Nenit 3 të Ligjit 05/L-113, dokumentet e bashkëngjitura janë: \"Pjesë përbërëse e këtij ligji është Memorandumi i Mirëkuptimit ndërmjet Ambasadës së Shteteve të Bashkuara të Amerikë",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 2,
+        "citations_verified": 2,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 1564,
+        "completion_tokens": 421,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.000771,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "05/L-113",
+          "article_number": "3"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "05/L-113"
+      }
+    },
+    {
+      "id": "q031",
+      "category": "status",
+      "query": "A është abroguar Ligji 03/L-165?",
+      "expected_law_numbers": [
+        "03/L-165",
+        "08/L-053"
+      ],
+      "expected_article_numbers": null,
+      "intent": "status_lookup",
+      "expected_intent": "status_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0,
+      "answer_preview": "Ligji 03/L-165 është shfuqizuar plotësisht. Ai është zëvendësuar me ligjin/ligjet: 08/L-053.",
+      "warnings": [
+        "Ligji 03/L-165 është shfuqizuar plotësisht nga: 08/L-053"
+      ],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": null,
+      "trace": {
+        "intent": "status_lookup",
+        "reason": "citation+status_keyword",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "03/L-165",
+          "article_number": null
+        },
+        "abolishment_status": "fully_abolished"
+      }
+    },
+    {
+      "id": "q032",
+      "category": "status",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 04/L-102?",
+      "expected_law_numbers": [
+        "04/L-102",
+        "08/L-257"
+      ],
+      "expected_article_numbers": null,
+      "intent": "status_lookup",
+      "expected_intent": "status_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0,
+      "answer_preview": "Ligji 04/L-102 është shfuqizuar plotësisht. Ai është zëvendësuar me ligjin/ligjet: 08/L-257.",
+      "warnings": [
+        "Ligji 04/L-102 është shfuqizuar plotësisht nga: 08/L-257"
+      ],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": null,
+      "trace": {
+        "intent": "status_lookup",
+        "reason": "citation+status_keyword",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "04/L-102",
+          "article_number": null
+        },
+        "abolishment_status": "fully_abolished"
+      }
+    },
+    {
+      "id": "q033",
+      "category": "direct_citation",
+      "query": "Sipas Ligjit 02/L-95, Neni 35, çfarë rregullohet?",
+      "expected_law_numbers": [
+        "02/L-95"
+      ],
+      "expected_article_numbers": [
+        "35"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 30984,
+      "answer_preview": "⚠️ KUJDES: Ligji 02/L-95 është shfuqizuar plotësisht nga Ligji 04/L-120. Përgjigja e mëposhtme është për referencë historike.\n\nNeni 35 i Ligjit 02/L-95 rregullon procedurën e kërkesës për lëshimin e f",
+      "warnings": [
+        "Ligji 02/L-95 është shfuqizuar plotësisht nga: 04/L-120"
+      ],
+      "citation_summary": {
+        "citations_total": 6,
+        "citations_verified": 6,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 2137,
+        "completion_tokens": 1028,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.001548,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "02/L-95",
+          "article_number": "35"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "02/L-95"
+      }
+    },
+    {
+      "id": "q034",
+      "category": "topic",
+      "query": "Më trego ligjin që rregullon paragrafi.",
+      "expected_law_numbers": [
+        "02/L-128",
+        "02/L-102",
+        "02/L-127",
+        "03/L-004",
+        "03/L-017"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 12661,
+      "answer_preview": "Nuk kam informacion të mjaftueshëm në bazën e të dhënave për të dhënë një përgjigje të verifikueshme për këtë pyetje.",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 0,
+        "citations_verified": 0,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 1175,
+        "completion_tokens": 327,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.00052,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q035",
+      "category": "topic",
+      "query": "Çfarë thotë legjislacioni për padisë?",
+      "expected_law_numbers": [
+        "08/L-182"
+      ],
+      "expected_article_numbers": null,
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": 3,
+      "rank_strict": 3,
+      "elapsed_ms": 27549,
+      "answer_preview": "Sipas legjislacionit të dhënë në kontekst, e vetmja dispozitë që trajton drejtpërdrejt padinë është ajo për padinë e mangët ose të pakuptueshme:\n\n- Nëse padia nuk i ka elementet e kërkuara ose është e",
+      "warnings": [
+        "Ligji 03/L-085 është shfuqizuar plotësisht nga: 04/L-109"
+      ],
+      "citation_summary": {
+        "citations_total": 4,
+        "citations_verified": 4,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 5822,
+        "completion_tokens": 833,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.002981,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q036",
+      "category": "direct_citation",
+      "query": "Më trego përmbajtjen e Nenit 3 të Ligjit 08/L-035.",
+      "expected_law_numbers": [
+        "08/L-035"
+      ],
+      "expected_article_numbers": [
+        "3"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 13853,
+      "answer_preview": "Neni 3 i Ligjit Nr. 08/L-035 për Ndryshimin dhe Plotësimin e Ligjit Nr. 04/L-017 për Ndihmë Juridike Falas përcakton hyrjen në fuqi të këtij ligji.\n\nSipas dispozitës: \"Ky ligj hyn në fuqi pesëmbëdhjet",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 1959,
+        "completion_tokens": 415,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.000937,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "08/L-035",
+          "article_number": "3"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "08/L-035"
+      }
+    },
+    {
+      "id": "q037",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: 1. Çdo person, pavarësisht nga përkatësia, në bazë të racës, ngjyrës, gjinisë, gjuhës, fesë, mendimeve?",
+      "expected_law_numbers": [
+        "04/L-057"
+      ],
+      "expected_article_numbers": [
+        "9"
+      ],
+      "intent": "semantic_question",
+      "expected_intent": "semantic_question",
+      "intent_ok": true,
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 48839,
+      "answer_preview": "⚠️ KUJDES: Ligji 03/L-199 është shfuqizuar plotësisht nga Ligji 06/L-054. Përgjigja e mëposhtme, e bazuar në Nenin 7 të Ligjit 03/L-199, jepet për referencë historike.\n\nBazuar në kontekstin e dhënë, p",
+      "warnings": [
+        "Ligji 03/L-199 është shfuqizuar plotësisht nga: 06/L-054"
+      ],
+      "citation_summary": {
+        "citations_total": 7,
+        "citations_verified": 7,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 2656,
+        "completion_tokens": 1646,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.002311,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "semantic_question",
+        "reason": "default_fallthrough",
+        "namespace": "default_v2",
+        "citation_parsed": null
+      }
+    },
+    {
+      "id": "q038",
+      "category": "direct_citation",
+      "query": "Sipas Ligjit 2004/26, Neni 8, çfarë rregullohet?",
+      "expected_law_numbers": [
+        "2004/26"
+      ],
+      "expected_article_numbers": [
+        "8"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 23466,
+      "answer_preview": "Sipas Nenit 8 të Ligjit nr. 2004/26 për Trashëgiminë, rregullohet mënyra e fitimit të trashëgimisë, duke përcaktuar shprehimisht se: \"Trashëgimia fitohet me ligj ose testament\" [Neni 8, Ligji 2004/26]",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 1305,
+        "completion_tokens": 752,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.000946,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "2004/26",
+          "article_number": "8"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "2004/26"
+      }
+    },
+    {
+      "id": "q039",
+      "category": "status",
+      "query": "A është ende në fuqi Ligji 02/L-59?",
+      "expected_law_numbers": [
+        "02/L-59",
+        "08/L-245"
+      ],
+      "expected_article_numbers": null,
+      "intent": "status_lookup",
+      "expected_intent": "status_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0,
+      "answer_preview": "Ligji 02/L-59 është shfuqizuar plotësisht. Ai është zëvendësuar me ligjin/ligjet: 08/L-245.",
+      "warnings": [
+        "Ligji 02/L-59 është shfuqizuar plotësisht nga: 08/L-245"
+      ],
+      "citation_summary": {
+        "citations_total": 1,
+        "citations_verified": 1,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": null,
+      "trace": {
+        "intent": "status_lookup",
+        "reason": "citation+status_keyword",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "02/L-59",
+          "article_number": null
+        },
+        "abolishment_status": "fully_abolished"
+      }
+    },
+    {
+      "id": "q040",
+      "category": "direct_citation",
+      "query": "Sipas Ligjit 05/L-084, Neni 49, çfarë rregullohet?",
+      "expected_law_numbers": [
+        "05/L-084"
+      ],
+      "expected_article_numbers": [
+        "49"
+      ],
+      "intent": "citation_lookup",
+      "expected_intent": "citation_lookup",
+      "intent_ok": true,
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 18336,
+      "answer_preview": "Sipas Ligjit 05/L-084 për Rregullatorin e Energjisë, Neni 49 rregullon të drejtën e palëve të pakënaqura për të kundërshtuar vendimet e Zyrës së Rregullatorit për Energji (ZRRE) lidhur me tarifat e rr",
+      "warnings": [],
+      "citation_summary": {
+        "citations_total": 2,
+        "citations_verified": 2,
+        "citations_unverified": 0,
+        "verified_rate": 1.0
+      },
+      "llm_usage": {
+        "model": "deepseek-v4-pro",
+        "prompt_tokens": 2561,
+        "completion_tokens": 593,
+        "cached_tokens": 640,
+        "usd_cost_estimate": 0.001354,
+        "finish_reason": "stop"
+      },
+      "trace": {
+        "intent": "citation_lookup",
+        "reason": "citation_parsed",
+        "namespace": "default_v2",
+        "citation_parsed": {
+          "law_number": "05/L-084",
+          "article_number": "49"
+        },
+        "citation_match_quality": "exact_start",
+        "matched_law_variant": "05/L-084"
+      }
+    }
+  ]
+}

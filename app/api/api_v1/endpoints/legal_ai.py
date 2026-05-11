@@ -498,20 +498,64 @@ async def ask_legal_question(
 ):
     """
     Ask a legal question and get an answer based on the indexed legal documents.
+
+    LEGACY endpoint (v1 namespace + English prompt + no citation validation).
+    For new frontend code, use `/legal-ai/ask-v2` which returns a rich
+    response in a single call.
     """
     # Create filter if document type is specified
     filter_dict = None
     if request.document_type:
         filter_dict = {"document_type": request.document_type}
-    
+
     # Answer the question
     result = await langchain_service.answer_question(
         question=request.query,
         filter=filter_dict,
         top_k=request.top_k
     )
-    
+
     return result
+
+
+# ---- /legal-ai/ask-v2: post-rebuild AvokAI endpoint ----------------------
+# Single-call rich response: routes the query through pipeline.answer()
+# (router → retrieve → generate → validate), enriches each retrieved chunk
+# with abolishment status + per-law catalog data (gazette URL, publication
+# date), and returns everything the new sidebar UI needs.
+#
+# Why a new endpoint instead of replacing /ask:
+#   - Reversible: legacy /ask still works for any client that hasn't migrated
+#   - Different response shape: this one is structured for direct UI render
+#   - Different namespace: defaults to default_v2 instead of legacy default
+# Once the React app is fully migrated, /ask can be deleted.
+
+from app.ai.pipeline import answer as pipeline_answer  # noqa: E402
+from app.ai.v2_adapter import adapt_pipeline_result_to_v2  # noqa: E402
+from app.schemas.avokai import AskV2Request, AskV2Response  # noqa: E402
+
+
+@router.post("/ask-v2", response_model=AskV2Response)
+async def ask_legal_question_v2(
+    request: AskV2Request,
+    current_user: User = Depends(get_current_active_user),
+):
+    """Single-call rich answer for AvokAI.
+
+    Routes through `pipeline.answer()` and returns the structured shape the
+    new frontend sidebar consumes directly. Replaces the historical
+    search + ask double-call pattern. Adapter logic lives in
+    `app.ai.v2_adapter` so it can be unit-tested without the FastAPI / DB
+    stack.
+    """
+    history = list(request.conversation_history or [])[-6:]
+    result = pipeline_answer(
+        request.query,
+        namespace=request.namespace,
+        use_llm=request.use_llm,
+        conversation_history=history if history else None,
+    )
+    return adapt_pipeline_result_to_v2(result)
 
 
 @router.post("/scrape", response_model=Dict[str, Any])

@@ -1,0 +1,1914 @@
+{
+  "timestamp": "2026-05-07T00:26:41.303399Z",
+  "pipeline": "hybrid_v2: citation_parser + abolishment + dense_top50→bm25_rescore",
+  "golden_seed": 20260507,
+  "overall": {
+    "count": 40,
+    "recall_at_5_loose": 0.8,
+    "recall_at_10_loose": 0.825,
+    "recall_at_5_strict": 0.8,
+    "mrr_loose": 0.708,
+    "mrr_strict": 0.69,
+    "p50_latency_ms": 945,
+    "p95_latency_ms": 2206
+  },
+  "by_category": {
+    "article_content": {
+      "count": 8,
+      "recall_at_5_loose": 0.625,
+      "recall_at_10_loose": 0.75,
+      "recall_at_5_strict": 0.625,
+      "mrr_loose": 0.5
+    },
+    "direct_citation": {
+      "count": 12,
+      "recall_at_5_loose": 1.0,
+      "recall_at_10_loose": 1.0,
+      "recall_at_5_strict": 1.0,
+      "mrr_loose": 0.958
+    },
+    "status": {
+      "count": 8,
+      "recall_at_5_loose": 1.0,
+      "recall_at_10_loose": 1.0,
+      "recall_at_5_strict": 1.0,
+      "mrr_loose": 1.0
+    },
+    "topic": {
+      "count": 12,
+      "recall_at_5_loose": 0.583,
+      "recall_at_10_loose": 0.583,
+      "recall_at_5_strict": 0.583,
+      "mrr_loose": 0.403
+    }
+  },
+  "by_path": {
+    "abolishment:fully_abolished": 8,
+    "semantic": 20,
+    "citation:exact_start": 11,
+    "citation_miss→semantic": 1
+  },
+  "per_query": [
+    {
+      "id": "q001",
+      "category": "status",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 03/L-043?",
+      "expected_law_numbers": [
+        "03/L-043",
+        "08/L-145"
+      ],
+      "expected_article_numbers": null,
+      "path": "abolishment:fully_abolished",
+      "retrieved": [
+        {
+          "law": "03/l-043",
+          "article": null,
+          "score": 1.0
+        },
+        {
+          "law": "08/l-145",
+          "article": null,
+          "score": 0.95
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0
+    },
+    {
+      "id": "q002",
+      "category": "topic",
+      "query": "Çfarë thotë legjislacioni për grantet?",
+      "expected_law_numbers": [
+        "06/L-020",
+        "05/L-109",
+        "06/L -133",
+        "07/L-001",
+        "07/L-014"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "08/l-056",
+          "article": "70",
+          "score": 0.8098672760362181
+        },
+        {
+          "law": "07/l-014",
+          "article": "12",
+          "score": 0.7195363272583031
+        },
+        {
+          "law": "05/l-109",
+          "article": "10",
+          "score": 0.7173061904975513
+        },
+        {
+          "law": "07/l-001",
+          "article": "10",
+          "score": 0.6877053774661994
+        },
+        {
+          "law": "07/l-014",
+          "article": "12",
+          "score": 0.6873323949643418
+        },
+        {
+          "law": "07/l-014",
+          "article": "12",
+          "score": 0.6793096753293166
+        },
+        {
+          "law": "05/l-109",
+          "article": "10",
+          "score": 0.6734807272645995
+        },
+        {
+          "law": "07/l-014",
+          "article": "12",
+          "score": 0.6583698306594343
+        },
+        {
+          "law": "06/l-020",
+          "article": "24",
+          "score": 0.6565431781920206
+        },
+        {
+          "law": "07/l-001",
+          "article": "26",
+          "score": 0.6561709345028538
+        }
+      ],
+      "rank_loose": 2,
+      "rank_strict": 2,
+      "elapsed_ms": 4320
+    },
+    {
+      "id": "q003",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: 1. Funksionet e akademisë janë si në vijim?",
+      "expected_law_numbers": [
+        "04/L-053"
+      ],
+      "expected_article_numbers": [
+        "13"
+      ],
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "02/l-15",
+          "article": "1",
+          "score": 0.8025357000973978
+        },
+        {
+          "law": "05/l-095",
+          "article": "6",
+          "score": 0.7723784824246092
+        },
+        {
+          "law": "04/l-053",
+          "article": "13",
+          "score": 0.70687519280534
+        },
+        {
+          "law": "05/l-095",
+          "article": "4",
+          "score": 0.6005136054055276
+        },
+        {
+          "law": "04/l-053",
+          "article": "14",
+          "score": 0.5736834726978302
+        },
+        {
+          "law": "04/l-226",
+          "article": "16",
+          "score": 0.5136978735719826
+        },
+        {
+          "law": "05/l-095",
+          "article": "7",
+          "score": 0.43693440845879733
+        },
+        {
+          "law": "05/l-095",
+          "article": "3",
+          "score": 0.43568598074525156
+        },
+        {
+          "law": "07/l-014",
+          "article": "10",
+          "score": 0.43514830560051115
+        },
+        {
+          "law": "05/l-095",
+          "article": "5",
+          "score": 0.43150724476867913
+        }
+      ],
+      "rank_loose": 3,
+      "rank_strict": 3,
+      "elapsed_ms": 1974
+    },
+    {
+      "id": "q004",
+      "category": "direct_citation",
+      "query": "Çfarë përcakton Neni 2 i ligjit 2004/21?",
+      "expected_law_numbers": [
+        "2004/21"
+      ],
+      "expected_article_numbers": [
+        "2"
+      ],
+      "path": "citation:exact_start",
+      "retrieved": [
+        {
+          "law": "2004/21",
+          "article": "2",
+          "score": 0.0779555663
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 870
+    },
+    {
+      "id": "q005",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: 1. Shprehjet e për dorura në këtë l igj kanë këtë kuptim?",
+      "expected_law_numbers": [
+        "04/L-120"
+      ],
+      "expected_article_numbers": [
+        "3"
+      ],
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "kuv-08/l-032-kod",
+          "article": "216",
+          "score": 0.8443510945577509
+        },
+        {
+          "law": "2004/2",
+          "article": "2",
+          "score": 0.6644374053663017
+        },
+        {
+          "law": "03/l-139",
+          "article": "2",
+          "score": 0.599305559045989
+        },
+        {
+          "law": "04/l-053",
+          "article": "3",
+          "score": 0.5874150323655936
+        },
+        {
+          "law": "02/l-15",
+          "article": "1",
+          "score": 0.5493462605178345
+        },
+        {
+          "law": "05/l-095",
+          "article": "2",
+          "score": 0.5448130875432877
+        },
+        {
+          "law": "kuv-08/l-032-kod",
+          "article": "19",
+          "score": 0.5443887742527413
+        },
+        {
+          "law": "kuv-08/l-032-kod",
+          "article": "85",
+          "score": 0.5415644858325621
+        },
+        {
+          "law": "02/l-99",
+          "article": "4",
+          "score": 0.5359140162063976
+        },
+        {
+          "law": "04/l-051",
+          "article": "3",
+          "score": 0.5198429036263802
+        }
+      ],
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 2075
+    },
+    {
+      "id": "q006",
+      "category": "topic",
+      "query": "Cili ligj flet për markës?",
+      "expected_law_numbers": [
+        "05/L-040",
+        "04/L-026",
+        "08/L-075"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "08/l-075",
+          "article": "2",
+          "score": 0.9052492508089462
+        },
+        {
+          "law": "04/l-026",
+          "article": "98",
+          "score": 0.8639267932749933
+        },
+        {
+          "law": "08/l-075",
+          "article": "90",
+          "score": 0.8072324249072692
+        },
+        {
+          "law": "04/l-026",
+          "article": "2",
+          "score": 0.8050892749216005
+        },
+        {
+          "law": "04/l-026",
+          "article": "16",
+          "score": 0.7995807600989
+        },
+        {
+          "law": "05/l-040",
+          "article": "27",
+          "score": 0.769904417267304
+        },
+        {
+          "law": "04/l-026",
+          "article": "14",
+          "score": 0.7607356483142309
+        },
+        {
+          "law": "05/l-040",
+          "article": "2",
+          "score": 0.730226232243445
+        },
+        {
+          "law": "08/l-075",
+          "article": "1",
+          "score": 0.7179352983264371
+        },
+        {
+          "law": "05/l-040",
+          "article": "63",
+          "score": 0.7133592338109582
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 1632
+    },
+    {
+      "id": "q007",
+      "category": "status",
+      "query": "A është abroguar Ligji 2004/2?",
+      "expected_law_numbers": [
+        "2004/2",
+        "05/L-020"
+      ],
+      "expected_article_numbers": null,
+      "path": "abolishment:fully_abolished",
+      "retrieved": [
+        {
+          "law": "2004/2",
+          "article": null,
+          "score": 1.0
+        },
+        {
+          "law": "05/l-020",
+          "article": null,
+          "score": 0.95
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0
+    },
+    {
+      "id": "q008",
+      "category": "direct_citation",
+      "query": "Sipas Ligjit 04/L-125, Neni 4, çfarë rregullohet?",
+      "expected_law_numbers": [
+        "04/L-125"
+      ],
+      "expected_article_numbers": [
+        "4"
+      ],
+      "path": "citation:exact_start",
+      "retrieved": [
+        {
+          "law": "04/l-125",
+          "article": "4",
+          "score": 0.0526697412
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 391
+    },
+    {
+      "id": "q009",
+      "category": "direct_citation",
+      "query": "Cila është dispozita e Nenit 4 në Ligjin 05/L-046?",
+      "expected_law_numbers": [
+        "05/L-046"
+      ],
+      "expected_article_numbers": [
+        "4"
+      ],
+      "path": "citation:exact_start",
+      "retrieved": [
+        {
+          "law": "05/l-046",
+          "article": "4",
+          "score": 0.101888038
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 606
+    },
+    {
+      "id": "q010",
+      "category": "status",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 03/L-018?",
+      "expected_law_numbers": [
+        "03/L-018",
+        "05/L-018"
+      ],
+      "expected_article_numbers": null,
+      "path": "abolishment:fully_abolished",
+      "retrieved": [
+        {
+          "law": "03/l-018",
+          "article": null,
+          "score": 1.0
+        },
+        {
+          "law": "05/l-018",
+          "article": null,
+          "score": 0.95
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0
+    },
+    {
+      "id": "q011",
+      "category": "status",
+      "query": "A është ende në fuqi Ligji 04/L-051?",
+      "expected_law_numbers": [
+        "04/L-051",
+        "06/L-011"
+      ],
+      "expected_article_numbers": null,
+      "path": "abolishment:fully_abolished",
+      "retrieved": [
+        {
+          "law": "04/l-051",
+          "article": null,
+          "score": 1.0
+        },
+        {
+          "law": "06/l-011",
+          "article": null,
+          "score": 0.95
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0
+    },
+    {
+      "id": "q012",
+      "category": "direct_citation",
+      "query": "Çfarë thotë Neni 11 i Ligjit 08/L-099?",
+      "expected_law_numbers": [
+        "08/L-099"
+      ],
+      "expected_article_numbers": [
+        "11"
+      ],
+      "path": "citation:exact_start",
+      "retrieved": [
+        {
+          "law": "08/l-099",
+          "article": "11",
+          "score": 0.0526556782
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 158
+    },
+    {
+      "id": "q013",
+      "category": "direct_citation",
+      "query": "Më trego përmbajtjen e Nenit 121 të Ligjit KUV-08/L-032-KOD.",
+      "expected_law_numbers": [
+        "KUV-08/L-032-KOD"
+      ],
+      "expected_article_numbers": [
+        "121"
+      ],
+      "path": "citation_miss→semantic",
+      "retrieved": [
+        {
+          "law": "04/l-121",
+          "article": "18",
+          "score": 0.8904533871955066
+        },
+        {
+          "law": "kuv-08/l-032-kod",
+          "article": "483",
+          "score": 0.8190638043964431
+        },
+        {
+          "law": "kuv-08/l-032-kod",
+          "article": "546",
+          "score": 0.684361655996286
+        },
+        {
+          "law": "04/l-108",
+          "article": "1",
+          "score": 0.6831567210941338
+        },
+        {
+          "law": "kuv-08/l-032-kod",
+          "article": "121",
+          "score": 0.6661506896338499
+        },
+        {
+          "law": "kuv-08/l-032-kod",
+          "article": "47",
+          "score": 0.5787102065759299
+        },
+        {
+          "law": "05/l-040",
+          "article": "8",
+          "score": 0.2
+        },
+        {
+          "law": "kuv-08/l-032-kod",
+          "article": "279",
+          "score": 0.17325111590146997
+        },
+        {
+          "law": "02/l-99",
+          "article": "121",
+          "score": 0.1520140175227643
+        },
+        {
+          "law": "03/l-101",
+          "article": "10",
+          "score": 0.15063987554590083
+        }
+      ],
+      "rank_loose": 2,
+      "rank_strict": 5,
+      "elapsed_ms": 784
+    },
+    {
+      "id": "q014",
+      "category": "topic",
+      "query": "Cilat ligje rregullojnë digjitalë?",
+      "expected_law_numbers": [
+        "08/L-295"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "08/l-295",
+          "article": "27",
+          "score": 0.8287067585250274
+        },
+        {
+          "law": "08/l-295",
+          "article": "28",
+          "score": 0.8083282970440325
+        },
+        {
+          "law": "08/l-295",
+          "article": "26",
+          "score": 0.7512716473049872
+        },
+        {
+          "law": "05/l-040",
+          "article": "23",
+          "score": 0.7063365873455841
+        },
+        {
+          "law": "08/l-295",
+          "article": "22",
+          "score": 0.5364471882891115
+        },
+        {
+          "law": "02/l-121",
+          "article": "26",
+          "score": 0.37585897615645236
+        },
+        {
+          "law": "06/l-081",
+          "article": "26",
+          "score": 0.37061200841956493
+        },
+        {
+          "law": "04/l-077",
+          "article": "14",
+          "score": 0.350814926608789
+        },
+        {
+          "law": "02/l-28",
+          "article": "142",
+          "score": 0.33827926287175
+        },
+        {
+          "law": "03/l-215",
+          "article": "2",
+          "score": 0.33087994275481847
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 4425
+    },
+    {
+      "id": "q015",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Kuvendet komunale mund të përcaktojnë ditët e komun ave të tyre si dhe ditët memoriale të komunave në?",
+      "expected_law_numbers": [
+        "03/L-064"
+      ],
+      "expected_article_numbers": [
+        "7"
+      ],
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "03/l-064",
+          "article": "7",
+          "score": 1.0
+        },
+        {
+          "law": "03/l-064",
+          "article": "5",
+          "score": 0.4182139338709584
+        },
+        {
+          "law": "03/l-064",
+          "article": "4",
+          "score": 0.2527829496626088
+        },
+        {
+          "law": "03/l-064",
+          "article": "6",
+          "score": 0.21813888731837505
+        },
+        {
+          "law": "03/l-064",
+          "article": "3",
+          "score": 0.21396346442203854
+        },
+        {
+          "law": "06/l-020",
+          "article": "6",
+          "score": 0.12578052610919327
+        },
+        {
+          "law": "07/l-001",
+          "article": "6",
+          "score": 0.11312557370134213
+        },
+        {
+          "law": "08/l-099",
+          "article": "27",
+          "score": 0.10753216559711531
+        },
+        {
+          "law": "2004/21",
+          "article": "13",
+          "score": 0.10645323462221519
+        },
+        {
+          "law": "08/l-099",
+          "article": "24",
+          "score": 0.103795763324393
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 1312
+    },
+    {
+      "id": "q016",
+      "category": "topic",
+      "query": "Cilat ligje rregullojnë resurseve?",
+      "expected_law_numbers": [
+        "08/L-069"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "03/l-139",
+          "article": "1",
+          "score": 0.9512258493340694
+        },
+        {
+          "law": "04/l-077",
+          "article": "2",
+          "score": 0.7190247007021886
+        },
+        {
+          "law": "05/l-040",
+          "article": "23",
+          "score": 0.5854542384815747
+        },
+        {
+          "law": "03/l-139",
+          "article": "4",
+          "score": 0.5370490990834714
+        },
+        {
+          "law": "04/l-125",
+          "article": "5",
+          "score": 0.4600563103916085
+        },
+        {
+          "law": "04/l-042",
+          "article": "32",
+          "score": 0.44546088231497927
+        },
+        {
+          "law": "03/l-241",
+          "article": "32",
+          "score": 0.44546088231497927
+        },
+        {
+          "law": "06/l-081",
+          "article": "26",
+          "score": 0.42527811147924655
+        },
+        {
+          "law": "03/l-215",
+          "article": "2",
+          "score": 0.37676191188145247
+        },
+        {
+          "law": "2004/21",
+          "article": "2",
+          "score": 0.3618174854719854
+        }
+      ],
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 1985
+    },
+    {
+      "id": "q017",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Pas nenit 4 të ligjit bazik shtohet neni i ri 4. A me tekstin si në vijim?",
+      "expected_law_numbers": [
+        "04/L-189"
+      ],
+      "expected_article_numbers": [
+        "4"
+      ],
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "05/l-040",
+          "article": "13",
+          "score": 0.8938972795876703
+        },
+        {
+          "law": "04/l-226",
+          "article": "13",
+          "score": 0.8919831977599367
+        },
+        {
+          "law": "04/l-226",
+          "article": "1",
+          "score": 0.8298041673893692
+        },
+        {
+          "law": "04/l-108",
+          "article": "16",
+          "score": 0.7996363778856531
+        },
+        {
+          "law": "04/l-108",
+          "article": "28",
+          "score": 0.7937711027532918
+        },
+        {
+          "law": "04/l-189",
+          "article": "2",
+          "score": 0.7679844604739675
+        },
+        {
+          "law": "04/l-124",
+          "article": "9",
+          "score": 0.760389674803996
+        },
+        {
+          "law": "05/l-040",
+          "article": "1",
+          "score": 0.7326057604744719
+        },
+        {
+          "law": "04/l-226",
+          "article": "12",
+          "score": 0.7309461592864954
+        },
+        {
+          "law": "04/l-108",
+          "article": "15",
+          "score": 0.7309003974513815
+        }
+      ],
+      "rank_loose": 6,
+      "rank_strict": null,
+      "elapsed_ms": 2206
+    },
+    {
+      "id": "q018",
+      "category": "topic",
+      "query": "Cili ligj flet për pastaj?",
+      "expected_law_numbers": [
+        "04/L-087"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "04/l-077",
+          "article": "294",
+          "score": 0.8042053436514058
+        },
+        {
+          "law": "04/l-077",
+          "article": "662",
+          "score": 0.4614844176369534
+        },
+        {
+          "law": "02/l-121",
+          "article": "26",
+          "score": 0.42234210955939927
+        },
+        {
+          "law": "04/l-077",
+          "article": "553",
+          "score": 0.4175987462957362
+        },
+        {
+          "law": "kuv-08/l-032-kod",
+          "article": "444",
+          "score": 0.40465856205448963
+        },
+        {
+          "law": "02/l-28",
+          "article": "142",
+          "score": 0.3946877459474335
+        },
+        {
+          "law": "04/l-077",
+          "article": "423",
+          "score": 0.39441967406226064
+        },
+        {
+          "law": "02/l-118",
+          "article": "25",
+          "score": 0.3852661012672166
+        },
+        {
+          "law": "02/l-15",
+          "article": "30",
+          "score": 0.34106794437284915
+        },
+        {
+          "law": "kuv-08/l-032-kod",
+          "article": "412",
+          "score": 0.3292730019001084
+        }
+      ],
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 1231
+    },
+    {
+      "id": "q019",
+      "category": "status",
+      "query": "A është ende në fuqi Ligji 03/L-215?",
+      "expected_law_numbers": [
+        "03/L-215",
+        "06/L-081"
+      ],
+      "expected_article_numbers": null,
+      "path": "abolishment:fully_abolished",
+      "retrieved": [
+        {
+          "law": "03/l-215",
+          "article": null,
+          "score": 1.0
+        },
+        {
+          "law": "06/l-081",
+          "article": null,
+          "score": 0.95
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0
+    },
+    {
+      "id": "q020",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Nën-paragrafi 1.4 i nenit 13 të ligjit bazik ndryshohet si në vijim?",
+      "expected_law_numbers": [
+        "08/L-201"
+      ],
+      "expected_article_numbers": [
+        "2"
+      ],
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "04/l-108",
+          "article": "16",
+          "score": 0.9268379324096354
+        },
+        {
+          "law": "08/l-201",
+          "article": "5",
+          "score": 0.8067918092669395
+        },
+        {
+          "law": "05/l-040",
+          "article": "25",
+          "score": 0.7533665246870813
+        },
+        {
+          "law": "08/l-201",
+          "article": "2",
+          "score": 0.737247366191053
+        },
+        {
+          "law": "04/l-108",
+          "article": "14",
+          "score": 0.7336100935585662
+        },
+        {
+          "law": "04/l-108",
+          "article": "27",
+          "score": 0.7175677522968588
+        },
+        {
+          "law": "04/l-108",
+          "article": "12",
+          "score": 0.7073731512590824
+        },
+        {
+          "law": "04/l-124",
+          "article": "11",
+          "score": 0.6735469264647025
+        },
+        {
+          "law": "04/l-108",
+          "article": "2",
+          "score": 0.6720083987976587
+        },
+        {
+          "law": "04/l-108",
+          "article": "22",
+          "score": 0.6474313277056434
+        }
+      ],
+      "rank_loose": 2,
+      "rank_strict": 4,
+      "elapsed_ms": 1021
+    },
+    {
+      "id": "q021",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: 2.1. Qëllimi i ligjit është t /uni0451 rregulloj /uni0451 sistemin e arsimit dhe aftësimit profesional forma l në?",
+      "expected_law_numbers": [
+        "02/L-42"
+      ],
+      "expected_article_numbers": [
+        "2"
+      ],
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "02/l-42",
+          "article": "2",
+          "score": 1.0
+        },
+        {
+          "law": "02/l-42",
+          "article": "4",
+          "score": 0.7083926443925275
+        },
+        {
+          "law": "02/l-42",
+          "article": "5",
+          "score": 0.6006606637803245
+        },
+        {
+          "law": "02/l-42",
+          "article": "1",
+          "score": 0.5390092375105643
+        },
+        {
+          "law": "02/l-42",
+          "article": "6",
+          "score": 0.4848526099066752
+        },
+        {
+          "law": "02/l-42",
+          "article": "9",
+          "score": 0.4797603477417249
+        },
+        {
+          "law": "02/l-42",
+          "article": "10",
+          "score": 0.4553649138544837
+        },
+        {
+          "law": "02/l-42",
+          "article": "23",
+          "score": 0.45125234382471857
+        },
+        {
+          "law": "02/l-42",
+          "article": "15",
+          "score": 0.4471176837456583
+        },
+        {
+          "law": "02/l-42",
+          "article": "21",
+          "score": 0.4403260805234823
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 1436
+    },
+    {
+      "id": "q022",
+      "category": "topic",
+      "query": "Cili ligj flet për eshte?",
+      "expected_law_numbers": [
+        "08/L-229",
+        "04/L-266",
+        "07/L-003",
+        "07/L-031",
+        "07/L-034"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "04/l-003",
+          "article": "2",
+          "score": 0.9084248464969481
+        },
+        {
+          "law": "04/l-077",
+          "article": "754",
+          "score": 0.8338739989485254
+        },
+        {
+          "law": "04/l-077",
+          "article": "423",
+          "score": 0.7851105629448965
+        },
+        {
+          "law": "03/l-034",
+          "article": "2",
+          "score": 0.7286545461628587
+        },
+        {
+          "law": "04/l-121",
+          "article": "25",
+          "score": 0.6841751108486445
+        },
+        {
+          "law": "04/l-125",
+          "article": "83",
+          "score": 0.6123312403337834
+        },
+        {
+          "law": "04/l-120",
+          "article": "3",
+          "score": 0.6119627965381791
+        },
+        {
+          "law": "04/l-108",
+          "article": "7",
+          "score": 0.5937280187145022
+        },
+        {
+          "law": "04/l-063",
+          "article": "3",
+          "score": 0.5923353266105265
+        },
+        {
+          "law": "04/l-125",
+          "article": "3",
+          "score": 0.5806644126098868
+        }
+      ],
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 1435
+    },
+    {
+      "id": "q023",
+      "category": "direct_citation",
+      "query": "Çfarë përcakton Neni 13 i ligjit 03/L-094?",
+      "expected_law_numbers": [
+        "03/L-094"
+      ],
+      "expected_article_numbers": [
+        "13"
+      ],
+      "path": "citation:exact_start",
+      "retrieved": [
+        {
+          "law": "03/l-094",
+          "article": "13",
+          "score": 0.0777957886
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 597
+    },
+    {
+      "id": "q024",
+      "category": "topic",
+      "query": "Cilat ligje rregullojnë mitrovicë?",
+      "expected_law_numbers": [
+        "04/L-234"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "04/l-077",
+          "article": "2",
+          "score": 0.8068042697815372
+        },
+        {
+          "law": "03/l-034",
+          "article": "31",
+          "score": 0.7827828618446636
+        },
+        {
+          "law": "05/l-040",
+          "article": "23",
+          "score": 0.6004451510333862
+        },
+        {
+          "law": "06/l-020",
+          "article": "24",
+          "score": 0.5676559251563511
+        },
+        {
+          "law": "2004/21",
+          "article": "21",
+          "score": 0.4085496322028411
+        },
+        {
+          "law": "04/l-077",
+          "article": "14",
+          "score": 0.396452452034754
+        },
+        {
+          "law": "04/l-042",
+          "article": "128",
+          "score": 0.39619456242665846
+        },
+        {
+          "law": "03/l-241",
+          "article": "128",
+          "score": 0.39619456242665846
+        },
+        {
+          "law": "2004/21",
+          "article": "2",
+          "score": 0.38544445841449626
+        },
+        {
+          "law": "08/l-237",
+          "article": "17",
+          "score": 0.345083067395063
+        }
+      ],
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 1256
+    },
+    {
+      "id": "q025",
+      "category": "direct_citation",
+      "query": "Më trego përmbajtjen e Nenit 3 të Ligjit 06/L-004.",
+      "expected_law_numbers": [
+        "06/L-004"
+      ],
+      "expected_article_numbers": [
+        "3"
+      ],
+      "path": "citation:exact_start",
+      "retrieved": [
+        {
+          "law": "06/l-004",
+          "article": "3",
+          "score": 0.103636459
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 375
+    },
+    {
+      "id": "q026",
+      "category": "direct_citation",
+      "query": "Çfarë përcakton Neni 6 i ligjit 03/L-101?",
+      "expected_law_numbers": [
+        "03/L-101"
+      ],
+      "expected_article_numbers": [
+        "6"
+      ],
+      "path": "citation:exact_start",
+      "retrieved": [
+        {
+          "law": "03/l-101",
+          "article": "6",
+          "score": 0.0862300172
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 410
+    },
+    {
+      "id": "q027",
+      "category": "status",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 04/L-124?",
+      "expected_law_numbers": [
+        "04/L-124",
+        "06/L-037"
+      ],
+      "expected_article_numbers": null,
+      "path": "abolishment:fully_abolished",
+      "retrieved": [
+        {
+          "law": "04/l-124",
+          "article": null,
+          "score": 1.0
+        },
+        {
+          "law": "06/l-037",
+          "article": null,
+          "score": 0.95
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0
+    },
+    {
+      "id": "q028",
+      "category": "direct_citation",
+      "query": "Më trego përmbajtjen e Nenit 31 të Ligjit 03/L-042.",
+      "expected_law_numbers": [
+        "03/L-042"
+      ],
+      "expected_article_numbers": [
+        "31"
+      ],
+      "path": "citation:exact_start",
+      "retrieved": [
+        {
+          "law": "03/l-042",
+          "article": "31",
+          "score": 0.0982176289
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 185
+    },
+    {
+      "id": "q029",
+      "category": "topic",
+      "query": "Më trego ligjin që rregullon organi.",
+      "expected_law_numbers": [
+        "04/L-063",
+        "02/L-121",
+        "02/L-28",
+        "03/L-034",
+        "03/L-139"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "02/l-101",
+          "article": "36",
+          "score": 0.8243621733518816
+        },
+        {
+          "law": "04/l-121",
+          "article": "67",
+          "score": 0.792457611440592
+        },
+        {
+          "law": "04/l-063",
+          "article": "24",
+          "score": 0.621338790560874
+        },
+        {
+          "law": "06/l-011",
+          "article": "2",
+          "score": 0.6074896747093794
+        },
+        {
+          "law": "04/l-063",
+          "article": "2",
+          "score": 0.5537620543390814
+        },
+        {
+          "law": "02/l-28",
+          "article": "22",
+          "score": 0.5483545551804686
+        },
+        {
+          "law": "04/l-063",
+          "article": "27",
+          "score": 0.5344214822059158
+        },
+        {
+          "law": "04/l-063",
+          "article": "22",
+          "score": 0.5078864941820728
+        },
+        {
+          "law": "04/l-120",
+          "article": "39",
+          "score": 0.49932751915381174
+        },
+        {
+          "law": "kuv-08/l-032-kod",
+          "article": "67",
+          "score": 0.4771999952970598
+        }
+      ],
+      "rank_loose": 3,
+      "rank_strict": 3,
+      "elapsed_ms": 1061
+    },
+    {
+      "id": "q030",
+      "category": "status",
+      "query": "A është abroguar Ligji 04/L-108?",
+      "expected_law_numbers": [
+        "04/L-108",
+        "05/L-037"
+      ],
+      "expected_article_numbers": null,
+      "path": "abolishment:fully_abolished",
+      "retrieved": [
+        {
+          "law": "04/l-108",
+          "article": null,
+          "score": 1.0
+        },
+        {
+          "law": "05/l-037",
+          "article": null,
+          "score": 0.95
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0
+    },
+    {
+      "id": "q031",
+      "category": "topic",
+      "query": "Çfarë thotë legjislacioni për personal?",
+      "expected_law_numbers": [
+        "04/L-003",
+        "02/L-118"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "2004/2",
+          "article": "2",
+          "score": 0.8161408460741517
+        },
+        {
+          "law": "02/l-118",
+          "article": "3",
+          "score": 0.510276955435058
+        },
+        {
+          "law": "04/l-003",
+          "article": "40",
+          "score": 0.4561113020621367
+        },
+        {
+          "law": "02/l-118",
+          "article": "4",
+          "score": 0.437114250501723
+        },
+        {
+          "law": "02/l-118",
+          "article": "5",
+          "score": 0.4158184778877027
+        },
+        {
+          "law": "02/l-118",
+          "article": "11",
+          "score": 0.4068584143045876
+        },
+        {
+          "law": "02/l-118",
+          "article": "8",
+          "score": 0.3910319790532459
+        },
+        {
+          "law": "02/l-118",
+          "article": "9",
+          "score": 0.3675763438919671
+        },
+        {
+          "law": "02/l-118",
+          "article": "17",
+          "score": 0.36104878713024646
+        },
+        {
+          "law": "02/l-118",
+          "article": "19",
+          "score": 0.35982464079741194
+        }
+      ],
+      "rank_loose": 2,
+      "rank_strict": 2,
+      "elapsed_ms": 1231
+    },
+    {
+      "id": "q032",
+      "category": "topic",
+      "query": "Çfarë thotë legjislacioni për shoqatave?",
+      "expected_law_numbers": [
+        "02/L-9"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "05/l-040",
+          "article": "63",
+          "score": 0.8100795215823102
+        },
+        {
+          "law": "02/l-9",
+          "article": "33",
+          "score": 0.7110097286609348
+        },
+        {
+          "law": "02/l-9",
+          "article": "14",
+          "score": 0.6620931947243685
+        },
+        {
+          "law": "02/l-9",
+          "article": "2",
+          "score": 0.628443883241878
+        },
+        {
+          "law": "02/l-9",
+          "article": "32",
+          "score": 0.6073409743297313
+        },
+        {
+          "law": "02/l-9",
+          "article": "30",
+          "score": 0.5726486759927345
+        },
+        {
+          "law": "04/l-121",
+          "article": "70",
+          "score": 0.5614530575381911
+        },
+        {
+          "law": "02/l-9",
+          "article": "11",
+          "score": 0.5590435842377017
+        },
+        {
+          "law": "02/l-9",
+          "article": "18",
+          "score": 0.5309203395525167
+        },
+        {
+          "law": "02/l-9",
+          "article": "23",
+          "score": 0.47999459063845723
+        }
+      ],
+      "rank_loose": 2,
+      "rank_strict": 2,
+      "elapsed_ms": 1430
+    },
+    {
+      "id": "q033",
+      "category": "status",
+      "query": "A është aktiv Ligji 04/L-226?",
+      "expected_law_numbers": [
+        "04/L-226",
+        "08/L-056"
+      ],
+      "expected_article_numbers": null,
+      "path": "abolishment:fully_abolished",
+      "retrieved": [
+        {
+          "law": "04/l-226",
+          "article": null,
+          "score": 1.0
+        },
+        {
+          "law": "08/l-056",
+          "article": null,
+          "score": 0.95
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 0
+    },
+    {
+      "id": "q034",
+      "category": "topic",
+      "query": "Më trego ligjin që rregullon kosovës.",
+      "expected_law_numbers": [
+        "2002/1",
+        "02/L-101",
+        "02/L-111",
+        "02/L-15",
+        "02/L-25"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "04/l-003",
+          "article": "1",
+          "score": 0.8335301079922827
+        },
+        {
+          "law": "04/l-124",
+          "article": "1",
+          "score": 0.7814831566215465
+        },
+        {
+          "law": "04/l-063",
+          "article": "2",
+          "score": 0.5193001244310939
+        },
+        {
+          "law": "02/l-9",
+          "article": "2",
+          "score": 0.5154990413959188
+        },
+        {
+          "law": "03/l-101",
+          "article": "10",
+          "score": 0.44069023798054974
+        },
+        {
+          "law": "03/l-094",
+          "article": "30",
+          "score": 0.4388338750203654
+        },
+        {
+          "law": "04/l-226",
+          "article": "28",
+          "score": 0.4354389634487036
+        },
+        {
+          "law": "03/l-042",
+          "article": "59",
+          "score": 0.4257404878135035
+        },
+        {
+          "law": "04/l-108",
+          "article": "29",
+          "score": 0.4221553596553396
+        },
+        {
+          "law": "06/l-004",
+          "article": "3",
+          "score": 0.42136742962233087
+        }
+      ],
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 1432
+    },
+    {
+      "id": "q035",
+      "category": "direct_citation",
+      "query": "Çfarë përcakton Neni 7 i ligjit 07/L-031?",
+      "expected_law_numbers": [
+        "07/L-031"
+      ],
+      "expected_article_numbers": [
+        "7"
+      ],
+      "path": "citation:exact_start",
+      "retrieved": [
+        {
+          "law": "07/l-031",
+          "article": "7",
+          "score": 0.140942156
+        },
+        {
+          "law": "07/l-031",
+          "article": "7",
+          "score": 0.130514771
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 599
+    },
+    {
+      "id": "q036",
+      "category": "direct_citation",
+      "query": "Çfarë përcakton Neni 29 i ligjit 08/L-237?",
+      "expected_law_numbers": [
+        "08/L-237"
+      ],
+      "expected_article_numbers": [
+        "29"
+      ],
+      "path": "citation:exact_start",
+      "retrieved": [
+        {
+          "law": "08/l-237",
+          "article": "29",
+          "score": 0.12558955
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 619
+    },
+    {
+      "id": "q037",
+      "category": "direct_citation",
+      "query": "Çfarë thotë Neni 4 i Ligjit 08/L-242?",
+      "expected_law_numbers": [
+        "08/L-242"
+      ],
+      "expected_article_numbers": [
+        "4"
+      ],
+      "path": "citation:exact_start",
+      "retrieved": [
+        {
+          "law": "08/l-242",
+          "article": "4",
+          "score": 0.139181077
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 406
+    },
+    {
+      "id": "q038",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: 1. Numri i nëpunësve në Akademi përcaktohet me aktin për organizimin e brendshëm dhe?",
+      "expected_law_numbers": [
+        "05/L-095"
+      ],
+      "expected_article_numbers": [
+        "23"
+      ],
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "05/l-095",
+          "article": "23",
+          "score": 1.0
+        },
+        {
+          "law": "04/l-053",
+          "article": "6",
+          "score": 0.2307750057622147
+        },
+        {
+          "law": "04/l-053",
+          "article": "11",
+          "score": 0.2132320688133572
+        },
+        {
+          "law": "08/l-237",
+          "article": "9",
+          "score": 0.19772210001852367
+        },
+        {
+          "law": "05/l-095",
+          "article": "29",
+          "score": 0.19478347471589472
+        },
+        {
+          "law": "04/l-077",
+          "article": "72",
+          "score": 0.18905776563409227
+        },
+        {
+          "law": "04/l-053",
+          "article": "16",
+          "score": 0.18877950405250815
+        },
+        {
+          "law": "04/l-053",
+          "article": "13",
+          "score": 0.17955816178539064
+        },
+        {
+          "law": "05/l-095",
+          "article": "17",
+          "score": 0.17185298813873162
+        },
+        {
+          "law": "03/l-094",
+          "article": "14",
+          "score": 0.1635504258976549
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 1652
+    },
+    {
+      "id": "q039",
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Ratifikohet Marrëveshja e Financimit ndërmjet Republikës së Kosovës dhe Asociacionit Ndërkombëtar për Zhvillim për Proje?",
+      "expected_law_numbers": [
+        "05/L -011"
+      ],
+      "expected_article_numbers": [
+        "2"
+      ],
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "07/l-003",
+          "article": "2",
+          "score": 1.0
+        },
+        {
+          "law": "07/l-003",
+          "article": "3",
+          "score": 0.779514304009623
+        },
+        {
+          "law": "07/l-003",
+          "article": "1",
+          "score": 0.7528963021401545
+        },
+        {
+          "law": "04/l-266",
+          "article": "2",
+          "score": 0.5940867380254911
+        },
+        {
+          "law": "04/l-266",
+          "article": "1",
+          "score": 0.5104092279262098
+        },
+        {
+          "law": "08/l-069",
+          "article": "2",
+          "score": 0.48543278609911134
+        },
+        {
+          "law": "04/l-234",
+          "article": "1",
+          "score": 0.44218086091382447
+        },
+        {
+          "law": "04/l-266",
+          "article": "3",
+          "score": 0.4296967854135868
+        },
+        {
+          "law": "04/l-234",
+          "article": "3",
+          "score": 0.3964733226184508
+        },
+        {
+          "law": "04/l-234",
+          "article": "4",
+          "score": 0.354957477513339
+        }
+      ],
+      "rank_loose": null,
+      "rank_strict": null,
+      "elapsed_ms": 1666
+    },
+    {
+      "id": "q040",
+      "category": "topic",
+      "query": "Cili ligj flet për kontratës?",
+      "expected_law_numbers": [
+        "04/L-042",
+        "02/L-99",
+        "03/L-241",
+        "04/L-077",
+        "04/L-121"
+      ],
+      "expected_article_numbers": null,
+      "path": "semantic",
+      "retrieved": [
+        {
+          "law": "04/l-077",
+          "article": "57",
+          "score": 0.8787854194323704
+        },
+        {
+          "law": "04/l-077",
+          "article": "167",
+          "score": 0.8763524153327739
+        },
+        {
+          "law": "04/l-077",
+          "article": "127",
+          "score": 0.8581223240429525
+        },
+        {
+          "law": "04/l-077",
+          "article": "441",
+          "score": 0.7743659914730134
+        },
+        {
+          "law": "04/l-077",
+          "article": "22",
+          "score": 0.7741226133192947
+        },
+        {
+          "law": "04/l-077",
+          "article": "51",
+          "score": 0.6651299747597397
+        },
+        {
+          "law": "04/l-077",
+          "article": "76",
+          "score": 0.664832824742345
+        },
+        {
+          "law": "02/l-99",
+          "article": "38",
+          "score": 0.6452194388388917
+        },
+        {
+          "law": "04/l-042",
+          "article": "41",
+          "score": 0.6438654230923342
+        },
+        {
+          "law": "03/l-241",
+          "article": "41",
+          "score": 0.6437477193136707
+        }
+      ],
+      "rank_loose": 1,
+      "rank_strict": 1,
+      "elapsed_ms": 1204
+    }
+  ]
+}

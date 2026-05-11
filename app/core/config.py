@@ -1,6 +1,6 @@
-from typing import List, Optional
-from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl, validator
+from typing import Annotated, List, Optional
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+from pydantic import AnyHttpUrl, field_validator
 from supabase import create_client, Client
 from supabase.lib.client_options import ClientOptions
 
@@ -9,9 +9,15 @@ class Settings(BaseSettings):
     VERSION: str
     DESCRIPTION: str
     API_V1_STR: str = "/api/v1"
-    
+
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = [
+    # `NoDecode` tells pydantic-settings v2 NOT to try `json.loads()` on the
+    # raw env value before our `field_validator(mode="before")` runs. Without
+    # this, a `.env` line like `BACKEND_CORS_ORIGINS=http://localhost:3000`
+    # (a plain string, not JSON) crashes with a JSONDecodeError before the
+    # validator can convert it to a list. Same idea on the other List[str]
+    # env-fed fields below.
+    BACKEND_CORS_ORIGINS: Annotated[List[str], NoDecode] = [
         "http://localhost:3000",  # React app development
         "http://localhost:8000",  # Backend development
         "https://avokati.vercel.app",  # Production frontend
@@ -71,7 +77,7 @@ class Settings(BaseSettings):
     # Upload Directory
     UPLOAD_DIR: str = "uploads"
     MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50MB
-    ALLOWED_UPLOAD_TYPES: List[str] = [
+    ALLOWED_UPLOAD_TYPES: Annotated[List[str], NoDecode] = [
         "application/pdf",
         "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -85,7 +91,7 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
     CELERY_TASK_SERIALIZER: str = "json"
     CELERY_RESULT_SERIALIZER: str = "json"
-    CELERY_ACCEPT_CONTENT: List[str] = ["json"]
+    CELERY_ACCEPT_CONTENT: Annotated[List[str], NoDecode] = ["json"]
     CELERY_TIMEZONE: str = "UTC"
     CELERY_TASK_TRACK_STARTED: bool = True
     CELERY_TASK_TIME_LIMIT: int = 30 * 60  # 30 minutes
@@ -93,32 +99,99 @@ class Settings(BaseSettings):
     CELERY_TASK_MAX_RETRIES: int = 3
     CELERY_TASK_RETRY_DELAY: int = 60  # 1 minute
 
-    @validator("BACKEND_CORS_ORIGINS", pre=True)
-    def assemble_cors_origins(cls, v: str | List[str]) -> List[str]:
-        if isinstance(v, str) and not v.startswith("["):
-            return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+    # Combined with the `NoDecode` annotations above, this validator is now
+    # responsible for parsing list-shaped env values entirely. Operators may
+    # use either form interchangeably:
+    #   BACKEND_CORS_ORIGINS=http://a,http://b           ← comma-separated
+    #   BACKEND_CORS_ORIGINS=["http://a","http://b"]     ← JSON array
+    # Without `NoDecode`, the env source tries `json.loads()` before the
+    # validator runs and crashes on the comma form. Now we own the parsing.
+    @field_validator(
+        "BACKEND_CORS_ORIGINS", "ALLOWED_UPLOAD_TYPES", "CELERY_ACCEPT_CONTENT",
+        mode="before",
+    )
+    @classmethod
+    def parse_list_field(cls, v):
+        if isinstance(v, list):
             return v
+        if isinstance(v, str):
+            s = v.strip()
+            if s.startswith("["):
+                # JSON array form
+                import json
+                try:
+                    parsed = json.loads(s)
+                    if isinstance(parsed, list):
+                        return parsed
+                except json.JSONDecodeError:
+                    pass
+            # Comma-separated string form (or single value with no commas)
+            return [i.strip() for i in s.split(",") if i.strip()]
         raise ValueError(v)
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        case_sensitive=True,
+        extra="ignore",  # tolerate unknown vars in .env (e.g. DEEPSEEK_API_KEY)
+    )
 
 settings = Settings()
 
-# Initialize Supabase client with optimized settings
-supabase: Client = create_client(
-    supabase_url=settings.SUPABASE_URL,
-    supabase_key=settings.SUPABASE_KEY,
-    options=ClientOptions(
-        postgrest_client_timeout=10,
-        storage_client_timeout=10,
-        auto_refresh_token=True,
-        persist_session=True,
-        realtime=dict(
-            eventsPerSecond=10,
-            timeout=60000
+
+# Supabase client is built lazily so importing `app.core.config` does NOT
+# instantiate a network client. Two reasons:
+#   1. The supabase-py `ClientOptions` API changed shape across versions
+#      (older versions accepted `postgrest_client_timeout` etc. as kwargs;
+#      newer versions expect different attribute names like `storage`).
+#      Eager instantiation here was crashing module import for environments
+#      whose pinned supabase version doesn't match what the original code
+#      assumed.
+#   2. AvokAI retrieval / generation does NOT need supabase — only
+#      auth/db modules do. Holding off on creating the client until
+#      something actually asks for it lets retrieval-only deployments
+#      (the eval harness, scripts/build_v2_index.py) skip it entirely.
+#
+# Callers that need the client should `from app.core.config import
+# get_supabase_client` and call it. The instance is memoized.
+_supabase_client: Client | None = None
+
+
+def get_supabase_client() -> Client:
+    """Return the lazily-built Supabase client (memoized)."""
+    global _supabase_client
+    if _supabase_client is not None:
+        return _supabase_client
+
+    # Try the modern kwarg shape first; fall back to bare init if the
+    # installed supabase version rejects unknown kwargs.
+    try:
+        options = ClientOptions(
+            postgrest_client_timeout=10,
+            storage_client_timeout=10,
+            auto_refresh_token=True,
+            persist_session=True,
+            realtime=dict(eventsPerSecond=10, timeout=60000),
         )
-    )
-) 
+        _supabase_client = create_client(
+            supabase_url=settings.SUPABASE_URL,
+            supabase_key=settings.SUPABASE_KEY,
+            options=options,
+        )
+    except (TypeError, AttributeError):
+        # Older or newer supabase-py whose ClientOptions doesn't accept
+        # these kwargs. Use defaults; behavior degrades gracefully.
+        _supabase_client = create_client(
+            supabase_url=settings.SUPABASE_URL,
+            supabase_key=settings.SUPABASE_KEY,
+        )
+    return _supabase_client
+
+
+def __getattr__(name: str):
+    """Module-level lazy accessor: `from app.core.config import supabase`
+    still works for code that already imports the legacy global, but the
+    client only spins up the first time it's actually accessed.
+    """
+    if name == "supabase":
+        return get_supabase_client()
+    raise AttributeError(f"module 'app.core.config' has no attribute {name!r}") 

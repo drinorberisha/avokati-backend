@@ -66,3 +66,9 @@ temp/
 # System Files
 .DS_Store
 Thumbs.db 
+# AvokAI eval / build artifacts
+# v2_index_state.json is rebuild state (which laws are embedded in default_v2).
+# It churns on every `make build-v2` and shouldn't be in git. Eval result
+# snapshots in tests/eval/results/eval_*.json ARE committed because the docs
+# reference them by filename.
+tests/eval/results/v2_index_state.json

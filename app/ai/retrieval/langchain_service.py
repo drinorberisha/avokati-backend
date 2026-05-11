@@ -1,7 +1,10 @@
 import logging
 from typing import List, Dict, Any, Optional, Tuple
 from langchain_openai import ChatOpenAI
-from langchain.chains import RetrievalQA
+# Note: `langchain.chains.RetrievalQA` was used in earlier drafts of this
+# module but is removed in langchain v1.x. The chain is built inline below
+# via `RunnablePassthrough` + `PromptTemplate`, so the legacy import was
+# dead code — removed during the Phase 1 §2.5 backend-import cleanup.
 from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough

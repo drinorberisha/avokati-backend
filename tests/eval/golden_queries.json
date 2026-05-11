@@ -1,0 +1,491 @@
+{
+  "version": 1,
+  "seed": 202605072,
+  "total": 40,
+  "by_category": {
+    "topic": 12,
+    "direct_citation": 12,
+    "status": 8,
+    "article_content": 8
+  },
+  "queries": [
+    {
+      "category": "topic",
+      "query": "Më trego ligjin që rregullon kontratës.",
+      "expected_law_numbers": [
+        "04/L-077",
+        "02/L-99",
+        "03/L-241",
+        "04/L-042",
+        "04/L-121"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: kontratës",
+      "id": "q001"
+    },
+    {
+      "category": "topic",
+      "query": "Më trego ligjin që rregullon gjuhën.",
+      "expected_law_numbers": [
+        "04/L-046",
+        "02/L-37"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: gjuhën",
+      "id": "q002"
+    },
+    {
+      "category": "topic",
+      "query": "Cilat janë dispozitat ligjore për mallrat?",
+      "expected_law_numbers": [
+        "KUV-08/L-247-KOD",
+        "03/L-109",
+        "03/L-170",
+        "04/L-163",
+        "04/L-198"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: mallrat",
+      "id": "q003"
+    },
+    {
+      "category": "topic",
+      "query": "Çfarë thotë legjislacioni për arkitektëve?",
+      "expected_law_numbers": [
+        "08/L-217",
+        "08/L-012"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: arkitektëve",
+      "id": "q004"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Çfarë përcakton Neni 34 i ligjit 04/L-175?",
+      "expected_law_numbers": [
+        "04/L-175"
+      ],
+      "expected_article_numbers": [
+        "34"
+      ],
+      "notes": "Article title: Bashkëpunimi me institucionet tjera profesionale",
+      "id": "q005"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Më trego përmbajtjen e Nenit 2 të Ligjit 03/L-203.",
+      "expected_law_numbers": [
+        "03/L-203"
+      ],
+      "expected_article_numbers": [
+        "2"
+      ],
+      "notes": "Article title: Fusha e zbatimit",
+      "id": "q006"
+    },
+    {
+      "category": "topic",
+      "query": "Çfarë thotë legjislacioni për qeveritare?",
+      "expected_law_numbers": [
+        "08/L-016",
+        "05/L-109",
+        "06/L -133",
+        "06/L-020",
+        "07/L-001"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: qeveritare",
+      "id": "q007"
+    },
+    {
+      "category": "status",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 04/L-223?",
+      "expected_law_numbers": [
+        "04/L-223",
+        "08/L-257"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Abolished by 08/L-257 (full)",
+      "id": "q008"
+    },
+    {
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Ndihma dhe mbrojtja e viktimave të trafikuara me njerëz?",
+      "expected_law_numbers": [
+        "04/L-218"
+      ],
+      "expected_article_numbers": [
+        "20"
+      ],
+      "notes": "Generated from article body excerpt",
+      "id": "q009"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Çfarë përcakton Neni 19 i ligjit 06/L-124?",
+      "expected_law_numbers": [
+        "06/L-124"
+      ],
+      "expected_article_numbers": [
+        "19"
+      ],
+      "notes": "Article title: Ndërprerja e shërbimit",
+      "id": "q010"
+    },
+    {
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Ky Ligj ka për qëllim që të ratifikojë Marrëveshjen për financim ndërmjet Republikës së Kosovës?",
+      "expected_law_numbers": [
+        "07/L-003"
+      ],
+      "expected_article_numbers": [
+        "1"
+      ],
+      "notes": "Generated from article body excerpt",
+      "id": "q011"
+    },
+    {
+      "category": "topic",
+      "query": "Më trego ligjin që rregullon regjistrimit.",
+      "expected_law_numbers": [
+        "04/L-006",
+        "02/L-123",
+        "03/L-237",
+        "04/L-127",
+        "04/L-136"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: regjistrimit",
+      "id": "q012"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Çfarë thotë Neni 2 i Ligjit 06/L-139?",
+      "expected_law_numbers": [
+        "06/L-139"
+      ],
+      "expected_article_numbers": [
+        "2"
+      ],
+      "notes": "Article title: Fushëveprimi i ligjit",
+      "id": "q013"
+    },
+    {
+      "category": "topic",
+      "query": "Çfarë thotë legjislacioni për shkollës?",
+      "expected_law_numbers": [
+        "03/L-018",
+        "2002/2"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: shkollës",
+      "id": "q014"
+    },
+    {
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Autorizim për furnizim me banderola me rastin e importit dhe prodhimit të?",
+      "expected_law_numbers": [
+        "08/L-115"
+      ],
+      "expected_article_numbers": [
+        "11"
+      ],
+      "notes": "Generated from article body excerpt",
+      "id": "q015"
+    },
+    {
+      "category": "status",
+      "query": "A është abroguar Ligji 03/L-082?",
+      "expected_law_numbers": [
+        "03/L-082",
+        "06/L-124"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Abolished by 06/L-124 (full)",
+      "id": "q016"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Cila është dispozita e Nenit 54 në Ligjin 08/L-275?",
+      "expected_law_numbers": [
+        "08/L-275"
+      ],
+      "expected_article_numbers": [
+        "54"
+      ],
+      "notes": "Article title: Përgjegjësi të e inspektorit",
+      "id": "q017"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Çfarë përcakton Neni 4 i ligjit 08/L-299?",
+      "expected_law_numbers": [
+        "08/L-299"
+      ],
+      "expected_article_numbers": [
+        "4"
+      ],
+      "notes": "Article title: Hyrja në fuqi",
+      "id": "q018"
+    },
+    {
+      "category": "status",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 04/L-106?",
+      "expected_law_numbers": [
+        "04/L-106",
+        "08/L-245"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Abolished by 08/L-245 (full)",
+      "id": "q019"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Më trego përmbajtjen e Nenit 5 të Ligjit 03/L-001.",
+      "expected_law_numbers": [
+        "03/L-001"
+      ],
+      "expected_article_numbers": [
+        "5"
+      ],
+      "notes": "Article title: Procedura për marrjen e përfitimit",
+      "id": "q020"
+    },
+    {
+      "category": "topic",
+      "query": "Cili ligj flet për ndërmjet?",
+      "expected_law_numbers": [
+        "06/L-161",
+        "04/L-271",
+        "05/L -011",
+        "05/L -012",
+        "05/L -056"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: ndërmjet",
+      "id": "q021"
+    },
+    {
+      "category": "topic",
+      "query": "Cili ligj flet për aftësi?",
+      "expected_law_numbers": [
+        "03/L-022",
+        "03/L-019",
+        "05/L-078"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: aftësi",
+      "id": "q022"
+    },
+    {
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: 1. Kur produktet e përpunuara, të përftuara në kuadër të përpunimit te brendshëm, lëshohen?",
+      "expected_law_numbers": [
+        "KUV-08/L-247-KOD"
+      ],
+      "expected_article_numbers": [
+        "138"
+      ],
+      "notes": "Generated from article body excerpt",
+      "id": "q023"
+    },
+    {
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Anëtar korrespondent i Akademisë mund të zgjidhet punonjësi i shkencës ose i artit, shtetas i?",
+      "expected_law_numbers": [
+        "05/L-038"
+      ],
+      "expected_article_numbers": [
+        "20"
+      ],
+      "notes": "Generated from article body excerpt",
+      "id": "q024"
+    },
+    {
+      "category": "status",
+      "query": "A është ende në fuqi Ligji 2004/22?",
+      "expected_law_numbers": [
+        "2004/22",
+        "08/L-202"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Abolished by 08/L-202 (full)",
+      "id": "q025"
+    },
+    {
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: 42.1. Kjo pjesë e ligjit vendos kushtet që do të pl otësohen nëse mënyrat e reja të pagesës?",
+      "expected_law_numbers": [
+        "02/L-23"
+      ],
+      "expected_article_numbers": [
+        "42"
+      ],
+      "notes": "Generated from article body excerpt",
+      "id": "q026"
+    },
+    {
+      "category": "status",
+      "query": "A është ende në fuqi Ligji 03/L-120?",
+      "expected_law_numbers": [
+        "03/L-120",
+        "08/L-275"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Abolished by 08/L-275 (full)",
+      "id": "q027"
+    },
+    {
+      "category": "topic",
+      "query": "Cilat janë dispozitat ligjore për vepron?",
+      "expected_law_numbers": [
+        "08/L-082",
+        "02/L-127"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: vepron",
+      "id": "q028"
+    },
+    {
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: Kuota e Republikës së Kosovës në Fondin Monetar Ndërkombëtar do të rritet nga pesëdhjetë e nëntë?",
+      "expected_law_numbers": [
+        "04/L-152"
+      ],
+      "expected_article_numbers": [
+        "2"
+      ],
+      "notes": "Generated from article body excerpt",
+      "id": "q029"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Cila është dispozita e Nenit 3 në Ligjin 05/L-113?",
+      "expected_law_numbers": [
+        "05/L-113"
+      ],
+      "expected_article_numbers": [
+        "3"
+      ],
+      "notes": "Article title: Dokumentet e bashkëngjitura",
+      "id": "q030"
+    },
+    {
+      "category": "status",
+      "query": "A është abroguar Ligji 03/L-165?",
+      "expected_law_numbers": [
+        "03/L-165",
+        "08/L-053"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Abolished by 08/L-053 (full)",
+      "id": "q031"
+    },
+    {
+      "category": "status",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 04/L-102?",
+      "expected_law_numbers": [
+        "04/L-102",
+        "08/L-257"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Abolished by 08/L-257 (full)",
+      "id": "q032"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Sipas Ligjit 02/L-95, Neni 35, çfarë rregullohet?",
+      "expected_law_numbers": [
+        "02/L-95"
+      ],
+      "expected_article_numbers": [
+        "35"
+      ],
+      "notes": "Article title: paragrafi 1 të këtij ligji;",
+      "id": "q033"
+    },
+    {
+      "category": "topic",
+      "query": "Më trego ligjin që rregullon paragrafi.",
+      "expected_law_numbers": [
+        "02/L-128",
+        "02/L-102",
+        "02/L-127",
+        "03/L-004",
+        "03/L-017"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: paragrafi",
+      "id": "q034"
+    },
+    {
+      "category": "topic",
+      "query": "Çfarë thotë legjislacioni për padisë?",
+      "expected_law_numbers": [
+        "08/L-182"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Topic keyword: padisë",
+      "id": "q035"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Më trego përmbajtjen e Nenit 3 të Ligjit 08/L-035.",
+      "expected_law_numbers": [
+        "08/L-035"
+      ],
+      "expected_article_numbers": [
+        "3"
+      ],
+      "notes": "Article title: Hyrja në fuqi",
+      "id": "q036"
+    },
+    {
+      "category": "article_content",
+      "query": "Çfarë thotë ligji për: 1. Çdo person, pavarësisht nga përkatësia, në bazë të racës, ngjyrës, gjinisë, gjuhës, fesë, mendimeve?",
+      "expected_law_numbers": [
+        "04/L-057"
+      ],
+      "expected_article_numbers": [
+        "9"
+      ],
+      "notes": "Generated from article body excerpt",
+      "id": "q037"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Sipas Ligjit 2004/26, Neni 8, çfarë rregullohet?",
+      "expected_law_numbers": [
+        "2004/26"
+      ],
+      "expected_article_numbers": [
+        "8"
+      ],
+      "notes": "Article title: Trashëgimia fitohet me ligj ose testament.",
+      "id": "q038"
+    },
+    {
+      "category": "status",
+      "query": "A është ende në fuqi Ligji 02/L-59?",
+      "expected_law_numbers": [
+        "02/L-59",
+        "08/L-245"
+      ],
+      "expected_article_numbers": null,
+      "notes": "Abolished by 08/L-245 (full)",
+      "id": "q039"
+    },
+    {
+      "category": "direct_citation",
+      "query": "Sipas Ligjit 05/L-084, Neni 49, çfarë rregullohet?",
+      "expected_law_numbers": [
+        "05/L-084"
+      ],
+      "expected_article_numbers": [
+        "49"
+      ],
+      "notes": "Article title: Ankesat në lidhje me tarifat dhe metodologjitë e tarifave",
+      "id": "q040"
+    }
+  ]
+}

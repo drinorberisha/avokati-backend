@@ -46,11 +46,18 @@ celery = "^5.3.0"
 redis = "^4.5.0"
 chardet = "^5.2.0"
 
+# AvokAI pipeline (added during the May 2026 rebuild — see
+# docs/AVOKAI_REBUILD_PLAN.md). pymupdf replaces PyPDF2 for clean Albanian
+# diacritic extraction; rank-bm25 powers query-time hybrid rescoring.
+pymupdf = "^1.24.0"
+rank-bm25 = "^0.2.2"
+
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"
 pytest-asyncio = "^0.23.0"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.10.0"
+asgi-lifespan = "^2.1.0"
 
 [build-system]
 requires = ["poetry-core"]
