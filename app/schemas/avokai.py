@@ -90,6 +90,10 @@ class AskV2Request(BaseModel):
         None,
         description="Optional prior turns in OpenAI message format ({role, content}). Capped at 6 entries server-side.",
     )
+    session_id: Optional[str] = Field(
+        None,
+        description="Optional chat session UUID. If provided, the turn is persisted into chat_messages and the session's last_message_at is bumped. Server rejects if the session isn't owned by the caller.",
+    )
 
 
 class AskV2Response(BaseModel):

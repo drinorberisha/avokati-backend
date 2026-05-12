@@ -530,15 +530,25 @@ async def ask_legal_question(
 #   - Different namespace: defaults to default_v2 instead of legacy default
 # Once the React app is fully migrated, /ask can be deleted.
 
+from uuid import UUID  # noqa: E402
+
 from app.ai.pipeline import answer as pipeline_answer  # noqa: E402
 from app.ai.v2_adapter import adapt_pipeline_result_to_v2  # noqa: E402
 from app.schemas.avokai import AskV2Request, AskV2Response  # noqa: E402
+from app.schemas.chat import (  # noqa: E402
+    ChatSessionCreate,
+    ChatSessionDetail,
+    ChatSessionSummary,
+    ChatSessionUpdate,
+)
+from app.crud import chat as chat_crud  # noqa: E402
 
 
 @router.post("/ask-v2", response_model=AskV2Response)
 async def ask_legal_question_v2(
     request: AskV2Request,
     current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """Single-call rich answer for AvokAI.
 
@@ -547,6 +557,11 @@ async def ask_legal_question_v2(
     search + ask double-call pattern. Adapter logic lives in
     `app.ai.v2_adapter` so it can be unit-tested without the FastAPI / DB
     stack.
+
+    If `session_id` is provided AND owned by the caller, the user+assistant
+    turn is persisted into `chat_messages` after generation. Persistence
+    failures don't fail the request — the answer still goes back to the
+    user; we just log the storage error.
     """
     history = list(request.conversation_history or [])[-6:]
     result = pipeline_answer(
@@ -555,7 +570,111 @@ async def ask_legal_question_v2(
         use_llm=request.use_llm,
         conversation_history=history if history else None,
     )
-    return adapt_pipeline_result_to_v2(result)
+    response = adapt_pipeline_result_to_v2(result)
+
+    # Best-effort persistence. The pipeline already ran; if storage fails
+    # we still want the user to see their answer.
+    if request.session_id:
+        try:
+            sid = UUID(request.session_id)
+            await chat_crud.append_turn(
+                db,
+                session_id=sid,
+                user_id=current_user.id,
+                user_content=request.query,
+                assistant_content=response.answer,
+                intent=response.intent,
+                sources=[s.model_dump() for s in response.sources],
+                citations=[c.model_dump() for c in response.citations],
+                abolishment_warnings=list(response.abolishment_warnings),
+                llm_usage=response.llm_usage.model_dump() if response.llm_usage else None,
+                elapsed_ms=response.elapsed_ms,
+            )
+        except (ValueError, Exception) as e:
+            logger.warning("ask-v2 persistence failed for session %s: %r", request.session_id, e)
+
+    return response
+
+
+# ---- /legal-ai/chat/sessions: persistent chat history --------------------
+# Per-user private chat sessions. Routing decisions: auto-create on first
+# message (frontend POSTs an empty session, then sends turns via /ask-v2
+# with the new session_id). Forever retention, manual delete only. Future
+# extension: shared/team sessions via a join table on chat_sessions.
+
+@router.post("/chat/sessions", response_model=ChatSessionSummary, status_code=status.HTTP_201_CREATED)
+async def create_chat_session(
+    body: Optional[ChatSessionCreate] = None,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a new (empty) chat session for the current user.
+
+    The body is optional. If omitted, the session is created with the default
+    Albanian placeholder title ("Bisedë e re"), to be replaced automatically
+    when the first user message is appended by /ask-v2.
+    """
+    title = body.title if body else None
+    session = await chat_crud.create_session(db, current_user.id, title=title)
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create chat session",
+        )
+    return session
+
+
+@router.get("/chat/sessions", response_model=List[ChatSessionSummary])
+async def list_chat_sessions(
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List the current user's chat sessions, newest activity first."""
+    return await chat_crud.list_sessions(db, current_user.id)
+
+
+@router.get("/chat/sessions/{session_id}", response_model=ChatSessionDetail)
+async def get_chat_session(
+    session_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Fetch a session with all its messages.
+
+    404 if the session doesn't exist or isn't owned by the caller (no
+    information leak about other users' sessions).
+    """
+    session = await chat_crud.get_session(db, session_id, current_user.id, with_messages=True)
+    if session is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    return session
+
+
+@router.patch("/chat/sessions/{session_id}", response_model=ChatSessionSummary)
+async def rename_chat_session(
+    session_id: UUID,
+    body: ChatSessionUpdate,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Rename a chat session."""
+    session = await chat_crud.update_session_title(db, session_id, current_user.id, body.title)
+    if session is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    return session
+
+
+@router.delete("/chat/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_chat_session(
+    session_id: UUID,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete a chat session and all its messages (cascade)."""
+    ok = await chat_crud.delete_session(db, session_id, current_user.id)
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
+    return None
 
 
 @router.post("/scrape", response_model=Dict[str, Any])

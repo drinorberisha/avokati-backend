@@ -6,6 +6,7 @@ from app.db.models.document_version import DocumentVersion
 from app.db.models.document_collaborator import DocumentCollaborator, CollaboratorRole
 from app.db.models.audit import AuditLog
 from app.db.models.legal_document import LegalDocument
+from app.db.models.chat_session import ChatSession, ChatMessage
 
 # Export all models and enums
 __all__ = [
@@ -16,7 +17,8 @@ __all__ = [
     'DocumentVersion',
     'DocumentCollaborator', 'CollaboratorRole',
     'AuditLog',
-    'LegalDocument'
+    'LegalDocument',
+    'ChatSession', 'ChatMessage',
 ]
 
 # This ensures all models are imported in the correct order 
