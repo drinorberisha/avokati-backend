@@ -48,9 +48,12 @@ chardet = "^5.2.0"
 
 # AvokAI pipeline (added during the May 2026 rebuild — see
 # docs/AVOKAI_REBUILD_PLAN.md). pymupdf replaces PyPDF2 for clean Albanian
-# diacritic extraction; rank-bm25 powers query-time hybrid rescoring.
+# diacritic extraction; rank-bm25 powers query-time hybrid rescoring;
+# sentence-transformers loads the BAAI/bge-reranker-v2-m3 cross-encoder
+# for topic-category quality improvements (Phase 2 reranker, May 2026).
 pymupdf = "^1.24.0"
 rank-bm25 = "^0.2.2"
+sentence-transformers = "^3.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0.0"

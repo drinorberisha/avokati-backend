@@ -35,6 +35,18 @@ async def lifespan(app: FastAPI):
     await initialize_db()
     logger.info("Database connection initialized")
 
+    # Warm up the cross-encoder reranker so the first user query doesn't pay
+    # the 3-5s model-load cost. Runs in a thread because sentence-transformers
+    # is sync. Failure is non-fatal: pipeline.py falls back to BM25-only order.
+    import asyncio
+    from app.ai import reranker as _reranker
+    if _reranker.is_enabled():
+        try:
+            ok = await asyncio.to_thread(_reranker.warmup)
+            logger.info("reranker warmup: %s", "ok" if ok else "failed (degraded mode)")
+        except Exception as e:
+            logger.warning("reranker warmup raised: %r", e)
+
     yield
 
     # Shutdown

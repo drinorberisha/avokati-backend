@@ -38,6 +38,11 @@ from app.ai.citation_validator import (
     validate_against_sources,
 )
 from app.ai.prompts.legal_qa_sq import build_messages
+from app.ai.reranker import (
+    RERANK_POOL_SIZE,
+    is_enabled as reranker_enabled,
+    rerank as cross_encoder_rerank,
+)
 from app.ai.router import (
     GREETING_RESPONSE,
     OUT_OF_SCOPE_RESPONSE,
@@ -113,7 +118,16 @@ def _embed_query(query: str) -> list[float]:
 
 
 def _semantic_retrieve(query: str, namespace: str) -> list[dict[str, Any]]:
-    """Dense top-200 from Pinecone, rescored to top-K by query-time BM25."""
+    """Dense top-200 → BM25-rescored top-20 → cross-encoder reranked top-K.
+
+    The reranker is applied to the BM25-rescored pool, not the dense top-200
+    directly: BM25 cuts lexical noise cheaply, and cross-encoder inference is
+    O(n) in candidate count. We only spend the reranker budget on candidates
+    BM25 already thinks are relevant.
+
+    If the reranker is disabled or fails to load, we degrade gracefully:
+    `cross_encoder_rerank` returns the input order unchanged.
+    """
     index = _pinecone_index()
     emb = _embed_query(query)
     res = index.query(
@@ -133,7 +147,15 @@ def _semantic_retrieve(query: str, namespace: str) -> list[dict[str, Any]]:
                 "content": meta.get("content") or meta.get("text") or "",
             }
         )
-    return bm25_rescore(query, pool, alpha=RESCORE_ALPHA, top_k=TOP_K)
+
+    # Wide pool for the reranker if enabled; otherwise just the final TOP_K.
+    bm25_top_k = RERANK_POOL_SIZE if reranker_enabled() else TOP_K
+    bm25_results = bm25_rescore(query, pool, alpha=RESCORE_ALPHA, top_k=bm25_top_k)
+
+    if not reranker_enabled():
+        return bm25_results
+
+    return cross_encoder_rerank(query, bm25_results, top_k=TOP_K)
 
 
 def _citation_retrieve(decision: RoutingDecision, namespace: str) -> dict[str, Any]:
