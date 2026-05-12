@@ -482,4 +482,300 @@ def _warning_already_in_text(text: str, warnings: list[str]) -> bool:
     return True
 
 
-__all__ = ["AnswerResult", "answer"]
+# ----- streaming variant (for the SSE /ask-v2/stream endpoint) -----------
+#
+# Async generator that yields typed events as the pipeline progresses, so
+# the frontend can render route + sources within ~2s and start showing
+# Albanian tokens within ~3-5s instead of waiting for the full ~2-3 min
+# generation.
+#
+# Event shape: `("event_name", payload_dict)`. The frontend SSE consumer
+# turns each tuple into a `event: name\ndata: <json>\n\n` block.
+#
+# Events fired (in order; not all fire for every route):
+#   route                 — always; carries intent + reason + namespace + parsed citation
+#   sources               — when retrieval produced any chunks (semantic, citation_lookup, status_lookup)
+#   abolishment_warnings  — when warnings were generated
+#   delta                 — repeatedly, when LLM streams tokens (semantic + citation_lookup paths)
+#   done                  — always; carries final validated answer, citations, llm_usage, elapsed_ms
+#   error                 — replaces `done` when the pipeline raises (e.g. embedding unavailable)
+
+
+async def answer_stream(
+    query: str,
+    *,
+    namespace: str | None = None,
+    use_llm: bool = True,
+    conversation_history: list[dict[str, str]] | None = None,
+):
+    """Streaming variant of `answer()` for the SSE endpoint.
+
+    Yields `(event_name, payload)` tuples. Same logic as `answer()` but
+    routes that have an LLM call stream the tokens via DeepSeek's
+    `stream=True` mode instead of waiting for the full response.
+
+    Retrieval primitives are still sync (Pinecone, BM25, reranker) — they
+    run inline because each is fast enough (< 4s combined) to not bother
+    offloading to a thread for a single user.
+
+    Errors are surfaced as `("error", {"message": ...})` rather than raised
+    — the SSE endpoint cannot reasonably bubble an exception once the
+    response stream has started.
+    """
+    import asyncio  # local to keep top-of-file imports unchanged
+
+    t0 = time.time()
+    ns = namespace or DEFAULT_NAMESPACE
+    decision = classify(query)
+    trace: dict[str, Any] = {
+        "intent": decision.intent,
+        "reason": decision.reason,
+        "namespace": ns,
+        "citation_parsed": (
+            {
+                "law_number": decision.citation.law_number,
+                "article_number": decision.citation.article_number,
+            }
+            if decision.citation
+            else None
+        ),
+    }
+    yield ("route", dict(trace))
+
+    # --- non-LLM short-circuit paths ----------------------------------
+    if decision.intent == "greeting":
+        elapsed = int((time.time() - t0) * 1000)
+        yield (
+            "done",
+            {
+                "answer": GREETING_RESPONSE,
+                "sources": [],
+                "citations": [],
+                "citation_summary": {},
+                "abolishment_warnings": [],
+                "intent": "greeting",
+                "elapsed_ms": elapsed,
+                "llm_usage": None,
+                "route_trace": trace,
+            },
+        )
+        return
+
+    if decision.intent == "out_of_scope":
+        elapsed = int((time.time() - t0) * 1000)
+        yield (
+            "done",
+            {
+                "answer": OUT_OF_SCOPE_RESPONSE,
+                "sources": [],
+                "citations": [],
+                "citation_summary": {},
+                "abolishment_warnings": [],
+                "intent": "out_of_scope",
+                "elapsed_ms": elapsed,
+                "llm_usage": None,
+                "route_trace": trace,
+            },
+        )
+        return
+
+    # --- retrieval -----------------------------------------------------
+    registry = AbolishmentRegistry.get()
+    sources: list[dict[str, Any]] = []
+    deterministic_answer: str | None = None
+
+    try:
+        if decision.intent == "status_lookup":
+            info = registry.lookup(decision.citation.law_number)  # type: ignore[union-attr]
+            sources = render_synthetic_chunks(info)
+            deterministic_answer = sources[0]["content"] if sources else (
+                f"Statusi i Ligjit {decision.citation.law_number} nuk gjendet në regjistrin e shfuqizimit."  # type: ignore[union-attr]
+            )
+            trace["abolishment_status"] = info.status
+
+        elif decision.intent == "citation_lookup":
+            # _citation_retrieve is sync (Pinecone metadata filter). Fast
+            # enough to run inline.
+            lookup = await asyncio.to_thread(_citation_retrieve, decision, ns)
+            if lookup["matches"]:
+                sources = [
+                    {
+                        "id": m["id"],
+                        "metadata": m["metadata"],
+                        "score": m["score"],
+                        "content": m["content"],
+                    }
+                    for m in lookup["matches"]
+                ]
+                trace["citation_match_quality"] = lookup["article_match_quality"]
+                trace["matched_law_variant"] = lookup["matched_law_variant"]
+            else:
+                trace["citation_miss"] = True
+                decision = RoutingDecision(
+                    "semantic_question", decision.citation, "citation_miss_fallback"
+                )
+
+        if decision.intent == "semantic_question" and not sources:
+            sources = await asyncio.to_thread(_semantic_retrieve, query, ns)
+    except Exception as e:
+        # Most likely EmbeddingUnavailableError. Surface clearly and stop.
+        yield (
+            "error",
+            {
+                "code": getattr(e, "code", "RETRIEVAL_FAILED"),
+                "message": str(e) or "Retrieval failed",
+            },
+        )
+        return
+
+    warnings = _abolishment_warnings(sources, registry)
+    if sources:
+        # Emit only what the UI needs to render the sidebar — same shape as
+        # the existing AskV2Response.sources after v2_adapter, but adapter
+        # transforms aren't strictly needed here because the frontend just
+        # passes them through to AvokAiSourceList.
+        yield ("sources", {"sources": sources})
+    if warnings:
+        yield ("abolishment_warnings", {"warnings": warnings})
+
+    # --- generation ----------------------------------------------------
+    final_answer: str
+    llm_usage: dict[str, Any] | None = None
+
+    primary_id: str | None = None
+    if (
+        decision.intent == "citation_lookup"
+        and trace.get("citation_match_quality") == "exact_start"
+        and sources
+    ):
+        primary_id = sources[0].get("id")
+
+    if deterministic_answer is not None:
+        final_answer = deterministic_answer
+        if warnings and not _warning_already_in_text(final_answer, warnings):
+            final_answer = "⚠️ KUJDES: " + warnings[0] + ". " + final_answer
+        # No LLM streaming; emit the full text as a single delta so the
+        # frontend's incremental render code-path is uniform across routes.
+        yield ("delta", {"text": final_answer})
+    elif not use_llm:
+        final_answer = "[retrieval-only mode; no LLM answer generated]"
+        yield ("delta", {"text": final_answer})
+    elif not sources:
+        final_answer = (
+            "Nuk kam informacion të mjaftueshëm në bazën e të dhënave për "
+            "të dhënë një përgjigje të verifikueshme për këtë pyetje."
+        )
+        yield ("delta", {"text": final_answer})
+    else:
+        try:
+            from app.ai.llm import acomplete_stream
+
+            messages = build_messages(
+                question=query,
+                sources=sources,
+                abolishment_warnings=warnings,
+                conversation_history=conversation_history,
+                primary_source_id=primary_id,
+            )
+            buf_parts: list[str] = []
+            async for event_type, payload in acomplete_stream(messages, temperature=0.1):
+                if event_type == "delta":
+                    buf_parts.append(payload)
+                    yield ("delta", {"text": payload})
+                elif event_type == "done":
+                    result = payload  # CompletionResult
+                    llm_usage = {
+                        "model": result.model,
+                        "prompt_tokens": result.prompt_tokens,
+                        "completion_tokens": result.completion_tokens,
+                        "cached_tokens": result.cached_tokens,
+                        "usd_cost_estimate": round(result.usd_cost_estimate(), 6),
+                        "finish_reason": result.finish_reason,
+                    }
+            final_answer = "".join(buf_parts)
+        except Exception as e:
+            trace["llm_error"] = repr(e)
+            final_answer = (
+                "Ndodhi një gabim teknik gjatë gjenerimit të përgjigjes. "
+                "Burimet e marra janë në dispozicion më poshtë për referencë."
+            )
+            yield ("delta", {"text": final_answer})
+
+    # --- validation + final event -------------------------------------
+    authoritative_laws: set[str] = set()
+    for s in sources:
+        meta = s.get("metadata") or s.get("document_metadata") or {}
+        if meta.get("synthetic"):
+            law = (meta.get("law_number") or "").strip().upper().replace(" ", "")
+            if law:
+                authoritative_laws.add(law)
+    import re as _re_pipe
+    _law_re = _re_pipe.compile(r"(?:KUV-)?\d{1,2}/L-\d{1,4}[A-Za-z0-9-]*|(?:19|20)\d{2}/\d{1,3}")
+    for w in warnings:
+        for m in _law_re.finditer(w):
+            authoritative_laws.add(m.group(0).upper().replace(" ", ""))
+
+    extracted = extract_citations(final_answer)
+    validated = validate_against_sources(extracted, sources, authoritative_laws=authoritative_laws)
+    annotated_answer = annotate_unverified(final_answer, validated)
+    citation_summary = summarize_citations(validated)
+    citation_records = [
+        {
+            "raw": v.citation.raw,
+            "law_number": v.citation.law_number,
+            "article_number": v.citation.article_number,
+            "verified": v.verified,
+            "matched_source_id": v.matched_source_id,
+        }
+        for v in validated
+    ]
+
+    elapsed_ms_total = int((time.time() - t0) * 1000)
+
+    # Emit the same structured cost/latency log line as the non-streaming
+    # `answer()` so we get consistent observability across endpoints.
+    try:
+        import hashlib as _hashlib
+        import json as _json
+        _log_payload = {
+            "event": "avokai_query",
+            "intent": decision.intent,
+            "route_reason": decision.reason,
+            "namespace": ns,
+            "query_hash": _hashlib.sha1((query or "").encode("utf-8")).hexdigest()[:12],
+            "query_len": len(query or ""),
+            "sources_count": len(sources),
+            "abolishment_warnings_count": len(warnings),
+            "citations_total": citation_summary.get("total", 0) if isinstance(citation_summary, dict) else 0,
+            "citations_verified": citation_summary.get("verified", 0) if isinstance(citation_summary, dict) else 0,
+            "elapsed_ms_total": elapsed_ms_total,
+            "llm_model": (llm_usage or {}).get("model"),
+            "llm_prompt_tokens": (llm_usage or {}).get("prompt_tokens"),
+            "llm_completion_tokens": (llm_usage or {}).get("completion_tokens"),
+            "llm_cached_tokens": (llm_usage or {}).get("cached_tokens"),
+            "llm_usd_cost": (llm_usage or {}).get("usd_cost_estimate"),
+            "llm_used": llm_usage is not None,
+            "had_llm_error": "llm_error" in trace,
+            "streamed": True,
+        }
+        print("avokai_query_log " + _json.dumps(_log_payload, separators=(",", ":")))
+    except Exception:
+        pass
+
+    yield (
+        "done",
+        {
+            "answer": annotated_answer,
+            "sources": sources,
+            "citations": citation_records,
+            "citation_summary": citation_summary,
+            "abolishment_warnings": warnings,
+            "intent": decision.intent,
+            "elapsed_ms": elapsed_ms_total,
+            "llm_usage": llm_usage,
+            "route_trace": trace,
+        },
+    )
+
+
+__all__ = ["AnswerResult", "answer", "answer_stream"]

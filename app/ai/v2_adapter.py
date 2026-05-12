@@ -19,6 +19,72 @@ from app.schemas.avokai import (
 )
 
 
+def adapt_source_for_v2(
+    s: dict,
+    *,
+    catalog: LawCatalog | None = None,
+    registry: AbolishmentRegistry | None = None,
+    primary_source_id: str | None = None,
+    cited_source_ids: set[str] | None = None,
+) -> "SourceCard":
+    """Build one SourceCard from a raw pipeline source dict.
+
+    Extracted from `adapt_pipeline_result_to_v2` so the SSE endpoint can
+    emit per-source events without waiting for the full result. Citation
+    info (`is_cited`) is only populated when `cited_source_ids` is passed —
+    the streaming path emits sources BEFORE the LLM answer is validated,
+    so is_cited starts False and gets refreshed by the final `done` event.
+    """
+    catalog = catalog or LawCatalog.get()
+    registry = registry or AbolishmentRegistry.get()
+    cited_source_ids = cited_source_ids or set()
+
+    meta = s.get("metadata") or {}
+    law = meta.get("law_number") or ""
+    chunk_id = s.get("id") or meta.get("chunk_id") or ""
+    chunk_type = meta.get("chunk_type") or "article"
+    score = float(s.get("score") or 0.0)
+
+    info = registry.lookup(law) if law else None
+    is_abolished = bool(info) and info.status in (
+        "fully_abolished",
+        "partially_abolished",
+    )
+    abolished_by = (
+        [(r.get("abolishing_law") or {}).get("law_number") for r in info.abolished_by]
+        if info
+        else []
+    )
+    abolished_by = [x for x in abolished_by if x]
+
+    cat = catalog.lookup(law) if law else None
+
+    return SourceCard(
+        id=chunk_id,
+        law_number=law or "?",
+        law_title=(cat.title if cat else None) or meta.get("law_title"),
+        article_number=meta.get("article_number") or None,
+        article_title=meta.get("article_title") or None,
+        chapter_number=meta.get("chapter_number") or None,
+        chapter_title=meta.get("chapter_title") or None,
+        chunk_type=chunk_type,
+        content=s.get("content") or meta.get("content") or "",
+        content_truncated=bool(meta.get("content_truncated")),
+        score=score,
+        score_band=score_to_band(score, chunk_type),
+        is_primary=(chunk_id == primary_source_id),
+        is_cited=(chunk_id in cited_source_ids),
+        is_abolished=is_abolished,
+        abolished_by=abolished_by,
+        abolishment_type=(
+            info.status.replace("_abolished", "") if info and is_abolished else None
+        ),
+        publication_date=cat.publication_date_iso if cat else None,
+        gazette_number=cat.gazette_number if cat else None,
+        law_url=cat.url if cat else None,
+    )
+
+
 def score_to_band(score: float, chunk_type: str) -> ScoreBand:
     """Bucket a raw retrieval score into a UI-friendly band.
 
@@ -66,54 +132,16 @@ def adapt_pipeline_result_to_v2(
     ):
         primary_source_id = result.sources[0].get("id")
 
-    cards: list[SourceCard] = []
-    for s in result.sources:
-        meta = s.get("metadata") or {}
-        law = meta.get("law_number") or ""
-        chunk_id = s.get("id") or meta.get("chunk_id") or ""
-        chunk_type = meta.get("chunk_type") or "article"
-        score = float(s.get("score") or 0.0)
-
-        info = registry.lookup(law) if law else None
-        is_abolished = bool(info) and info.status in (
-            "fully_abolished",
-            "partially_abolished",
+    cards: list[SourceCard] = [
+        adapt_source_for_v2(
+            s,
+            catalog=catalog,
+            registry=registry,
+            primary_source_id=primary_source_id,
+            cited_source_ids=cited_source_ids,
         )
-        abolished_by = (
-            [(r.get("abolishing_law") or {}).get("law_number") for r in info.abolished_by]
-            if info
-            else []
-        )
-        abolished_by = [x for x in abolished_by if x]
-
-        cat = catalog.lookup(law) if law else None
-
-        cards.append(
-            SourceCard(
-                id=chunk_id,
-                law_number=law or "?",
-                law_title=(cat.title if cat else None) or meta.get("law_title"),
-                article_number=meta.get("article_number") or None,
-                article_title=meta.get("article_title") or None,
-                chapter_number=meta.get("chapter_number") or None,
-                chapter_title=meta.get("chapter_title") or None,
-                chunk_type=chunk_type,
-                content=s.get("content") or meta.get("content") or "",
-                content_truncated=bool(meta.get("content_truncated")),
-                score=score,
-                score_band=score_to_band(score, chunk_type),
-                is_primary=(chunk_id == primary_source_id),
-                is_cited=(chunk_id in cited_source_ids),
-                is_abolished=is_abolished,
-                abolished_by=abolished_by,
-                abolishment_type=(
-                    info.status.replace("_abolished", "") if info and is_abolished else None
-                ),
-                publication_date=cat.publication_date_iso if cat else None,
-                gazette_number=cat.gazette_number if cat else None,
-                law_url=cat.url if cat else None,
-            )
-        )
+        for s in result.sources
+    ]
 
     citations = [
         CitationRecord(
@@ -141,4 +169,4 @@ def adapt_pipeline_result_to_v2(
     )
 
 
-__all__ = ["adapt_pipeline_result_to_v2", "score_to_band"]
+__all__ = ["adapt_pipeline_result_to_v2", "adapt_source_for_v2", "score_to_band"]

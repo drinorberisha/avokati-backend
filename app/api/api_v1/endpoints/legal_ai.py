@@ -615,6 +615,143 @@ async def ask_legal_question_v2(
     return response
 
 
+# ---- /legal-ai/ask-v2/stream: SSE streaming variant ---------------------
+# Same logic as /ask-v2 but streams typed events so the user sees Albanian
+# tokens within a few seconds instead of waiting for the full ~2-3 min
+# generation. Browsers' EventSource doesn't support POST or Authorization
+# headers, so the frontend uses fetch() + ReadableStream to consume this.
+#
+# Event types (each emitted as `event: <name>\ndata: <json>\n\n`):
+#   route                — intent + reason (fires immediately after classify)
+#   sources              — retrieved chunks (fires after retrieval, before LLM)
+#   abolishment_warnings — warning strings (when applicable)
+#   delta                — { "text": "..." } per LLM token chunk
+#   done                 — final validated answer + citations + llm_usage + elapsed_ms
+#   error                — { code, message } on failure (replaces `done`)
+
+from fastapi.responses import StreamingResponse  # noqa: E402
+from app.ai.pipeline import answer_stream as pipeline_answer_stream  # noqa: E402
+from app.ai.v2_adapter import adapt_source_for_v2  # noqa: E402
+
+
+def _sse_format(event: str, payload: Any) -> str:
+    """Format one SSE event. Newlines in the JSON are not a problem because
+    we serialize compactly (no indentation), but we still need the trailing
+    blank line to flush the event.
+    """
+    import json as _json
+    return f"event: {event}\ndata: {_json.dumps(payload, ensure_ascii=False, separators=(',', ':'))}\n\n"
+
+
+@router.post("/ask-v2/stream")
+async def ask_legal_question_v2_stream(
+    request: AskV2Request,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """SSE streaming version of /ask-v2.
+
+    Same request body. Returns `text/event-stream`. Errors that happen
+    BEFORE the stream starts (auth, validation) come back as normal HTTP
+    errors; errors AFTER the stream has begun are emitted as an `error`
+    SSE event because we can't change the response status code mid-stream.
+    """
+    history = list(request.conversation_history or [])[-6:]
+    session_uuid: UUID | None = None
+    if request.session_id:
+        try:
+            session_uuid = UUID(request.session_id)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="invalid session_id",
+            )
+
+    async def event_generator():
+        accumulated_answer = ""
+        final_payload: dict[str, Any] | None = None
+        try:
+            async for event_name, payload in pipeline_answer_stream(
+                request.query,
+                namespace=request.namespace,
+                use_llm=request.use_llm,
+                conversation_history=history if history else None,
+            ):
+                # Mirror v2_adapter shape for the `sources` event so the
+                # frontend's existing AvokAiSourceCard renderer works without
+                # branching on whether the data came from /ask-v2 or
+                # /ask-v2/stream.
+                if event_name == "sources":
+                    raw_sources = payload.get("sources", [])
+                    enriched = [adapt_source_for_v2(s) for s in raw_sources]
+                    yield _sse_format("sources", {"sources": [e.model_dump() for e in enriched]})
+                elif event_name == "delta":
+                    text = payload.get("text", "")
+                    accumulated_answer += text
+                    yield _sse_format("delta", {"text": text})
+                elif event_name == "done":
+                    final_payload = payload
+                    # Mirror the v2 sidebar shape for sources in `done` too,
+                    # so a client that only listens to `done` (e.g. an eval
+                    # harness) gets the same structure as the legacy endpoint.
+                    raw_sources = payload.get("sources") or []
+                    enriched_sources = [adapt_source_for_v2(s).model_dump() for s in raw_sources]
+                    out = {
+                        "answer": payload.get("answer", ""),
+                        "intent": payload.get("intent"),
+                        "sources": enriched_sources,
+                        "citations": payload.get("citations", []),
+                        "abolishment_warnings": payload.get("abolishment_warnings", []),
+                        "llm_usage": payload.get("llm_usage"),
+                        "elapsed_ms": payload.get("elapsed_ms", 0),
+                        "route_trace": payload.get("route_trace", {}),
+                    }
+                    yield _sse_format("done", out)
+                else:
+                    yield _sse_format(event_name, payload)
+        except Exception as e:
+            logger.exception("ask-v2/stream: pipeline error")
+            yield _sse_format(
+                "error",
+                {"code": "PIPELINE_ERROR", "message": repr(e)},
+            )
+
+        # Best-effort persistence — runs after the stream has finished
+        # producing events but before the connection closes. Same rule as
+        # the non-streaming endpoint: storage failure must not be visible
+        # to the user (their answer is already on screen).
+        if session_uuid is not None and final_payload is not None:
+            try:
+                await chat_crud.append_turn(
+                    db,
+                    session_id=session_uuid,
+                    user_id=current_user.id,
+                    user_content=request.query,
+                    assistant_content=final_payload.get("answer") or accumulated_answer,
+                    intent=final_payload.get("intent"),
+                    sources=final_payload.get("sources") or [],
+                    citations=final_payload.get("citations") or [],
+                    abolishment_warnings=list(final_payload.get("abolishment_warnings") or []),
+                    llm_usage=final_payload.get("llm_usage"),
+                    elapsed_ms=final_payload.get("elapsed_ms"),
+                )
+            except Exception as e:
+                logger.warning("ask-v2/stream persistence failed for session %s: %r", session_uuid, e)
+
+    # `X-Accel-Buffering: no` disables nginx-style proxy buffering. Cloud
+    # Run's Google Front End respects it and flushes events as they're
+    # produced; without it, GFE may buffer up to a few seconds of output.
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
+
+
 # ---- /legal-ai/chat/sessions: persistent chat history --------------------
 # Per-user private chat sessions. Routing decisions: auto-create on first
 # message (frontend POSTs an empty session, then sends turns via /ask-v2

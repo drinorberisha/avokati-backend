@@ -84,7 +84,7 @@ class CompletionResult:
 
 
 def get_client():
-    """Return an OpenAI SDK client configured for the DeepSeek API.
+    """Return a sync OpenAI SDK client configured for the DeepSeek API.
 
     Lazy-imported so this module is still importable without `openai`
     installed (e.g. during chunker-only unit tests).
@@ -97,6 +97,23 @@ def get_client():
         )
     from openai import OpenAI
     return OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
+
+
+def get_async_client():
+    """Async OpenAI SDK client for streaming (used by SSE endpoint).
+
+    Separate from the sync client because the SDK keeps a per-client
+    connection pool; mixing them in the same module is fine but each is
+    its own resource.
+    """
+    api_key = os.environ.get("DEEPSEEK_API_KEY")
+    if not api_key:
+        raise RuntimeError(
+            "DEEPSEEK_API_KEY is not set. Add it to backend/.env to enable "
+            "AvokAI generation. Embeddings still use OPENAI_API_KEY."
+        )
+    from openai import AsyncOpenAI
+    return AsyncOpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
 
 
 def complete(
@@ -160,11 +177,94 @@ def complete(
     )
 
 
+async def acomplete_stream(
+    messages: list[ChatMessage] | list[dict[str, str]],
+    *,
+    model: str | None = None,
+    temperature: float = 0.1,
+    max_tokens: int | None = None,
+    fast: bool = False,
+):
+    """Async streaming completion against DeepSeek.
+
+    Async generator yielding `("delta", str)` for each token chunk, ending
+    with `("done", CompletionResult)` where the result has the full
+    accumulated text and final usage counts. Usage tokens are only present
+    in the final chunk when `stream_options={"include_usage": True}` is
+    set, which DeepSeek (OpenAI-compatible) supports.
+
+    Designed for the SSE `/ask-v2/stream` endpoint — yields fast (sub-100ms
+    to first chunk on warm path), so users see Albanian text appear within
+    a few seconds instead of waiting for the full ~2-3 minute generation.
+    """
+    client = get_async_client()
+    model_name = model or (FAST_MODEL if fast else PRIMARY_MODEL)
+
+    if messages and isinstance(messages[0], ChatMessage):
+        payload = [{"role": m.role, "content": m.content} for m in messages]
+    else:
+        payload = list(messages)  # type: ignore[arg-type]
+
+    kwargs: dict[str, Any] = {
+        "model": model_name,
+        "messages": payload,
+        "temperature": temperature,
+        "stream": True,
+        "stream_options": {"include_usage": True},
+    }
+    if max_tokens is not None:
+        kwargs["max_tokens"] = max_tokens
+
+    full_text_parts: list[str] = []
+    finish_reason: str | None = None
+    prompt_tokens = completion_tokens = cached_tokens = 0
+
+    stream = await client.chat.completions.create(**kwargs)
+    async for chunk in stream:
+        choices = getattr(chunk, "choices", None) or []
+        if choices:
+            choice = choices[0]
+            delta = getattr(choice, "delta", None)
+            if delta is not None:
+                text = getattr(delta, "content", None) or ""
+                if text:
+                    full_text_parts.append(text)
+                    yield ("delta", text)
+            fr = getattr(choice, "finish_reason", None)
+            if fr:
+                finish_reason = fr
+        # The final chunk in stream mode (with include_usage=True) carries
+        # the usage block under `usage` and no `choices` content.
+        usage = getattr(chunk, "usage", None)
+        if usage is not None:
+            prompt_tokens = getattr(usage, "prompt_tokens", 0) or 0
+            completion_tokens = getattr(usage, "completion_tokens", 0) or 0
+            cached_tokens = (
+                getattr(usage, "prompt_cache_hit_tokens", None)
+                or getattr(usage, "cached_tokens", None)
+                or 0
+            )
+
+    yield (
+        "done",
+        CompletionResult(
+            text="".join(full_text_parts),
+            model=model_name,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            cached_tokens=int(cached_tokens),
+            finish_reason=finish_reason,
+        ),
+    )
+
+
 __all__ = [
     "PRIMARY_MODEL",
     "FAST_MODEL",
     "ChatMessage",
     "CompletionResult",
     "get_client",
+    "get_async_client",
     "complete",
+    "acomplete_stream",
 ]
