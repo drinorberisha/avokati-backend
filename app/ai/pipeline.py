@@ -414,6 +414,42 @@ def answer(
         for v in validated
     ]
 
+    elapsed_ms_total = int((time.time() - t0) * 1000)
+
+    # Structured per-query log line for prod cost/latency observability.
+    # Cloud Run already collects stdout into Cloud Logging; this line is
+    # picked up there and can be piped into BigQuery via a log sink for
+    # ad-hoc analysis (P50/P95 latency, $/query, route mix, etc.) without
+    # standing up a dashboard yet. Keep the schema stable so downstream
+    # queries don't break — add fields, don't rename.
+    try:
+        import hashlib as _hashlib
+        import json as _json
+        _log_payload = {
+            "event": "avokai_query",
+            "intent": decision.intent,
+            "route_reason": decision.reason,
+            "namespace": ns,
+            "query_hash": _hashlib.sha1((query or "").encode("utf-8")).hexdigest()[:12],
+            "query_len": len(query or ""),
+            "sources_count": len(sources),
+            "abolishment_warnings_count": len(warnings),
+            "citations_total": citation_summary.get("total", 0) if isinstance(citation_summary, dict) else 0,
+            "citations_verified": citation_summary.get("verified", 0) if isinstance(citation_summary, dict) else 0,
+            "elapsed_ms_total": elapsed_ms_total,
+            "llm_model": (llm_usage or {}).get("model"),
+            "llm_prompt_tokens": (llm_usage or {}).get("prompt_tokens"),
+            "llm_completion_tokens": (llm_usage or {}).get("completion_tokens"),
+            "llm_cached_tokens": (llm_usage or {}).get("cached_tokens"),
+            "llm_usd_cost": (llm_usage or {}).get("usd_cost_estimate"),
+            "llm_used": llm_usage is not None,
+            "had_llm_error": "llm_error" in trace,
+        }
+        print("avokai_query_log " + _json.dumps(_log_payload, separators=(",", ":")))
+    except Exception:
+        # Logging is best-effort and must never fail the request.
+        pass
+
     return AnswerResult(
         query=query,
         intent=decision.intent,
@@ -423,7 +459,7 @@ def answer(
         citation_summary=citation_summary,
         abolishment_warnings=warnings,
         route_trace=trace,
-        elapsed_ms=int((time.time() - t0) * 1000),
+        elapsed_ms=elapsed_ms_total,
         llm_usage=llm_usage,
     )
 
