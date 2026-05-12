@@ -34,6 +34,16 @@ except ImportError:
     HAVE_OPENAI = False
     logger.warning("openai not available. OpenAI embeddings will not work.")
 
+
+class EmbeddingUnavailableError(RuntimeError):
+    """Raised when every configured embedding provider fails.
+
+    Replaces the old "silently return zero vector" path, which used to poison
+    Pinecone with semantically-meaningless rows. Callers should treat this as
+    a user-visible failure (return a clear Albanian error to the UI rather
+    than degrading silently).
+    """
+
 # Import the LangChain Embeddings base class
 try:
     from langchain_core.embeddings import Embeddings as LangChainEmbeddings
@@ -279,95 +289,21 @@ class HuggingFaceEmbeddingProvider(EmbeddingProvider):
         """Get the model name."""
         return self._model_name
 
-class LocalEmbeddingProvider(EmbeddingProvider):
-    """
-    A simple local embedding provider that uses basic text processing to create embeddings.
-    This is a fallback option when no other providers are available or working.
-    The quality is much lower than ML-based embeddings but it's better than nothing.
-    """
-    
-    def __init__(self, dimension: int = 1536):
-        """
-        Initialize the local embedding provider.
-        
-        Args:
-            dimension: Dimension of the embedding vectors
-        """
-        self._dimension = dimension
-        logger.info(f"Local embedding provider initialized (dimension: {dimension})")
-    
-    def embed_query(self, text: str) -> List[float]:
-        """
-        Generate an embedding for a query.
-        
-        Args:
-            text: Text to generate an embedding for
-            
-        Returns:
-            Embedding vector as a list of floats
-        """
-        return self._hash_based_embedding(text)
-    
-    def embed_documents(self, texts: List[str]) -> List[List[float]]:
-        """
-        Generate embeddings for multiple texts.
-        
-        Args:
-            texts: List of texts to generate embeddings for
-            
-        Returns:
-            List of embedding vectors
-        """
-        return [self._hash_based_embedding(text) for text in texts]
-    
-    def _hash_based_embedding(self, text: str) -> List[float]:
-        """Generate embedding using a hash-based approach."""
-        if not text:
-            return [0.0] * self._dimension
-            
-        # Normalize and clean text
-        text = text.lower().strip()
-        
-        # Initialize vector with zeros
-        vector = [0.0] * self._dimension
-        
-        # Use word tokens and character 3-grams
-        tokens = text.split()
-        
-        # Add all character trigrams
-        for i in range(len(text) - 2):
-            trigram = text[i:i+3]
-            tokens.append(trigram)
-        
-        # Fill the vector based on token hashes
-        for token in tokens:
-            # Hash the token to get a position and value
-            hash_val = int(hashlib.md5(token.encode()).hexdigest(), 16)
-            pos = hash_val % self._dimension
-            val = (hash_val % 10000) / 10000.0  # Convert to value between 0 and 1
-            vector[pos] += val
-        
-        # Normalize the vector to unit length
-        magnitude = sum(x**2 for x in vector) ** 0.5
-        if magnitude > 0:
-            vector = [x/magnitude for x in vector]
-            
-        return vector
-    
-    @property
-    def dimension(self) -> int:
-        """Get the embedding dimension."""
-        return self._dimension
-    
-    @property
-    def provider_name(self) -> str:
-        """Get the provider name."""
-        return "local"
-    
-    @property
-    def model_name(self) -> str:
-        """Get the model name."""
-        return "hash-based"
+# LocalEmbeddingProvider (hash-based fallback) was REMOVED on 2026-05-12.
+#
+# Rationale: when OpenAI returned a quota error during ingestion, the
+# fallback would silently write semantically-meaningless hash vectors into
+# Pinecone with the same metadata schema as real embeddings. Those vectors
+# look identical to good ones at query time but match nothing useful —
+# permanently poisoning the index until you manually find and delete them.
+#
+# Better behavior: fail loud. Ingestion stops on an embedding error and
+# the operator decides whether to retry, wait out a rate limit, or swap
+# providers. At query time the FastAPI route catches the exception and
+# returns a clear Albanian-language error to the UI rather than degrading
+# silently. See app/api/api_v1/endpoints/legal_ai.py for the user-facing
+# error handling.
+
 
 class MultiProviderEmbeddings(LangChainEmbeddings):
     """
@@ -433,40 +369,48 @@ class MultiProviderEmbeddings(LangChainEmbeddings):
     def embed_query(self, text: str) -> List[float]:
         """
         Generate an embedding for a single query text.
-        
+
+        Tries each configured provider in order. If every provider fails,
+        raises EmbeddingUnavailableError — we no longer silently return zero
+        vectors (which would write semantic noise into Pinecone and match
+        nothing useful at query time).
+
         Args:
             text: Text to generate an embedding for
-            
+
         Returns:
             Embedding vector as a list of floats
+
+        Raises:
+            EmbeddingUnavailableError: every provider failed; caller should
+                surface a user-visible error rather than continuing.
         """
         if not self.providers:
-            logger.error("No embedding providers available")
-            return [0.0] * self.get_default_dimension()
-        
-        # Try each provider in order
+            raise EmbeddingUnavailableError(
+                "No embedding providers configured. Set OPENAI_API_KEY to enable retrieval."
+            )
+
+        last_errors: list[str] = []
         for i in range(len(self.providers)):
             provider_index = (self.current_provider_index + i) % len(self.providers)
             provider = self.providers[provider_index]
-            
+
             try:
                 logger.info(f"Generating query embedding using {provider.provider_name} - {provider.model_name}")
                 embedding = provider.embed_query(text)
-                
+
                 if embedding and len(embedding) > 0:
-                    # Success - update current provider index for next request
                     self.current_provider_index = provider_index
-                    logger.info(f"Successfully generated embedding with {provider.provider_name}")
                     return embedding
+                last_errors.append(f"{provider.provider_name}: returned empty embedding")
             except Exception as e:
+                last_errors.append(f"{provider.provider_name}: {e!r}")
                 logger.warning(f"Provider {provider.provider_name} - {provider.model_name} failed: {e}")
-            
-            logger.warning(f"Provider {provider.provider_name} - {provider.model_name} failed, trying next")
-        
-        # All providers failed
-        logger.error("All embedding providers failed")
-        # Return zeros as a last resort
-        return [0.0] * self.get_default_dimension()
+
+        raise EmbeddingUnavailableError(
+            "All embedding providers failed; query cannot be processed. "
+            "Last errors: " + " | ".join(last_errors)
+        )
     
     def embed_documents(self, texts: List[str]) -> List[List[float]]:
         """
@@ -479,52 +423,43 @@ class MultiProviderEmbeddings(LangChainEmbeddings):
             List of embedding vectors
         """
         if not texts:
-            logger.warning("Empty texts list provided to embed_documents")
             return []
-            
+
         if not self.providers:
-            logger.error("No embedding providers available")
-            dim = self.get_default_dimension()
-            return [[0.0] * dim for _ in texts]
-        
-        # Try each provider in order
+            raise EmbeddingUnavailableError(
+                "No embedding providers configured. Set OPENAI_API_KEY to enable ingestion."
+            )
+
+        last_errors: list[str] = []
         for i in range(len(self.providers)):
             provider_index = (self.current_provider_index + i) % len(self.providers)
             provider = self.providers[provider_index]
-            
+
             try:
                 logger.info(f"Generating document embeddings using {provider.provider_name} - {provider.model_name}")
                 embeddings = provider.embed_documents(texts)
-                
-                # Validate embeddings
+
                 if not embeddings:
-                    logger.warning(f"Provider {provider.provider_name} returned empty embeddings list")
+                    last_errors.append(f"{provider.provider_name}: empty list")
                     continue
-                    
                 if len(embeddings) != len(texts):
-                    logger.warning(f"Provider {provider.provider_name} returned incorrect number of embeddings: {len(embeddings)} vs {len(texts)} expected")
+                    last_errors.append(
+                        f"{provider.provider_name}: {len(embeddings)} embeddings for {len(texts)} texts"
+                    )
                     continue
-                
                 if all(len(emb) > 0 for emb in embeddings):
-                    # Success - update current provider index for next request
                     self.current_provider_index = provider_index
-                    logger.info(f"Successfully generated embeddings with {provider.provider_name}")
-                    
-                    # Ensure consistent dimensions
                     target_dim = provider.dimension
                     return [self.normalize_embedding(emb, target_dim) for emb in embeddings]
-                else:
-                    logger.warning(f"Provider {provider.provider_name} returned some empty embeddings")
+                last_errors.append(f"{provider.provider_name}: contained empty embeddings")
             except Exception as e:
+                last_errors.append(f"{provider.provider_name}: {e!r}")
                 logger.warning(f"Provider {provider.provider_name} - {provider.model_name} failed: {e}")
-            
-            logger.warning(f"Provider {provider.provider_name} - {provider.model_name} failed, trying next")
-        
-        # All providers failed
-        logger.error("All embedding providers failed")
-        # Return zeros as a last resort
-        dim = self.get_default_dimension()
-        return [[0.0] * dim for _ in texts]
+
+        raise EmbeddingUnavailableError(
+            "All embedding providers failed during embed_documents; ingestion aborted. "
+            "Last errors: " + " | ".join(last_errors)
+        )
         
     # Adding required method from LangChain Embeddings interface
     def embed_query_with_retrieval_metadata(self, text: str) -> Dict[str, Any]:
@@ -608,13 +543,18 @@ def create_embeddings_from_config() -> MultiProviderEmbeddings:
         except Exception as e:
             logger.error(f"Failed to initialize HuggingFace provider: {e}")
     
-    # Always add local provider as last resort
-    use_local = os.getenv('USE_LOCAL_EMBEDDINGS', 'true').lower() == 'true'
-    if use_local:
-        dimension = int(os.getenv('LOCAL_EMBEDDING_DIMENSION', '3072'))
-        
-        providers.append(LocalEmbeddingProvider(dimension=dimension))
-    
+    # LocalEmbeddingProvider was deliberately removed (2026-05-12). If we
+    # reach this point with no working provider, the function still returns
+    # an empty MultiProviderEmbeddings; the first embed call then raises a
+    # clear error rather than silently corrupting the index.
+
+    if not providers:
+        logger.error(
+            "No embedding providers configured. Set OPENAI_API_KEY or "
+            "USE_HUGGINGFACE_EMBEDDINGS=true; ingestion will fail loudly "
+            "rather than fall back to meaningless hash vectors."
+        )
+
     return MultiProviderEmbeddings(providers)
 
 # Create a singleton instance - lazy loaded

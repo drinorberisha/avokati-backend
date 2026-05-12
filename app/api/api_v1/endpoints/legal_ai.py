@@ -532,6 +532,7 @@ async def ask_legal_question(
 
 from uuid import UUID  # noqa: E402
 
+from app.ai.embedding.providers import EmbeddingUnavailableError  # noqa: E402
 from app.ai.pipeline import answer as pipeline_answer  # noqa: E402
 from app.ai.v2_adapter import adapt_pipeline_result_to_v2  # noqa: E402
 from app.schemas.avokai import AskV2Request, AskV2Response  # noqa: E402
@@ -562,14 +563,32 @@ async def ask_legal_question_v2(
     turn is persisted into `chat_messages` after generation. Persistence
     failures don't fail the request — the answer still goes back to the
     user; we just log the storage error.
+
+    Error mapping for the UI:
+      - EmbeddingUnavailableError -> 503 with code `EMBEDDING_UNAVAILABLE`,
+        so the frontend can show "Shërbimi i kërkimit nuk është i
+        disponueshëm momentalisht" instead of a generic toast.
     """
     history = list(request.conversation_history or [])[-6:]
-    result = pipeline_answer(
-        request.query,
-        namespace=request.namespace,
-        use_llm=request.use_llm,
-        conversation_history=history if history else None,
-    )
+    try:
+        result = pipeline_answer(
+            request.query,
+            namespace=request.namespace,
+            use_llm=request.use_llm,
+            conversation_history=history if history else None,
+        )
+    except EmbeddingUnavailableError as e:
+        logger.error("ask-v2: embedding provider unavailable: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "code": "EMBEDDING_UNAVAILABLE",
+                "message": (
+                    "Shërbimi i kërkimit nuk është i disponueshëm momentalisht. "
+                    "Ju lutemi provoni përsëri për pak minuta."
+                ),
+            },
+        )
     response = adapt_pipeline_result_to_v2(result)
 
     # Best-effort persistence. The pipeline already ran; if storage fails

@@ -110,8 +110,20 @@ def _dummy_vector():
 
 
 def _embed_query(query: str) -> list[float]:
-    res = _openai_embeddings().embeddings.create(model=EMBED_MODEL, input=[query])
-    return res.data[0].embedding
+    """Embed the query with OpenAI. Fails loudly on any provider error.
+
+    The hash-based LocalEmbeddingProvider fallback was deleted in May 2026
+    because it silently poisoned the index with semantic noise on quota
+    errors. If OpenAI is unavailable, we now raise
+    `EmbeddingUnavailableError`, which the /ask-v2 route turns into a 503
+    with a clear Albanian-language message for the user.
+    """
+    from app.ai.embedding.providers import EmbeddingUnavailableError
+    try:
+        res = _openai_embeddings().embeddings.create(model=EMBED_MODEL, input=[query])
+        return res.data[0].embedding
+    except Exception as e:
+        raise EmbeddingUnavailableError(f"OpenAI embedding call failed: {e!r}") from e
 
 
 # ----- retrieval primitives ----------------------------------------------
