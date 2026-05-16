@@ -670,6 +670,25 @@ async def ask_legal_question_v2_stream(
     async def event_generator():
         accumulated_answer = ""
         final_payload: dict[str, Any] | None = None
+
+        # Cloud Run's Google Front End buffers small response chunks up to
+        # ~32KB before flushing to the client. SSE events are usually <200
+        # bytes each, so without forcing a flush, the user waits the full
+        # 2-3 min for the LLM to finish and only then gets all events in
+        # one burst. Worse, the long pause without bytes can trigger an
+        # intermediate connection close, surfacing as a "transport error"
+        # in the browser and a generic "gabim teknik" message to the user.
+        #
+        # Fix: emit a 2KB padding comment immediately. SSE comments
+        # (lines starting with `:`) are valid per the spec and ignored by
+        # all SSE consumers, but the bytes count toward the flush threshold
+        # so the GFE forwards everything we've buffered so far. Yield once
+        # to the event loop after the padding so the bytes actually flush
+        # before we go off to do the slow retrieval work.
+        yield ":" + (" " * 2048) + "\n\n"
+        import asyncio as _asyncio_yield
+        await _asyncio_yield.sleep(0)
+
         try:
             async for event_name, payload in pipeline_answer_stream(
                 request.query,
