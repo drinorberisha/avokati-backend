@@ -1,0 +1,103 @@
+# Cloud Build config for the AvokAI backend.
+#
+# What it does:
+#   1. Builds the Docker image with two tags: the short git SHA (immutable
+#      identifier for rollback) and `latest` (always-points-at-tip).
+#   2. Pushes both tags to Artifact Registry.
+#   3. Deploys the freshly-built image to Cloud Run, preserving the same
+#      cpu/memory/min-instances config used during the manual deploys.
+#
+# How to use:
+#
+#   One-shot manual build + deploy from your workstation:
+#       gcloud builds submit --config=cloudbuild.yaml --project=berix-systems-llc-admin
+#
+#   Fully automatic build + deploy on every push to main:
+#       Create a Cloud Build trigger in the GCP console pointing at this
+#       repo's main branch with this file as the config. After that, every
+#       `git push origin main` builds the image and rolls a new Cloud Run
+#       revision in ~10 min — no manual gcloud needed.
+#
+# Required IAM (one-time, on first run):
+#   The Cloud Build service account (PROJECT_NUMBER@cloudbuild.gserviceaccount.com)
+#   needs:
+#     - roles/artifactregistry.writer  (push images)
+#     - roles/run.admin                (deploy revisions)
+#     - roles/iam.serviceAccountUser   (act-as the Cloud Run runtime SA)
+#   If a build fails with permission errors, run:
+#       PROJECT_NUMBER=$(gcloud projects describe berix-systems-llc-admin --format='value(projectNumber)')
+#       gcloud projects add-iam-policy-binding berix-systems-llc-admin \
+#         --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+#         --role=roles/run.admin
+#       gcloud projects add-iam-policy-binding berix-systems-llc-admin \
+#         --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+#         --role=roles/iam.serviceAccountUser
+
+substitutions:
+  _IMAGE: 'europe-west1-docker.pkg.dev/berix-systems-llc-admin/avokai/backend'
+  _SERVICE: 'avokai-backend'
+  _REGION: 'europe-west1'
+
+steps:
+  # Step 1: build with two tags in one go.
+  - id: 'build'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_IMAGE}:${SHORT_SHA}'
+      - '-t'
+      - '${_IMAGE}:latest'
+      - '.'
+
+  # Step 2: push both tags. --all-tags makes us future-proof if we add more.
+  - id: 'push'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '--all-tags'
+      - '${_IMAGE}'
+    waitFor: ['build']
+
+  # Step 3: deploy the SHA-tagged image to Cloud Run. Using the SHA tag (not
+  # `latest`) means each deploy is reproducible — rollback is just redeploying
+  # the previous SHA. Config mirrors the manual gcloud run deploy we've been
+  # using since v6: 2 vCPU, 4 GiB (reranker model fits comfortably), warm
+  # min-instance, cpu-boost during startup so the model loads fast.
+  - id: 'deploy'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE}'
+      - '--image=${_IMAGE}:${SHORT_SHA}'
+      - '--region=${_REGION}'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--port=8080'
+      - '--cpu=2'
+      - '--memory=4Gi'
+      - '--min-instances=1'
+      - '--max-instances=5'
+      - '--concurrency=40'
+      - '--timeout=300'
+      - '--cpu-boost'
+    waitFor: ['push']
+
+# Make the resulting images visible in the build's "Images" tab in the GCP
+# console — also makes `gcloud builds describe` show them.
+images:
+  - '${_IMAGE}:${SHORT_SHA}'
+  - '${_IMAGE}:latest'
+
+options:
+  # CLOUD_LOGGING_ONLY avoids needing a logs bucket; logs flow straight to
+  # Cloud Logging where we already aggregate everything else.
+  logging: CLOUD_LOGGING_ONLY
+  # Beefier builder than the default e2-medium. Cuts our ~10-min torch build
+  # to ~4-5 min. Cost difference is a few cents per build — well worth it.
+  machineType: 'E2_HIGHCPU_8'
+
+# 30 min upper bound. Real builds run 4-12 min depending on dep cache state.
+timeout: '1800s'
