@@ -10,13 +10,20 @@
 # How to use:
 #
 #   One-shot manual build + deploy from your workstation:
-#       gcloud builds submit --config=cloudbuild.yaml --project=berix-systems-llc-admin
+#       gcloud builds submit \
+#         --config=cloudbuild.yaml \
+#         --substitutions=_TAG=$(git rev-parse --short HEAD) \
+#         --project=berix-systems-llc-admin
+#
+#     (Without --substitutions, _TAG defaults to the auto-generated
+#     BUILD_ID. Still works, just less informative for rollback.)
 #
 #   Fully automatic build + deploy on every push to main:
 #       Create a Cloud Build trigger in the GCP console pointing at this
-#       repo's main branch with this file as the config. After that, every
-#       `git push origin main` builds the image and rolls a new Cloud Run
-#       revision in ~10 min — no manual gcloud needed.
+#       repo's main branch with this file as the config, and set the
+#       trigger's substitutions to include _TAG=$SHORT_SHA. After that,
+#       every `git push origin main` builds the image and rolls a new
+#       Cloud Run revision in ~5 min — no manual gcloud needed.
 #
 # Required IAM (one-time, on first run):
 #   The Cloud Build service account (PROJECT_NUMBER@cloudbuild.gserviceaccount.com)
@@ -37,6 +44,15 @@ substitutions:
   _IMAGE: 'europe-west1-docker.pkg.dev/berix-systems-llc-admin/avokai/backend'
   _SERVICE: 'avokai-backend'
   _REGION: 'europe-west1'
+  # _TAG is the immutable image tag. SHORT_SHA is only auto-populated when
+  # the build is invoked by a Cloud Build *trigger* — not by manual
+  # `gcloud builds submit`. So we keep _TAG as a substitution with a default
+  # that's overridden in two ways:
+  #   - Manual:  --substitutions=_TAG=$(git rev-parse --short HEAD)
+  #   - Trigger: configure the trigger to set _TAG = $SHORT_SHA
+  # If neither path overrides it, BUILD_ID (always set) is used as a last
+  # resort so an image still gets a unique tag.
+  _TAG: '${BUILD_ID}'
 
 steps:
   # Step 1: build with two tags in one go.
@@ -45,7 +61,7 @@ steps:
     args:
       - 'build'
       - '-t'
-      - '${_IMAGE}:${SHORT_SHA}'
+      - '${_IMAGE}:${_TAG}'
       - '-t'
       - '${_IMAGE}:latest'
       - '.'
@@ -71,7 +87,7 @@ steps:
       - 'run'
       - 'deploy'
       - '${_SERVICE}'
-      - '--image=${_IMAGE}:${SHORT_SHA}'
+      - '--image=${_IMAGE}:${_TAG}'
       - '--region=${_REGION}'
       - '--platform=managed'
       - '--allow-unauthenticated'
@@ -88,10 +104,12 @@ steps:
 # Make the resulting images visible in the build's "Images" tab in the GCP
 # console — also makes `gcloud builds describe` show them.
 images:
-  - '${_IMAGE}:${SHORT_SHA}'
+  - '${_IMAGE}:${_TAG}'
   - '${_IMAGE}:latest'
 
 options:
+  # dynamic_substitutions allows _TAG to reference ${BUILD_ID} as default.
+  dynamic_substitutions: true
   # CLOUD_LOGGING_ONLY avoids needing a logs bucket; logs flow straight to
   # Cloud Logging where we already aggregate everything else.
   logging: CLOUD_LOGGING_ONLY
