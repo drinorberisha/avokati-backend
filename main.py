@@ -66,10 +66,19 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configure CORS
+# Configure CORS.
+#
+# - `allow_origins` carries the explicit production origins (Vercel,
+#   localhost canonical), populated from BACKEND_CORS_ORIGINS in .env.
+# - `allow_origin_regex` additionally permits *any* localhost / 127.0.0.1
+#   port so a developer running Vite on a non-default port (3001, 5173,
+#   etc., e.g. when 3000 is in use) doesn't get CORS-400'd. The regex is
+#   only checked when allow_origins doesn't already match — so prod
+#   security isn't affected.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.BACKEND_CORS_ORIGINS,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
