@@ -69,8 +69,13 @@ def _get_model():
         try:
             from sentence_transformers import CrossEncoder
 
+            # max_length=256 covers ~99% of v2 article chunks (Albanian legal
+            # text is dense — 256 BPE tokens ≈ 1k chars ≈ first paragraph or
+            # two). Halving from 512 gives ~2x CPU inference speed on the
+            # Cloud Run 2-vCPU instance where the model is the largest part
+            # of per-query latency.
             logger.info("loading cross-encoder reranker: %s", DEFAULT_MODEL)
-            _model = CrossEncoder(DEFAULT_MODEL, max_length=512)
+            _model = CrossEncoder(DEFAULT_MODEL, max_length=256)
             logger.info("reranker ready")
         except Exception as e:
             logger.error("failed to load reranker (%s): %r", DEFAULT_MODEL, e)

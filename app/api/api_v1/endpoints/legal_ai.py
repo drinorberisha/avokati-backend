@@ -690,10 +690,10 @@ async def ask_legal_question_v2_stream(
 
         queue: _asyncio.Queue = _asyncio.Queue()
         SENTINEL_DONE = object()
-        # Each heartbeat is ~512 bytes of comment padding. At 250 ms cadence
-        # that's ~2 KB/sec — enough to keep the GFE flushing without burning
-        # bandwidth. SSE comments (`:...\n\n`) are ignored by all consumers.
-        HEARTBEAT_PAYLOAD = ":" + ("h" * 512) + "\n\n"
+        # 64-byte comment payload at 250 ms cadence (~250 B/sec). Enough to
+        # keep the GFE TCP buffer ticking over so each subsequent real event
+        # gets forwarded. SSE comments (`:...\n\n`) are ignored by clients.
+        HEARTBEAT_PAYLOAD = ":" + ("h" * 64) + "\n\n"
         HEARTBEAT_INTERVAL = 0.25
 
         async def pipeline_task() -> None:
