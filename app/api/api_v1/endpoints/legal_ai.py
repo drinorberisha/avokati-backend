@@ -668,38 +668,82 @@ async def ask_legal_question_v2_stream(
             )
 
     async def event_generator():
+        import asyncio as _asyncio
+
         accumulated_answer = ""
         final_payload: dict[str, Any] | None = None
 
-        # Cloud Run's Google Front End buffers small response chunks up to
-        # ~32KB before flushing to the client. SSE events are usually <200
-        # bytes each, so without forcing a flush, the user waits the full
-        # 2-3 min for the LLM to finish and only then gets all events in
-        # one burst. Worse, the long pause without bytes can trigger an
-        # intermediate connection close, surfacing as a "transport error"
-        # in the browser and a generic "gabim teknik" message to the user.
+        # Cloud Run's Google Front End buffers small response chunks before
+        # forwarding them to the client. SSE events of <200 bytes each get
+        # held until the buffer fills, which means the user waits the full
+        # 2-3 min for the LLM to finish and only then sees the answer drop
+        # in all at once. The initial 2KB padding (below) takes care of the
+        # very first flush, but subsequent deltas accumulate again unless
+        # we keep pushing bytes through.
         #
-        # Fix: emit a 2KB padding comment immediately. SSE comments
-        # (lines starting with `:`) are valid per the spec and ignored by
-        # all SSE consumers, but the bytes count toward the flush threshold
-        # so the GFE forwards everything we've buffered so far. Yield once
-        # to the event loop after the padding so the bytes actually flush
-        # before we go off to do the slow retrieval work.
+        # Strategy: run the pipeline in a background task feeding a queue,
+        # and a heartbeat task that injects a padding-comment every 250 ms
+        # so bytes flow continuously regardless of pipeline pauses. The
+        # generator drains the queue and yields whatever lands.
         yield ":" + (" " * 2048) + "\n\n"
-        import asyncio as _asyncio_yield
-        await _asyncio_yield.sleep(0)
+        await _asyncio.sleep(0)
+
+        queue: _asyncio.Queue = _asyncio.Queue()
+        SENTINEL_DONE = object()
+        # Each heartbeat is ~512 bytes of comment padding. At 250 ms cadence
+        # that's ~2 KB/sec — enough to keep the GFE flushing without burning
+        # bandwidth. SSE comments (`:...\n\n`) are ignored by all consumers.
+        HEARTBEAT_PAYLOAD = ":" + ("h" * 512) + "\n\n"
+        HEARTBEAT_INTERVAL = 0.25
+
+        async def pipeline_task() -> None:
+            try:
+                async for event_name, payload in pipeline_answer_stream(
+                    request.query,
+                    namespace=request.namespace,
+                    use_llm=request.use_llm,
+                    conversation_history=history if history else None,
+                ):
+                    await queue.put(("event", event_name, payload))
+            except Exception as e:
+                await queue.put(("error", e))
+            finally:
+                await queue.put(("sentinel", SENTINEL_DONE))
+
+        async def heartbeat_task() -> None:
+            try:
+                while True:
+                    await _asyncio.sleep(HEARTBEAT_INTERVAL)
+                    await queue.put(("heartbeat", None))
+            except _asyncio.CancelledError:
+                return
+
+        ptask = _asyncio.create_task(pipeline_task())
+        hbtask = _asyncio.create_task(heartbeat_task())
 
         try:
-            async for event_name, payload in pipeline_answer_stream(
-                request.query,
-                namespace=request.namespace,
-                use_llm=request.use_llm,
-                conversation_history=history if history else None,
-            ):
-                # Mirror v2_adapter shape for the `sources` event so the
-                # frontend's existing AvokAiSourceCard renderer works without
-                # branching on whether the data came from /ask-v2 or
-                # /ask-v2/stream.
+            while True:
+                item = await queue.get()
+                kind = item[0]
+
+                if kind == "sentinel":
+                    break
+
+                if kind == "heartbeat":
+                    yield HEARTBEAT_PAYLOAD
+                    continue
+
+                if kind == "error":
+                    e = item[1]
+                    logger.exception("ask-v2/stream: pipeline error: %r", e)
+                    yield _sse_format(
+                        "error",
+                        {"code": "PIPELINE_ERROR", "message": repr(e)},
+                    )
+                    continue
+
+                # kind == "event"
+                _, event_name, payload = item
                 if event_name == "sources":
                     raw_sources = payload.get("sources", [])
                     enriched = [adapt_source_for_v2(s) for s in raw_sources]
@@ -710,9 +754,6 @@ async def ask_legal_question_v2_stream(
                     yield _sse_format("delta", {"text": text})
                 elif event_name == "done":
                     final_payload = payload
-                    # Mirror the v2 sidebar shape for sources in `done` too,
-                    # so a client that only listens to `done` (e.g. an eval
-                    # harness) gets the same structure as the legacy endpoint.
                     raw_sources = payload.get("sources") or []
                     enriched_sources = [adapt_source_for_v2(s).model_dump() for s in raw_sources]
                     out = {
@@ -728,12 +769,18 @@ async def ask_legal_question_v2_stream(
                     yield _sse_format("done", out)
                 else:
                     yield _sse_format(event_name, payload)
-        except Exception as e:
-            logger.exception("ask-v2/stream: pipeline error")
-            yield _sse_format(
-                "error",
-                {"code": "PIPELINE_ERROR", "message": repr(e)},
-            )
+        finally:
+            hbtask.cancel()
+            try:
+                await hbtask
+            except _asyncio.CancelledError:
+                pass
+            # Wait for pipeline task to finish naturally — if it raised, it
+            # already pushed an error item and we yielded it above.
+            try:
+                await ptask
+            except Exception:
+                pass
 
         # Best-effort persistence — runs after the stream has finished
         # producing events but before the connection closes. Same rule as
