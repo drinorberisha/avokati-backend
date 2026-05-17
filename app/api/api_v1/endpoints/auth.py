@@ -30,7 +30,8 @@ async def register(
                 "data": {
                     "full_name": user_in.full_name,
                     "role": user_in.role.value.lower() if hasattr(user_in.role, 'value') else str(user_in.role).lower(),
-                    "phone": user_in.phone
+                    "phone": user_in.phone,
+                    "bar_number": user_in.bar_number
                 }
             }
         })
@@ -38,7 +39,7 @@ async def register(
         print(f"Supabase auth response - user: {auth_response.user}")  # Debug print
         
         # Sync user to our database
-        db_user = sync_user_to_db(db, auth_response.user, user_in)
+        db_user = await sync_user_to_db(db, auth_response.user, user_in)
         return db_user
         
     except Exception as e:

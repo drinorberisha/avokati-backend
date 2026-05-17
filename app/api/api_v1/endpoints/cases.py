@@ -1,240 +1,200 @@
-from typing import List, Any, Optional, Dict
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Path
-from sqlalchemy.ext.asyncio import AsyncSession
-import logging
-from app.core.database import get_db
-from app.crud import case as case_crud
-from app.schemas.case import Case, CaseCreate, CaseUpdate, CaseResponse, CaseStatus
-from app.core.auth import get_current_user
-from app.schemas.user import User, UserRole
+from typing import Any, List, Optional
 from uuid import UUID
 
-logger = logging.getLogger(__name__)
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from postgrest.exceptions import APIError
+
+from app.core.auth import get_current_user
+from app.core.supabase import get_supabase_client
+from app.schemas.case import Case, CaseCreate, CaseStatus, CaseUpdate
+from app.schemas.case_milestone import CaseMilestone, CaseMilestoneCreate, CaseMilestoneUpdate
+from app.schemas.user import User
+
 router = APIRouter()
+
+
+def _normalize_case(row: dict) -> dict:
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "type": row["type"],
+        "client_id": row["client_id"],
+        "status": row["status"],
+        "court": row.get("court"),
+        "judge": row.get("judge"),
+        "description": row.get("description"),
+        "client": row.get("clients"),
+    }
+
+
+def _normalize_milestone(row: dict) -> dict:
+    return {
+        "id": row["id"],
+        "case_id": row["case_id"],
+        "title": row["title"],
+        "description": row.get("description"),
+        "due_date": row.get("due_date"),
+        "status": row["status"],
+        "priority": row["priority"],
+    }
+
 
 @router.post("/", response_model=Case, status_code=status.HTTP_201_CREATED)
 async def create_case(
     *,
-    db: AsyncSession = Depends(get_db),
     case_in: CaseCreate,
-    current_user: User = Depends(get_current_user)
-) -> Any:
-    """
-    Create new case.
-    
-    Requires attorney or admin role.
-    """
-    logger.info(f"Case creation requested by user: {current_user.id}")
-    
-    # Check permissions
-    if current_user.role not in [UserRole.attorney, UserRole.admin]:
-        logger.warning(f"Unauthorized case creation attempt by user: {current_user.id}, role: {current_user.role}")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only attorneys and admins can create cases"
-        )
-    
-    # Create the case
-    new_case = await case_crud.create_case(db, case_in)
-    if not new_case:
-        logger.error("Failed to create case")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to create case"
-        )
-    
-    logger.info(f"Case created successfully: {new_case.id}")
-    return new_case
-
-@router.get("/", response_model=List[CaseResponse])
-async def get_cases(
-    *,
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    skip: int = Query(0, ge=0, description="Skip N records"),
-    limit: int = Query(100, ge=1, le=100, description="Limit to N records"),
-    client_id: Optional[UUID] = Query(None, description="Filter by client ID"),
-    status: Optional[CaseStatus] = Query(None, description="Filter by case status")
+    supabase=Depends(get_supabase_client),
 ) -> Any:
-    """
-    Retrieve cases with optional filtering.
-    
-    Supports pagination and filtering by client_id and status.
-    Clients can only see their own cases.
-    """
-    logger.info(f"Case list requested by user: {current_user.id}")
-    
-    # Prepare filters
-    filters: Dict[str, Any] = {}
-    
-    # If user is a client, only show their cases
-    if current_user.role == UserRole.client:
-        filters["client_id"] = current_user.id
-    elif client_id:
-        filters["client_id"] = client_id
-    
-    # Add status filter if provided
-    if status:
-        filters["status"] = status
-    
-    # Get cases with filters
-    cases = await case_crud.get_cases(db, skip=skip, limit=limit, filters=filters)
-    
-    logger.info(f"Retrieved {len(cases)} cases")
-    return cases
+    response = supabase.table("cases").insert(case_in.model_dump(mode="json")).execute()
+    if not response.data:
+        raise HTTPException(status_code=400, detail="Failed to create case")
+    created = supabase.table("cases").select("*, clients(id, name, email, phone)").eq("id", response.data[0]["id"]).single().execute()
+    return _normalize_case(created.data)
 
-@router.get("/{case_id}", response_model=CaseResponse)
+
+@router.get("/", response_model=List[Case])
+async def get_cases(
+    current_user: User = Depends(get_current_user),
+    supabase=Depends(get_supabase_client),
+    client_id: Optional[UUID] = Query(None),
+    status: Optional[CaseStatus] = Query(None),
+) -> Any:
+    query = supabase.table("cases").select("*, clients(id, name, email, phone)")
+    if client_id:
+        query = query.eq("client_id", str(client_id))
+    if status:
+        query = query.eq("status", status.value)
+    response = query.execute()
+    return [_normalize_case(row) for row in response.data or []]
+
+
+@router.get("/{case_id}", response_model=Case)
 async def read_case(
     *,
-    db: AsyncSession = Depends(get_db),
-    case_id: str = Path(..., description="The ID of the case to retrieve"),
-    current_user: User = Depends(get_current_user)
+    case_id: str,
+    current_user: User = Depends(get_current_user),
+    supabase=Depends(get_supabase_client),
 ) -> Any:
-    """
-    Get case by ID.
-    
-    Clients can only view their own cases.
-    """
-    logger.info(f"Case {case_id} requested by user: {current_user.id}")
-    
-    # Get the case
-    case = await case_crud.get_case(db, case_id=case_id)
-    if not case:
-        logger.warning(f"Case not found: {case_id}")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Case not found"
-        )
-    
-    # Check if user has permission to view this case
-    if (current_user.role == UserRole.client and 
-        current_user.id != str(case.client_id)):
-        logger.warning(f"Unauthorized case access attempt by user: {current_user.id}")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have permission to view this case"
-        )
-    
-    return case
+    response = supabase.table("cases").select("*, clients(id, name, email, phone)").eq("id", case_id).single().execute()
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Case not found")
+    return _normalize_case(response.data)
+
 
 @router.put("/{case_id}", response_model=Case)
 async def update_case(
     *,
-    db: AsyncSession = Depends(get_db),
-    case_id: str = Path(..., description="The ID of the case to update"),
+    case_id: str,
     case_in: CaseUpdate,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    supabase=Depends(get_supabase_client),
 ) -> Any:
-    """
-    Update case.
-    
-    Only the assigned attorney or admin can update the case.
-    """
-    logger.info(f"Case update requested for {case_id} by user: {current_user.id}")
-    
-    # Get the case
-    case = await case_crud.get_case(db, case_id=case_id)
-    if not case:
-        logger.warning(f"Case not found for update: {case_id}")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Case not found"
-        )
-    
-    # Check if user has permission to update
-    if (current_user.role != UserRole.admin and 
-        current_user.id != str(case.primary_attorney_id)):
-        logger.warning(f"Unauthorized case update attempt by user: {current_user.id}")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only the assigned attorney or admin can update the case"
-        )
-    
-    # Update the case
-    updated_case = await case_crud.update_case(db, case_id=case_id, case_in=case_in)
-    if not updated_case:
-        logger.error(f"Failed to update case: {case_id}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to update case"
-        )
-    
-    logger.info(f"Case updated successfully: {case_id}")
-    return updated_case
+    try:
+        update_data = case_in.model_dump(mode="json", exclude_unset=True)
+        response = supabase.table("cases").update(update_data).eq("id", case_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Case not found")
+        updated = supabase.table("cases").select("*, clients(id, name, email, phone)").eq("id", case_id).single().execute()
+        return _normalize_case(updated.data)
+    except HTTPException:
+        raise
+    except APIError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-@router.delete("/{case_id}", response_model=Dict[str, bool])
+
+@router.delete("/{case_id}")
 async def delete_case(
     *,
-    db: AsyncSession = Depends(get_db),
-    case_id: str = Path(..., description="The ID of the case to delete"),
-    current_user: User = Depends(get_current_user)
+    case_id: str,
+    current_user: User = Depends(get_current_user),
+    supabase=Depends(get_supabase_client),
 ) -> Any:
-    """
-    Delete case.
-    
-    Only admin can delete cases.
-    """
-    logger.info(f"Case deletion requested for {case_id} by user: {current_user.id}")
-    
-    # Check if user has permission to delete
-    if current_user.role != UserRole.admin:
-        logger.warning(f"Unauthorized case deletion attempt by user: {current_user.id}")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only admin can delete cases"
-        )
-    
-    # Check if case exists
-    case = await case_crud.get_case(db, case_id=case_id)
-    if not case:
-        logger.warning(f"Case not found for deletion: {case_id}")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Case not found"
-        )
-    
-    # Delete the case
-    success = await case_crud.delete_case(db, case_id=case_id)
-    if not success:
-        logger.error(f"Failed to delete case: {case_id}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete case"
-        )
-    
-    logger.info(f"Case deleted successfully: {case_id}")
-    return {"success": True}
+    try:
+        supabase.table("documents").delete().eq("case_id", case_id).execute()
+        supabase.table("invoices").update({"case_id": None}).eq("case_id", case_id).execute()
+        supabase.table("case_milestones").delete().eq("case_id", case_id).execute()
+        response = supabase.table("cases").delete().eq("id", case_id).execute()
+        if not response.data:
+            raise HTTPException(status_code=404, detail="Case not found")
+        return {"success": True}
+    except HTTPException:
+        raise
+    except APIError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-@router.get("/by-number/{case_number}", response_model=CaseResponse)
-async def get_case_by_number(
+
+@router.get("/{case_id}/milestones", response_model=List[CaseMilestone])
+async def get_case_milestones(
     *,
-    db: AsyncSession = Depends(get_db),
-    case_number: str = Path(..., description="The case number to retrieve"),
-    current_user: User = Depends(get_current_user)
+    case_id: str,
+    current_user: User = Depends(get_current_user),
+    supabase=Depends(get_supabase_client),
 ) -> Any:
-    """
-    Get case by case number.
-    
-    Clients can only view their own cases.
-    """
-    logger.info(f"Case lookup by number {case_number} requested by user: {current_user.id}")
-    
-    # Get the case
-    case = await case_crud.get_case_by_number(db, case_number=case_number)
-    if not case:
-        logger.warning(f"Case not found by number: {case_number}")
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Case not found"
-        )
-    
-    # Check if user has permission to view this case
-    if (current_user.role == UserRole.client and 
-        current_user.id != str(case.client_id)):
-        logger.warning(f"Unauthorized case access attempt by user: {current_user.id}")
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have permission to view this case"
-        )
-    
-    return case 
+    response = (
+        supabase.table("case_milestones")
+        .select("id, case_id, title, description, due_date, status, priority")
+        .eq("case_id", case_id)
+        .order("due_date", desc=False)
+        .execute()
+    )
+    return [_normalize_milestone(row) for row in response.data or []]
+
+
+@router.post("/{case_id}/milestones", response_model=CaseMilestone, status_code=status.HTTP_201_CREATED)
+async def create_case_milestone(
+    *,
+    case_id: str,
+    milestone_in: CaseMilestoneCreate,
+    current_user: User = Depends(get_current_user),
+    supabase=Depends(get_supabase_client),
+) -> Any:
+    payload = milestone_in.model_dump(mode="json")
+    # Frontend still sends camelCase from the existing component.
+    payload["case_id"] = case_id
+    response = supabase.table("case_milestones").insert(payload).execute()
+    if not response.data:
+        raise HTTPException(status_code=400, detail="Failed to create milestone")
+    return _normalize_milestone(response.data[0])
+
+
+@router.put("/{case_id}/milestones/{milestone_id}", response_model=CaseMilestone)
+async def update_case_milestone(
+    *,
+    case_id: str,
+    milestone_id: str,
+    milestone_in: CaseMilestoneUpdate,
+    current_user: User = Depends(get_current_user),
+    supabase=Depends(get_supabase_client),
+) -> Any:
+    payload = milestone_in.model_dump(mode="json", exclude_unset=True)
+    response = (
+        supabase.table("case_milestones")
+        .update(payload)
+        .eq("id", milestone_id)
+        .eq("case_id", case_id)
+        .execute()
+    )
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Milestone not found")
+    return _normalize_milestone(response.data[0])
+
+
+@router.delete("/{case_id}/milestones/{milestone_id}")
+async def delete_case_milestone(
+    *,
+    case_id: str,
+    milestone_id: str,
+    current_user: User = Depends(get_current_user),
+    supabase=Depends(get_supabase_client),
+) -> Any:
+    response = (
+        supabase.table("case_milestones")
+        .delete()
+        .eq("id", milestone_id)
+        .eq("case_id", case_id)
+        .execute()
+    )
+    if not response.data:
+        raise HTTPException(status_code=404, detail="Milestone not found")
+    return {"success": True}

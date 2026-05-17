@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Text, DateTime, Enum as SQLEnum, ForeignKey, CheckConstraint
+from sqlalchemy import Column, Text, ForeignKey, CheckConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
@@ -14,17 +14,13 @@ class Case(Base):
     __tablename__ = "cases"
 
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=func.gen_random_uuid())
-    case_number = Column(Text, nullable=False, unique=True)
-    title = Column(Text, nullable=False)
+    name = Column(Text, nullable=False)
     type = Column(Text, nullable=False)
     status = Column(Text, nullable=False, server_default='open')
-    court = Column(Text, nullable=False)
-    judge = Column(Text, nullable=False)
-    next_hearing = Column(DateTime(timezone=True), nullable=True)
+    court = Column(Text, nullable=True)
+    judge = Column(Text, nullable=True)
+    description = Column(Text, nullable=True)
     client_id = Column(UUID(as_uuid=True), ForeignKey("clients.id"), nullable=False)
-    primary_attorney_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    created_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
-    updated_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
 
     # Add check constraint to ensure valid status values
     __table_args__ = (
@@ -36,5 +32,5 @@ class Case(Base):
 
     # Relationships
     client = relationship("Client", back_populates="cases")
-    primary_attorney = relationship("User", back_populates="primary_cases")
     documents = relationship("Document", back_populates="case") 
+    milestones = relationship("CaseMilestone", back_populates="case", cascade="all, delete-orphan")

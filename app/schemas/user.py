@@ -12,11 +12,11 @@ class UserRole(str, Enum):
 
 class UserBase(BaseModel):
     email: Optional[EmailStr] = None
-    name: Optional[str] = None
     is_active: Optional[bool] = True
     role: Optional[UserRole] = UserRole.paralegal
     full_name: Optional[str] = None
     phone: Optional[str] = None
+    bar_number: Optional[str] = None
     is_superuser: bool = False
 
 class UserCreate(UserBase):

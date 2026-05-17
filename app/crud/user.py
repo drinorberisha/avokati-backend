@@ -67,6 +67,8 @@ async def sync_user_to_db(db: AsyncSession, auth_user: Any, user_in: UserCreate 
             "email": auth_user.email,
             "full_name": user_in.full_name if user_in else user_metadata.get('full_name'),
             "role": role,
+            "phone": user_in.phone if user_in else user_metadata.get("phone"),
+            "bar_number": getattr(user_in, "bar_number", None) if user_in else user_metadata.get("bar_number"),
             "is_active": True,
             "is_superuser": False,
             "hashed_password": "SUPABASE_AUTH"  # We don't store actual passwords

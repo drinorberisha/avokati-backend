@@ -25,9 +25,7 @@ class User(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.current_timestamp())
     role = Column(ENUM('attorney', 'paralegal', 'admin', 'client', name='user_role', create_type=False), nullable=False, server_default='paralegal')
     phone = Column(Text, nullable=True)
+    bar_number = Column(Text, nullable=True)
 
     # Relationships
-    primary_cases = relationship("Case", back_populates="primary_attorney")
-    document_collaborations = relationship("DocumentCollaborator", back_populates="user")
     audit_logs = relationship("AuditLog", back_populates="user")
-    created_versions = relationship("DocumentVersion", back_populates="created_by") 

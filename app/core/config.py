@@ -19,7 +19,11 @@ class Settings(BaseSettings):
     # env-fed fields below.
     BACKEND_CORS_ORIGINS: Annotated[List[str], NoDecode] = [
         "http://localhost:3000",  # React app development
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",  # Vite fallback/default
+        "http://127.0.0.1:5173",
         "http://localhost:8000",  # Backend development
+        "http://127.0.0.1:8000",
         "https://avokati.vercel.app",  # Production frontend
     ]
 
