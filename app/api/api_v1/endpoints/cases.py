@@ -6,6 +6,7 @@ from postgrest.exceptions import APIError
 
 from app.core.auth import get_current_user
 from app.core.supabase import get_supabase_client
+from app.core.tenancy import require_office, assert_in_office
 from app.schemas.case import Case, CaseCreate, CaseStatus, CaseUpdate
 from app.schemas.case_milestone import CaseMilestone, CaseMilestoneCreate, CaseMilestoneUpdate
 from app.schemas.user import User
@@ -44,23 +45,36 @@ async def create_case(
     *,
     case_in: CaseCreate,
     current_user: User = Depends(get_current_user),
+    office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
 ) -> Any:
-    response = supabase.table("cases").insert(case_in.model_dump(mode="json")).execute()
+    payload = case_in.model_dump(mode="json")
+    # The referenced client must belong to the caller's office.
+    assert_in_office(supabase, "clients", payload.get("client_id"), office_id, detail="Client not found")
+    payload["office_id"] = office_id
+    response = supabase.table("cases").insert(payload).execute()
     if not response.data:
         raise HTTPException(status_code=400, detail="Failed to create case")
-    created = supabase.table("cases").select("*, clients(id, name, email, phone)").eq("id", response.data[0]["id"]).single().execute()
+    created = (
+        supabase.table("cases")
+        .select("*, clients(id, name, email, phone)")
+        .eq("id", response.data[0]["id"])
+        .eq("office_id", office_id)
+        .single()
+        .execute()
+    )
     return _normalize_case(created.data)
 
 
 @router.get("/", response_model=List[Case])
 async def get_cases(
     current_user: User = Depends(get_current_user),
+    office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
     client_id: Optional[UUID] = Query(None),
     status: Optional[CaseStatus] = Query(None),
 ) -> Any:
-    query = supabase.table("cases").select("*, clients(id, name, email, phone)")
+    query = supabase.table("cases").select("*, clients(id, name, email, phone)").eq("office_id", office_id)
     if client_id:
         query = query.eq("client_id", str(client_id))
     if status:
@@ -74,12 +88,20 @@ async def read_case(
     *,
     case_id: str,
     current_user: User = Depends(get_current_user),
+    office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
 ) -> Any:
-    response = supabase.table("cases").select("*, clients(id, name, email, phone)").eq("id", case_id).single().execute()
+    response = (
+        supabase.table("cases")
+        .select("*, clients(id, name, email, phone)")
+        .eq("id", case_id)
+        .eq("office_id", office_id)
+        .limit(1)
+        .execute()
+    )
     if not response.data:
         raise HTTPException(status_code=404, detail="Case not found")
-    return _normalize_case(response.data)
+    return _normalize_case(response.data[0])
 
 
 @router.put("/{case_id}", response_model=Case)
@@ -88,14 +110,32 @@ async def update_case(
     case_id: str,
     case_in: CaseUpdate,
     current_user: User = Depends(get_current_user),
+    office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
 ) -> Any:
     try:
         update_data = case_in.model_dump(mode="json", exclude_unset=True)
-        response = supabase.table("cases").update(update_data).eq("id", case_id).execute()
+        update_data.pop("office_id", None)
+        # If reassigning the client, the new client must also be in this office.
+        if update_data.get("client_id"):
+            assert_in_office(supabase, "clients", update_data["client_id"], office_id, detail="Client not found")
+        response = (
+            supabase.table("cases")
+            .update(update_data)
+            .eq("id", case_id)
+            .eq("office_id", office_id)
+            .execute()
+        )
         if not response.data:
             raise HTTPException(status_code=404, detail="Case not found")
-        updated = supabase.table("cases").select("*, clients(id, name, email, phone)").eq("id", case_id).single().execute()
+        updated = (
+            supabase.table("cases")
+            .select("*, clients(id, name, email, phone)")
+            .eq("id", case_id)
+            .eq("office_id", office_id)
+            .single()
+            .execute()
+        )
         return _normalize_case(updated.data)
     except HTTPException:
         raise
@@ -108,13 +148,16 @@ async def delete_case(
     *,
     case_id: str,
     current_user: User = Depends(get_current_user),
+    office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
 ) -> Any:
     try:
+        # Ownership guard before cascading.
+        assert_in_office(supabase, "cases", case_id, office_id, detail="Case not found")
         supabase.table("documents").delete().eq("case_id", case_id).execute()
         supabase.table("invoices").update({"case_id": None}).eq("case_id", case_id).execute()
         supabase.table("case_milestones").delete().eq("case_id", case_id).execute()
-        response = supabase.table("cases").delete().eq("id", case_id).execute()
+        response = supabase.table("cases").delete().eq("id", case_id).eq("office_id", office_id).execute()
         if not response.data:
             raise HTTPException(status_code=404, detail="Case not found")
         return {"success": True}
@@ -129,12 +172,15 @@ async def get_case_milestones(
     *,
     case_id: str,
     current_user: User = Depends(get_current_user),
+    office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
 ) -> Any:
+    assert_in_office(supabase, "cases", case_id, office_id, detail="Case not found")
     response = (
         supabase.table("case_milestones")
         .select("id, case_id, title, description, due_date, status, priority")
         .eq("case_id", case_id)
+        .eq("office_id", office_id)
         .order("due_date", desc=False)
         .execute()
     )
@@ -147,11 +193,13 @@ async def create_case_milestone(
     case_id: str,
     milestone_in: CaseMilestoneCreate,
     current_user: User = Depends(get_current_user),
+    office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
 ) -> Any:
+    assert_in_office(supabase, "cases", case_id, office_id, detail="Case not found")
     payload = milestone_in.model_dump(mode="json")
-    # Frontend still sends camelCase from the existing component.
     payload["case_id"] = case_id
+    payload["office_id"] = office_id
     response = supabase.table("case_milestones").insert(payload).execute()
     if not response.data:
         raise HTTPException(status_code=400, detail="Failed to create milestone")
@@ -165,14 +213,17 @@ async def update_case_milestone(
     milestone_id: str,
     milestone_in: CaseMilestoneUpdate,
     current_user: User = Depends(get_current_user),
+    office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
 ) -> Any:
     payload = milestone_in.model_dump(mode="json", exclude_unset=True)
+    payload.pop("office_id", None)
     response = (
         supabase.table("case_milestones")
         .update(payload)
         .eq("id", milestone_id)
         .eq("case_id", case_id)
+        .eq("office_id", office_id)
         .execute()
     )
     if not response.data:
@@ -186,6 +237,7 @@ async def delete_case_milestone(
     case_id: str,
     milestone_id: str,
     current_user: User = Depends(get_current_user),
+    office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
 ) -> Any:
     response = (
@@ -193,6 +245,7 @@ async def delete_case_milestone(
         .delete()
         .eq("id", milestone_id)
         .eq("case_id", case_id)
+        .eq("office_id", office_id)
         .execute()
     )
     if not response.data:
