@@ -35,6 +35,9 @@ class User(UserBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
+    # Office (multi-tenant) membership. office_id is None until the user onboards.
+    office_id: Optional[UUID] = None
+    office_role: Optional[str] = "member"
 
     class Config:
         from_attributes = True

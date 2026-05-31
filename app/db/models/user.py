@@ -26,6 +26,11 @@ class User(Base):
     role = Column(ENUM('attorney', 'paralegal', 'admin', 'client', name='user_role', create_type=False), nullable=False, server_default='paralegal')
     phone = Column(Text, nullable=True)
     bar_number = Column(Text, nullable=True)
+    # Office (multi-tenant) membership. Nullable until the user onboards into an
+    # office. office_role is the office-permission level (owner|admin|member),
+    # orthogonal to the professional `role` enum above. See docs/BUILD_ORDER.md.
+    office_id = Column(UUID(as_uuid=True), nullable=True)
+    office_role = Column(Text, nullable=False, server_default='member')
 
     # Relationships
     audit_logs = relationship("AuditLog", back_populates="user")
