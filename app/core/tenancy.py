@@ -35,7 +35,7 @@ def require_office(current_user: User = Depends(get_current_user)) -> str:
 
 
 def require_office_admin(current_user: User = Depends(get_current_user)) -> User:
-    """Allow only office owners/admins (for member + invite management)."""
+    """Allow only office owners/admins (e.g. for invites)."""
     if not getattr(current_user, "office_id", None):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -45,6 +45,22 @@ def require_office_admin(current_user: User = Depends(get_current_user)) -> User
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Requires office admin privileges.",
+        )
+    return current_user
+
+
+def require_office_owner(current_user: User = Depends(get_current_user)) -> User:
+    """Allow only the office owner (the creator). Used for changing member
+    roles — that power is reserved to the owner alone."""
+    if not getattr(current_user, "office_id", None):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={"code": "NEEDS_ONBOARDING", "message": "User is not assigned to an office."},
+        )
+    if getattr(current_user, "office_role", "member") != "owner":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only the office owner can change member roles.",
         )
     return current_user
 

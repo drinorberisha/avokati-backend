@@ -15,6 +15,12 @@ async def read_user_me(current_user: User = Depends(get_current_user)) -> Any:
     """
     return current_user
 
+# Fields a user may change about themselves. Role / privilege / office
+# membership are deliberately excluded — a user cannot escalate their own role
+# (only the office owner can change roles, via /offices/me/members).
+_SELF_EDITABLE_FIELDS = {"full_name", "phone", "bar_number", "password"}
+
+
 @router.put("/me", response_model=User)
 async def update_user_me(
     user_in: UserUpdate,
@@ -22,9 +28,12 @@ async def update_user_me(
     db: AsyncSession = Depends(get_db)
 ) -> Any:
     """
-    Update current user.
+    Update current user's own profile. Role, is_superuser, is_active, email and
+    office membership are NOT self-editable and are ignored if sent.
     """
-    user = await user_crud.update_user(db, current_user.id, user_in)
+    data = user_in.model_dump(exclude_unset=True)
+    safe = {k: v for k, v in data.items() if k in _SELF_EDITABLE_FIELDS}
+    user = await user_crud.update_user(db, str(current_user.id), safe)
     return user
 
 @router.get("/{user_id}", response_model=User)

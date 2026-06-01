@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.auth import get_current_user
 from app.core.supabase import get_supabase_client
-from app.core.tenancy import require_office, require_office_admin
+from app.core.tenancy import require_office, require_office_admin, require_office_owner
 from app.schemas.office import (
     InviteCreate,
     InviteOut,
@@ -105,15 +105,22 @@ async def list_members(
     return resp.data or []
 
 
+_PROFESSIONAL_ROLES = ("attorney", "paralegal", "admin", "client")
+
+
 @router.patch("/me/members/{user_id}", response_model=OfficeMemberOut)
 async def update_member(
     *,
     user_id: str,
     member_in: MemberUpdate,
-    current_user: User = Depends(require_office_admin),
+    current_user: User = Depends(require_office_owner),
     office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
 ) -> Any:
+    # Only the office owner reaches here (require_office_owner).
+    if str(user_id) == str(current_user.id):
+        raise HTTPException(status_code=400, detail="You cannot change your own role.")
+
     # Target must be a member of this office.
     target = (
         supabase.table("users")
@@ -129,6 +136,10 @@ async def update_member(
         raise HTTPException(status_code=400, detail="The office owner cannot be modified.")
 
     update_data: dict = {}
+    if member_in.role is not None:
+        if member_in.role not in _PROFESSIONAL_ROLES:
+            raise HTTPException(status_code=400, detail=f"role must be one of {_PROFESSIONAL_ROLES}.")
+        update_data["role"] = member_in.role
     if member_in.office_role is not None:
         if member_in.office_role not in ("admin", "member"):
             raise HTTPException(status_code=400, detail="office_role must be 'admin' or 'member'.")

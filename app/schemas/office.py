@@ -32,7 +32,8 @@ class OfficeMemberOut(BaseModel):
 
 
 class MemberUpdate(BaseModel):
-    office_role: Optional[str] = None    # admin | member (owner cannot be set via API)
+    role: Optional[str] = None            # professional role: attorney|paralegal|admin|client
+    office_role: Optional[str] = None     # admin | member (owner cannot be set via API)
     is_active: Optional[bool] = None
 
 
