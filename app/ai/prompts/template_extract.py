@@ -7,7 +7,7 @@ replaced by {{camelCaseVariable}} tokens, plus the matching variable list.
 
 from app.ai.llm import ChatMessage
 
-_SYSTEM = """You convert legal documents (contracts, notary deeds, court filings)
+TEMPLATE_SYSTEM_PROMPT = """You convert legal documents (contracts, notary deeds, court filings)
 into reusable, parameterized templates for a Kosovo law office.
 
 You receive the raw text of one document. Produce a TEMPLATE of it: keep the
@@ -47,7 +47,7 @@ Return ONLY a JSON object (no markdown fences, no commentary) with this shape:
 
 def build_messages(document_text: str) -> list[ChatMessage]:
     return [
-        ChatMessage(role="system", content=_SYSTEM),
+        ChatMessage(role="system", content=TEMPLATE_SYSTEM_PROMPT),
         ChatMessage(
             role="user",
             content="Convert this document into a template JSON:\n\n" + document_text,

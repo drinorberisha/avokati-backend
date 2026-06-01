@@ -114,6 +114,21 @@ def _normalize_variables(content: str, variables: Any) -> list[dict]:
     return list(by_name.values())
 
 
+def _finalize_draft(data: dict) -> dict:
+    """Validate + normalize a parsed template dict (from Gemini or DeepSeek)."""
+    content = data.get("content_html") or data.get("content") or ""
+    if not data.get("title") or not content:
+        raise HTTPException(status_code=502, detail="The document could not be templated.")
+    return {
+        "title": str(data["title"])[:200],
+        "description": (data.get("description") or None),
+        "category": (data.get("category") or None),
+        "language": (data.get("language") or None),
+        "content": content,
+        "variables": _normalize_variables(content, data.get("variables")),
+    }
+
+
 def _parse_template_json(raw: str) -> dict:
     text = (raw or "").strip()
     # Strip ```json ... ``` fences the model may add.
@@ -128,18 +143,7 @@ def _parse_template_json(raw: str) -> dict:
         if not m:
             raise HTTPException(status_code=502, detail="Could not parse the extracted template.")
         data = json.loads(m.group(0))
-
-    content = data.get("content_html") or data.get("content") or ""
-    if not data.get("title") or not content:
-        raise HTTPException(status_code=502, detail="The document could not be templated.")
-    return {
-        "title": str(data["title"])[:200],
-        "description": (data.get("description") or None),
-        "category": (data.get("category") or None),
-        "language": (data.get("language") or None),
-        "content": content,
-        "variables": _normalize_variables(content, data.get("variables")),
-    }
+    return _finalize_draft(data)
 
 
 def _run_extraction(text: str) -> dict:
@@ -158,38 +162,66 @@ async def extract_template(
     office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
 ) -> Any:
-    """Upload a PDF/DOCX contract → analyse it → create a draft template the
-    user can refine in the editor. Saved with source_type='imported'."""
+    """Upload a PDF/DOCX/image contract → analyse it → create a draft template
+    the user can refine in the editor. Saved with source_type='imported'.
+
+    When GEMINI_API_KEY is set, Gemini 2.5 Flash reads the raw file directly
+    (incl. scanned PDFs / photos — built-in OCR). Otherwise we fall back to
+    PyMuPDF/DOCX text extraction + DeepSeek, which only handles digital text.
+    """
+    from app.ai.gemini_extract import (
+        gemini_enabled,
+        extract_template_from_file,
+        extract_template_from_text,
+        SUPPORTED_INLINE_MIME,
+    )
+
     raw = await file.read()
     name = (file.filename or "").lower()
-    ctype = file.content_type or ""
+    ctype = (file.content_type or "").lower()
 
-    if name.endswith(".pdf") or "pdf" in ctype:
-        text = _extract_pdf(raw)
-    elif name.endswith(".docx") or "wordprocessingml" in ctype or "officedocument" in ctype:
-        text = _extract_docx(raw)
-    else:
-        raise HTTPException(status_code=400, detail="Unsupported file type. Upload a PDF or DOCX.")
+    is_pdf = name.endswith(".pdf") or "pdf" in ctype
+    is_docx = name.endswith(".docx") or "wordprocessingml" in ctype or "officedocument" in ctype
+    is_image = ctype.startswith("image/") or name.endswith(
+        (".png", ".jpg", ".jpeg", ".webp", ".heic", ".heif")
+    )
 
-    text = (text or "").strip()
-    if len(text) < 100 or _is_low_text(text):
-        raise HTTPException(
-            status_code=422,
-            detail={
-                "code": "EMPTY_EXTRACTION",
-                "message": (
-                    "This file has no readable text — it looks like a scanned image "
-                    "(e.g. a CamScanner/Adobe Scan PDF). Scanned-document OCR isn't "
-                    "supported yet; please upload a text-based PDF or a DOCX."
-                ),
-            },
-        )
-    # Cap the input fed to the LLM (keeps cost/latency bounded; long contracts
-    # are still well covered by the leading ~20k chars).
-    text = text[:20000]
+    scanned_msg = {
+        "code": "EMPTY_EXTRACTION",
+        "message": (
+            "This file has no readable text — it looks like a scanned image "
+            "(e.g. a CamScanner/Adobe Scan PDF). Add a GEMINI_API_KEY to enable "
+            "scanned-document reading, or upload a text-based PDF or DOCX."
+        ),
+    }
 
     try:
-        draft = await asyncio.to_thread(_run_extraction, text)
+        if gemini_enabled():
+            # Gemini path — reads the document directly (digital or scanned).
+            if is_pdf or is_image:
+                mime = "application/pdf" if is_pdf else (ctype or "image/jpeg")
+                if mime not in SUPPORTED_INLINE_MIME:
+                    mime = "application/pdf" if is_pdf else "image/jpeg"
+                draft = _finalize_draft(await extract_template_from_file(raw, mime))
+            elif is_docx:
+                text = (_extract_docx(raw) or "").strip()
+                if len(text) < 50:
+                    raise HTTPException(status_code=422, detail=scanned_msg)
+                draft = _finalize_draft(await extract_template_from_text(text[:40000]))
+            else:
+                raise HTTPException(status_code=400, detail="Unsupported file type. Upload a PDF, DOCX or image.")
+        else:
+            # Fallback path — digital text only (no OCR).
+            if is_pdf:
+                text = _extract_pdf(raw)
+            elif is_docx:
+                text = _extract_docx(raw)
+            else:
+                raise HTTPException(status_code=400, detail="Unsupported file type. Upload a PDF or DOCX.")
+            text = (text or "").strip()
+            if len(text) < 100 or _is_low_text(text):
+                raise HTTPException(status_code=422, detail=scanned_msg)
+            draft = await asyncio.to_thread(_run_extraction, text[:20000])
     except HTTPException:
         raise
     except Exception as exc:  # noqa: BLE001 - surface a clean error to the UI
