@@ -68,6 +68,18 @@ def _extract_docx(data: bytes) -> str:
     return "\n".join(paragraphs)
 
 
+_SCAN_WATERMARK_RE = re.compile(r"(?i)(scanned\s+(with|by)\s+)?cam\s*scanner|adobe\s+scan")
+
+
+def _is_low_text(text: str) -> bool:
+    """True if a PDF/DOCX yielded too little real text to template — typically a
+    scanned-image PDF where the only embedded text is a scanner watermark
+    (e.g. CamScanner stamps every page). OCR is out of scope for now."""
+    cleaned = _SCAN_WATERMARK_RE.sub(" ", text)
+    letters = re.findall(r"[^\W\d_]", cleaned, flags=re.UNICODE)
+    return len(letters) < 200
+
+
 def _normalize_variables(content: str, variables: Any) -> list[dict]:
     """Reconcile the LLM's variable list with the {{tokens}} actually present:
     keep declared variables, coerce types, add an id, and backfill any token
@@ -160,12 +172,16 @@ async def extract_template(
         raise HTTPException(status_code=400, detail="Unsupported file type. Upload a PDF or DOCX.")
 
     text = (text or "").strip()
-    if len(text) < 100:
+    if len(text) < 100 or _is_low_text(text):
         raise HTTPException(
             status_code=422,
             detail={
                 "code": "EMPTY_EXTRACTION",
-                "message": "Could not read text from this file. If it is a scanned image, OCR is not supported yet.",
+                "message": (
+                    "This file has no readable text — it looks like a scanned image "
+                    "(e.g. a CamScanner/Adobe Scan PDF). Scanned-document OCR isn't "
+                    "supported yet; please upload a text-based PDF or a DOCX."
+                ),
             },
         )
     # Cap the input fed to the LLM (keeps cost/latency bounded; long contracts
