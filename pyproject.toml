@@ -28,6 +28,9 @@ postgrest = "^0.10.0"
 storage3 = ">=0.5.2,<0.6.0"
 websockets = "10.4"
 aioboto3 = "^14.1.0"
+# Google Cloud Storage — EU-region file storage (replacing AWS S3, see
+# docs/COMPLIANCE_PLAN.md Phase 1). Keyless on Cloud Run via the runtime SA.
+google-cloud-storage = "^2.18.0"
 langchain = "^0.3.0"
 langchain-community = "^0.3.0"
 langchain-core = "^0.3.0"

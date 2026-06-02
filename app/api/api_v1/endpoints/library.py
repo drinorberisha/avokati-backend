@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 
 from app.core.auth import get_current_user
 from app.core.config import settings
-from app.core.s3 import s3
+from app.core.gcs import gcs
 from app.core.supabase import get_supabase_client
 from app.core.tenancy import require_office
 from app.schemas.library import LibraryDocumentOut, LibraryDownloadOut
@@ -86,7 +86,7 @@ async def upload_document(
         )
 
     file_key = _file_key(office_id, file.filename or "document")
-    uploaded = await s3.upload_file(io.BytesIO(content), file_key, content_type=content_type)
+    uploaded = await gcs.upload_file(io.BytesIO(content), file_key, content_type=content_type)
     if not uploaded:
         raise HTTPException(status_code=500, detail="Failed to upload the file.")
 
@@ -104,7 +104,7 @@ async def upload_document(
     if not resp.data:
         # roll back the orphaned S3 object
         try:
-            await s3.delete_file(file_key)
+            await gcs.delete_file(file_key)
         except Exception:  # noqa: BLE001
             pass
         raise HTTPException(status_code=400, detail="Failed to save the document.")
@@ -129,7 +129,7 @@ async def download_document(
     )
     if not resp.data:
         raise HTTPException(status_code=404, detail="Document not found")
-    url = await s3.generate_presigned_url(resp.data[0]["file_url"], "get_object", expiration=3600)
+    url = await gcs.generate_signed_url(resp.data[0]["file_url"], "get_object", expiration=3600)
     if not url:
         raise HTTPException(status_code=500, detail="Could not generate a download link.")
     return {"url": url}
@@ -155,7 +155,7 @@ async def delete_document(
         raise HTTPException(status_code=404, detail="Document not found")
 
     try:
-        await s3.delete_file(resp.data[0]["file_url"])
+        await gcs.delete_file(resp.data[0]["file_url"])
     except Exception as exc:  # noqa: BLE001 - DB row is the source of truth
         logger.warning("S3 delete failed for %s: %s", resp.data[0]["file_url"], exc)
 
@@ -172,7 +172,7 @@ async def delete_all_documents(
     resp = supabase.table("library_documents").select("file_url").eq("office_id", office_id).execute()
     for row in resp.data or []:
         try:
-            await s3.delete_file(row["file_url"])
+            await gcs.delete_file(row["file_url"])
         except Exception as exc:  # noqa: BLE001
             logger.warning("S3 delete failed for %s: %s", row["file_url"], exc)
     supabase.table("library_documents").delete().eq("office_id", office_id).execute()
