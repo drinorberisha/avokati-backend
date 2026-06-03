@@ -6,7 +6,6 @@ from app.db.models.document import Document
 from app.db.models.event import Event
 from app.db.models.invoice import Invoice
 from app.db.models.audit import AuditLog
-from app.db.models.legal_document import LegalDocument
 from app.db.models.chat_session import ChatSession, ChatMessage
 from app.db.models.template import Template
 from app.db.models.library_document import LibraryDocument
@@ -20,7 +19,6 @@ __all__ = [
     'Document',
     'Event', 'Invoice',
     'AuditLog',
-    'LegalDocument',
     'ChatSession', 'ChatMessage',
     'Template',
     'LibraryDocument',

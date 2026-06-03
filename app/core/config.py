@@ -49,12 +49,6 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_SECONDS: int
     REFRESH_TOKEN_EXPIRE_DAYS: int
 
-    # AWS S3 (legacy — being migrated to GCS, see docs/COMPLIANCE_PLAN.md)
-    AWS_ACCESS_KEY_ID: str
-    AWS_SECRET_ACCESS_KEY: str
-    AWS_REGION: str
-    S3_BUCKET_NAME: str
-
     # Google Cloud Storage (EU file storage)
     GCS_BUCKET_NAME: str = "avokati-documents-eu"
     GCS_SIGNER_SA: Optional[str] = None   # SA email used for V4 signing (Cloud Run)
