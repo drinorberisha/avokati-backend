@@ -11,7 +11,6 @@ load_dotenv()
 
 from app.core.config import settings
 from app.api.api_v1.api import api_router
-from app.core.s3 import s3
 from app.core.database import initialize_db, close_db_connection
 
 # Configure logging
