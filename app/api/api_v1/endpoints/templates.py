@@ -11,6 +11,7 @@ from xml.etree import ElementTree as ET
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.core.auth import get_current_user
+from app.core.consent import require_ai_consent
 from app.core.supabase import get_supabase_client
 from app.core.tenancy import require_office
 from app.schemas.template import TemplateCreate, TemplateOut, TemplateUpdate
@@ -161,6 +162,7 @@ async def extract_template(
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
     supabase=Depends(get_supabase_client),
+    _consent: None = Depends(require_ai_consent),
 ) -> Any:
     """Upload a PDF/DOCX/image contract → analyse it → create a draft template
     the user can refine in the editor. Saved with source_type='imported'.

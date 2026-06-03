@@ -9,6 +9,7 @@ from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.auth import get_current_active_user
 from app.db.models import User
+from app.core.consent import require_ai_consent
 
 from app.ai.retrieval.langchain_service import langchain_service
 
@@ -81,6 +82,7 @@ async def ask_legal_question_v2(
     request: AskV2Request,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
+    _consent: None = Depends(require_ai_consent),
 ):
     """Single-call rich answer for AvokAI.
 
@@ -179,6 +181,7 @@ async def ask_legal_question_v2_stream(
     request: AskV2Request,
     current_user: User = Depends(get_current_active_user),
     db: AsyncSession = Depends(get_db),
+    _consent: None = Depends(require_ai_consent),
 ):
     """SSE streaming version of /ask-v2.
 

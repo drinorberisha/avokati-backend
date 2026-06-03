@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.api_v1.endpoints import auth, users, clients, cases, documents, events, health, invoices, legal_ai, offices, templates, library
+from app.api.api_v1.endpoints import auth, users, clients, cases, documents, events, health, invoices, legal_ai, offices, templates, library, consents
 
 api_router = APIRouter()
 
@@ -14,4 +14,5 @@ api_router.include_router(events.router, prefix="/events", tags=["events"])
 api_router.include_router(invoices.router, prefix="/invoices", tags=["invoices"])
 api_router.include_router(templates.router, prefix="/templates", tags=["templates"])
 api_router.include_router(library.router, prefix="/legal-ai/library", tags=["library"])
+api_router.include_router(consents.router, prefix="/consents", tags=["consents"])
 api_router.include_router(legal_ai.router, prefix="/legal-ai", tags=["legal-ai"])
