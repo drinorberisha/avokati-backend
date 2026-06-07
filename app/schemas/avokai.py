@@ -83,9 +83,13 @@ class LlmUsage(BaseModel):
 
 
 class AskV2Request(BaseModel):
-    query: str = Field(..., description="The user's question, in any language; the system replies in Albanian")
+    query: str = Field(..., description="The user's question, in any language")
     use_llm: bool = Field(True, description="If False, skip generation and return retrieval only (used by eval / debug)")
     namespace: Optional[str] = Field(None, description="Pinecone namespace override; defaults to env PINECONE_NAMESPACE_V2 (=default_v2)")
+    response_language: Literal["sq", "en"] = Field(
+        "sq",
+        description="Language AvokAI must use for user-facing answers: sq=Albanian, en=English.",
+    )
     conversation_history: Optional[list[dict[str, str]]] = Field(
         None,
         description="Optional prior turns in OpenAI message format ({role, content}). Capped at 6 entries server-side.",
@@ -104,7 +108,7 @@ class AskV2Response(BaseModel):
     """
 
     query: str
-    answer: str = Field(..., description="Albanian-language answer, with `⚠️ i paverifikuar` markers on any unverified citations")
+    answer: str = Field(..., description="Answer in the requested response language, with warning markers on any unverified citations")
     intent: Intent = Field(..., description="Which retrieval/generation path was used")
     sources: list[SourceCard] = Field(default_factory=list)
     citations: list[CitationRecord] = Field(default_factory=list)

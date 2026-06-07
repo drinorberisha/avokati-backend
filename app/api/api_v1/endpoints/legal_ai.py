@@ -109,17 +109,23 @@ async def ask_legal_question_v2(
             namespace=request.namespace,
             use_llm=request.use_llm,
             conversation_history=history if history else None,
+            response_language=request.response_language,
         )
     except EmbeddingUnavailableError as e:
         logger.error("ask-v2: embedding provider unavailable: %s", e)
+        message = (
+            "Search service is currently unavailable. Please try again in a few minutes."
+            if request.response_language == "en"
+            else (
+                "Shërbimi i kërkimit nuk është i disponueshëm momentalisht. "
+                "Ju lutemi provoni përsëri për pak minuta."
+            )
+        )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={
                 "code": "EMBEDDING_UNAVAILABLE",
-                "message": (
-                    "Shërbimi i kërkimit nuk është i disponueshëm momentalisht. "
-                    "Ju lutemi provoni përsëri për pak minuta."
-                ),
+                "message": message,
             },
         )
     response = adapt_pipeline_result_to_v2(result)
@@ -237,6 +243,7 @@ async def ask_legal_question_v2_stream(
                     namespace=request.namespace,
                     use_llm=request.use_llm,
                     conversation_history=history if history else None,
+                    response_language=request.response_language,
                 ):
                     await queue.put(("event", event_name, payload))
             except Exception as e:

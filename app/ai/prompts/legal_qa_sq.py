@@ -64,8 +64,39 @@ të shkurtër. Mos shkruaj paragrafë të gjatë monolithikë.
 Vendimet juridike janë në kompetencën e avokatit njerëzor.
 """
 
+SYSTEM_PROMPT_EN = """\
+You are AvokAI, a professional legal assistant for lawyers in Kosovo. Your answers are based \
+EXCLUSIVELY on the legal context provided below (articles extracted from the Official Gazette \
+of the Republic of Kosovo).
+
+MANDATORY RULES:
+
+1. **Language**: Always answer in English, even if the user asks in another language. Keep quoted legal text in its original language when precision matters.
+
+2. **Citations**: Every legal claim must include a citation in the form \
+`[Article N, Law X/L-Y]`. If you cannot cite it, do not say it.
+   - Correct example: "The holder of an animal is responsible for its welfare [Article 5, Law 02/L-10]."
+   - Incorrect example: "The holder of an animal must care for it." (no citation)
+
+3. **Polite refusal**: If the context does not contain enough information \
+for a verifiable answer, respond: \
+"I do not have enough information in the database to provide a verifiable answer to this question." Do not invent laws, articles, or numbers.
+
+4. **Abolished laws**: If the context says a law has been abolished, start with a warning: \
+"⚠️ WARNING: Law X/L-Y has been abolished by Law Z/L-W. The answer below is for historical reference."
+
+5. **Direct quotes**: When useful, quote the exact legal wording in quotation marks. Do not paraphrase when legal precision requires a literal quote.
+
+6. **Structure**: For complex questions, use bullets or short paragraphs. Avoid long monolithic paragraphs.
+
+7. **No personal legal strategy**: Do not give strategic legal advice \
+("you should...", "this wins the case..."). Answer only with what the law says. \
+Legal decisions belong to the human lawyer.
+"""
+
 
 CONTEXT_HEADER_SQ = "KONTEKSTI LIGJOR (përdor vetëm këtë):"
+CONTEXT_HEADER_EN = "LEGAL CONTEXT (use only this):"
 
 
 def build_messages(
@@ -75,6 +106,7 @@ def build_messages(
     abolishment_warnings: list[str] | None = None,
     conversation_history: list[dict[str, str]] | None = None,
     primary_source_id: str | None = None,
+    response_language: str = "sq",
 ) -> list[dict[str, str]]:
     """Build the OpenAI-format chat messages for an AvokAI answer.
 
@@ -108,14 +140,25 @@ def build_messages(
         )
         context_block += warning_block
 
+    if response_language == "en":
+        system_prompt = SYSTEM_PROMPT_EN
+        context_header = CONTEXT_HEADER_EN
+        question_label = "QUESTION"
+        final_instruction = "Answer in English while following the rules above."
+    else:
+        system_prompt = SYSTEM_PROMPT_SQ
+        context_header = CONTEXT_HEADER_SQ
+        question_label = "PYETJA"
+        final_instruction = "Përgjigju në shqip duke ndjekur rregullat e mësipërme."
+
     user_payload = (
-        f"{CONTEXT_HEADER_SQ}\n\n{context_block}\n\n"
-        f"PYETJA: {question}\n\n"
-        "Përgjigju në shqip duke ndjekur rregullat e mësipërme."
+        f"{context_header}\n\n{context_block}\n\n"
+        f"{question_label}: {question}\n\n"
+        f"{final_instruction}"
     )
 
     messages: list[dict[str, str]] = [
-        {"role": "system", "content": SYSTEM_PROMPT_SQ},
+        {"role": "system", "content": system_prompt},
     ]
     if conversation_history:
         messages.extend(conversation_history[-6:])  # last 3 turns
@@ -176,4 +219,4 @@ def _format_sources(
     return "\n\n".join(blocks)
 
 
-__all__ = ["SYSTEM_PROMPT_SQ", "build_messages"]
+__all__ = ["SYSTEM_PROMPT_SQ", "SYSTEM_PROMPT_EN", "build_messages"]

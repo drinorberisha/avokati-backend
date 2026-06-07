@@ -72,6 +72,71 @@ class AnswerResult:
     llm_usage: dict[str, Any] | None = None
 
 
+_MESSAGES = {
+    "sq": {
+        "greeting": GREETING_RESPONSE,
+        "out_of_scope": OUT_OF_SCOPE_RESPONSE,
+        "insufficient_context": (
+            "Nuk kam informacion të mjaftueshëm në bazën e të dhënave për "
+            "të dhënë një përgjigje të verifikueshme për këtë pyetje."
+        ),
+        "generation_error": (
+            "Ndodhi një gabim teknik gjatë gjenerimit të përgjigjes. "
+            "Burimet e marra janë në dispozicion më poshtë për referencë."
+        ),
+    },
+    "en": {
+        "greeting": (
+            "Hello! I am AvokAI, a legal assistant for Kosovo legislation. "
+            "How can I help with a legal question today? You can ask about a "
+            "specific article, the status of a law, or legal provisions on a topic."
+        ),
+        "out_of_scope": (
+            "Sorry, I specialize only in Kosovo legislation and cannot help with "
+            "questions outside that area. Please ask a legal question."
+        ),
+        "insufficient_context": (
+            "I do not have enough information in the database to provide a "
+            "verifiable answer to this question."
+        ),
+        "generation_error": (
+            "A technical error occurred while generating the answer. The retrieved "
+            "sources are available below for reference."
+        ),
+    },
+}
+
+
+def _normalize_response_language(language: str | None) -> str:
+    return "en" if language == "en" else "sq"
+
+
+def _localized_message(key: str, language: str) -> str:
+    lang = _normalize_response_language(language)
+    return _MESSAGES[lang].get(key) or _MESSAGES["sq"][key]
+
+
+def _status_answer(info: Any, language: str) -> str:
+    if _normalize_response_language(language) != "en":
+        return ""
+    if info.status == "fully_abolished":
+        ab_list = ", ".join(
+            (r.get("abolishing_law") or {}).get("law_number") or "?" for r in info.abolished_by
+        )
+        return f"Law {info.law_number} has been fully abolished. It was replaced by law/laws: {ab_list}."
+    if info.status == "partially_abolished":
+        ab_list = ", ".join(
+            (r.get("abolishing_law") or {}).get("law_number") or "?" for r in info.abolished_by
+        )
+        return f"Law {info.law_number} has been partially abolished. Parts of it were replaced by: {ab_list}."
+    if info.status == "abolisher":
+        old_list = ", ".join(
+            (r.get("abolished_law") or {}).get("law_number") or "?" for r in info.abolishes
+        )
+        return f"Law {info.law_number} is currently in force and has abolished: {old_list}."
+    return f"The status of Law {info.law_number} was not found in the abolishment relations registry."
+
+
 # ----- per-call infra (lazy & cached) ------------------------------------
 
 _clients: dict[str, Any] = {}
@@ -223,6 +288,7 @@ def answer(
     namespace: str | None = None,
     use_llm: bool = True,
     conversation_history: list[dict[str, str]] | None = None,
+    response_language: str = "sq",
 ) -> AnswerResult:
     """One call from query to validated answer.
 
@@ -240,6 +306,7 @@ def answer(
     """
     t0 = time.time()
     ns = namespace or DEFAULT_NAMESPACE
+    lang = _normalize_response_language(response_language)
     decision = classify(query)
     trace: dict[str, Any] = {
         "intent": decision.intent,
@@ -260,7 +327,7 @@ def answer(
         return AnswerResult(
             query=query,
             intent="greeting",
-            answer=GREETING_RESPONSE,
+            answer=_localized_message("greeting", lang),
             route_trace=trace,
             elapsed_ms=int((time.time() - t0) * 1000),
         )
@@ -268,7 +335,7 @@ def answer(
         return AnswerResult(
             query=query,
             intent="out_of_scope",
-            answer=OUT_OF_SCOPE_RESPONSE,
+            answer=_localized_message("out_of_scope", lang),
             route_trace=trace,
             elapsed_ms=int((time.time() - t0) * 1000),
         )
@@ -282,9 +349,9 @@ def answer(
         info = registry.lookup(decision.citation.law_number)  # type: ignore[union-attr]
         sources = render_synthetic_chunks(info)
         # Status questions answer themselves from the registry — no LLM needed.
-        deterministic_answer = sources[0]["content"] if sources else (
+        deterministic_answer = _status_answer(info, lang) or (sources[0]["content"] if sources else (
             f"Statusi i Ligjit {decision.citation.law_number} nuk gjendet në regjistrin e shfuqizimit."  # type: ignore[union-attr]
-        )
+        ))
         trace["abolishment_status"] = info.status
 
     elif decision.intent == "citation_lookup":
@@ -346,10 +413,7 @@ def answer(
         # Retrieval-only mode (used by retrieval eval). Stub out generation.
         final_answer = "[retrieval-only mode; no LLM answer generated]"
     elif not sources:
-        final_answer = (
-            "Nuk kam informacion të mjaftueshëm në bazën e të dhënave për "
-            "të dhënë një përgjigje të verifikueshme për këtë pyetje."
-        )
+        final_answer = _localized_message("insufficient_context", lang)
     else:
         try:
             from app.ai.llm import complete
@@ -360,6 +424,7 @@ def answer(
                 abolishment_warnings=warnings,
                 conversation_history=conversation_history,
                 primary_source_id=primary_id,
+                response_language=lang,
             )
             result = complete(messages, temperature=0.1)
             final_answer = result.text
@@ -373,10 +438,7 @@ def answer(
             }
         except Exception as e:
             trace["llm_error"] = repr(e)
-            final_answer = (
-                "Ndodhi një gabim teknik gjatë gjenerimit të përgjigjes. "
-                "Burimet e marra janë në dispozicion më poshtë për referencë."
-            )
+            final_answer = _localized_message("generation_error", lang)
 
     # Validation. Treat any law referenced by abolishment context as
     # authoritative: the model legitimately mentions abolisher laws (and
@@ -507,6 +569,7 @@ async def answer_stream(
     namespace: str | None = None,
     use_llm: bool = True,
     conversation_history: list[dict[str, str]] | None = None,
+    response_language: str = "sq",
 ):
     """Streaming variant of `answer()` for the SSE endpoint.
 
@@ -526,6 +589,7 @@ async def answer_stream(
 
     t0 = time.time()
     ns = namespace or DEFAULT_NAMESPACE
+    lang = _normalize_response_language(response_language)
     decision = classify(query)
     trace: dict[str, Any] = {
         "intent": decision.intent,
@@ -548,7 +612,7 @@ async def answer_stream(
         yield (
             "done",
             {
-                "answer": GREETING_RESPONSE,
+                "answer": _localized_message("greeting", lang),
                 "sources": [],
                 "citations": [],
                 "citation_summary": {},
@@ -566,7 +630,7 @@ async def answer_stream(
         yield (
             "done",
             {
-                "answer": OUT_OF_SCOPE_RESPONSE,
+                "answer": _localized_message("out_of_scope", lang),
                 "sources": [],
                 "citations": [],
                 "citation_summary": {},
@@ -588,9 +652,9 @@ async def answer_stream(
         if decision.intent == "status_lookup":
             info = registry.lookup(decision.citation.law_number)  # type: ignore[union-attr]
             sources = render_synthetic_chunks(info)
-            deterministic_answer = sources[0]["content"] if sources else (
+            deterministic_answer = _status_answer(info, lang) or (sources[0]["content"] if sources else (
                 f"Statusi i Ligjit {decision.citation.law_number} nuk gjendet në regjistrin e shfuqizimit."  # type: ignore[union-attr]
-            )
+            ))
             trace["abolishment_status"] = info.status
 
         elif decision.intent == "citation_lookup":
@@ -661,10 +725,7 @@ async def answer_stream(
         final_answer = "[retrieval-only mode; no LLM answer generated]"
         yield ("delta", {"text": final_answer})
     elif not sources:
-        final_answer = (
-            "Nuk kam informacion të mjaftueshëm në bazën e të dhënave për "
-            "të dhënë një përgjigje të verifikueshme për këtë pyetje."
-        )
+        final_answer = _localized_message("insufficient_context", lang)
         yield ("delta", {"text": final_answer})
     else:
         try:
@@ -676,6 +737,7 @@ async def answer_stream(
                 abolishment_warnings=warnings,
                 conversation_history=conversation_history,
                 primary_source_id=primary_id,
+                response_language=lang,
             )
             buf_parts: list[str] = []
             async for event_type, payload in acomplete_stream(messages, temperature=0.1):
@@ -695,10 +757,7 @@ async def answer_stream(
             final_answer = "".join(buf_parts)
         except Exception as e:
             trace["llm_error"] = repr(e)
-            final_answer = (
-                "Ndodhi një gabim teknik gjatë gjenerimit të përgjigjes. "
-                "Burimet e marra janë në dispozicion më poshtë për referencë."
-            )
+            final_answer = _localized_message("generation_error", lang)
             yield ("delta", {"text": final_answer})
 
     # --- validation + final event -------------------------------------
