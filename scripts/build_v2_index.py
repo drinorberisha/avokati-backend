@@ -2,7 +2,10 @@
 Build the v2 Pinecone namespace from the on-disk law PDFs.
 
 Pipeline per law:
-  1. PyMuPDF extracts clean Albanian text from the PDF.
+  1. PyMuPDF extracts clean Albanian text from the PDF. If the PDF's text layer
+     is garbled (a non-embedded font with broken encoding maps ë/ç -> €/digits —
+     some 2020s gazette PDFs), it is auto-routed to page-selective Gemini OCR
+     (only the garbled pages). Disable with --no-ocr. See app/ai/ocr.py.
   2. v2_chunker splits into per-article chunks with real metadata
      (`law_number`, `article_number`, `article_title`, `chapter_number`).
   3. OpenAI text-embedding-3-large embeds each article.
@@ -28,6 +31,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from dataclasses import asdict
@@ -44,6 +48,7 @@ except Exception:
     pass
 
 from app.ai.v2_chunker import LegalChunk, chunk_law  # noqa: E402
+from scripts.audit_garbled_chunks import garble_ratio  # noqa: E402
 
 REPO_ROOT = BACKEND_ROOT.parent
 LAWS_DIR = REPO_ROOT / "Scraping" / "data" / "laws"
@@ -51,6 +56,10 @@ V2_NAMESPACE = "default_v2"
 EMBED_MODEL = os.environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
 EMBED_BATCH = 50          # OpenAI handles up to 2048 inputs but we want bounded latency
 UPSERT_BATCH = 100        # Pinecone recommended batch size
+# A page whose extracted text is garbled above this ratio has the broken-font
+# text layer → re-extract via OCR. Genuinely garbled pages score ~0.10-0.20;
+# clean pages ~0 (the sharpened detector ignores list numbers/measurements/codes).
+GARBLE_PAGE_THRESHOLD = 0.05
 
 STATE_PATH = BACKEND_ROOT / "tests" / "eval" / "results" / f"v2_index_state.json"
 
@@ -79,6 +88,32 @@ def _extract_text(pdf_path: Path) -> str:
 def _looks_scanned(text: str) -> bool:
     """Detect mostly-image PDFs that PyMuPDF can't read."""
     return len(text.strip()) < 500
+
+
+# Table-of-contents leader lines ("Neni 5 [Gjuhët] ........... 12"). Left in,
+# they get chunked as junk — and when a doc's TOC lists every article, the
+# chunker reads it as a whole second "document" (the Constitution PDF extracts
+# as TWO Neni 1-162 sequences: a TOC then the real text). Dropping any line with
+# a 4+ dot leader makes those TOC headers bodiless, so the <50-char skip removes
+# them; real article text (no dot leaders) is untouched.
+_TOC_LINE_RE = re.compile(r"(?m)^.*\.{4,}.*$\n?")
+
+
+def _strip_toc_lines(text: str) -> str:
+    return _TOC_LINE_RE.sub("", text)
+
+
+def _garbled_page_count(pdf_path: Path) -> int:
+    """How many of a PDF's pages have a garbled text layer (broken non-embedded font)."""
+    import fitz
+    try:
+        doc = fitz.open(str(pdf_path))
+    except Exception:
+        return 0
+    try:
+        return sum(1 for pg in doc if garble_ratio(pg.get_text("text")) > GARBLE_PAGE_THRESHOLD)
+    finally:
+        doc.close()
 
 
 def _load_state() -> dict[str, Any]:
@@ -119,6 +154,9 @@ def main() -> None:
     p.add_argument("--reset", action="store_true", help="Wipe the v2 namespace before starting (DESTRUCTIVE within v2 only)")
     p.add_argument("--namespace", default=V2_NAMESPACE, help="Target namespace (default: default_v2)")
     p.add_argument("--law", action="append", help="Process only specific law dirs (can repeat). E.g. --law 02_L-10")
+    p.add_argument("--no-ocr", action="store_true",
+                   help="Do NOT auto-route garbled (bad-text-layer) PDFs to Gemini OCR; "
+                        "ingest their raw PyMuPDF text and just flag them in state['garbled_laws'].")
     args = p.parse_args()
 
     if not LAWS_DIR.exists():
@@ -185,6 +223,26 @@ def main() -> None:
             _save_state(state)
             continue
 
+        # Auto-route bad-text-layer PDFs to OCR. A non-embedded font with broken
+        # encoding (ë/ç -> €/digits) renders fine but extracts garbled, and no text
+        # extractor can recover it — re-extract via page-selective Gemini OCR (only
+        # the garbled pages; clean pages keep their exact PyMuPDF text).
+        n_garbled = sum(_garbled_page_count(pdf) for pdf in pdfs)
+        if n_garbled and not args.no_ocr and not args.dry_run:
+            try:
+                from app.ai.ocr import ocr_pdf_text
+                print(f"    [garbled] {n_garbled} bad-text-layer page(s) → page-selective OCR")
+                text = "\n".join(ocr_pdf_text(str(pdf), page_selective=True) for pdf in pdfs)
+            except Exception as e:
+                print(f"    [garbled] OCR unavailable/failed ({e}); ingesting PyMuPDF text, flagging")
+                state.setdefault("garbled_laws", {})[law_number] = n_garbled
+        elif n_garbled:
+            why = "--no-ocr" if args.no_ocr else "dry-run"
+            print(f"    [garbled] {n_garbled} bad-text-layer page(s) ({why}) → would OCR; using PyMuPDF text")
+            if not args.dry_run:
+                state.setdefault("garbled_laws", {})[law_number] = n_garbled
+
+        text = _strip_toc_lines(text)
         chunks = chunk_law(law_number, text)
         if not chunks:
             state["skipped_laws"][law_number] = "no_articles_detected"
@@ -239,6 +297,9 @@ def main() -> None:
     print(f"  Laws completed: {len(completed) - len(state.get('completed_laws', [])) + len(completed)}")
     print(f"  Chunks upserted this run: {total_chunks}")
     print(f"  Skipped: {total_skipped}")
+    flagged = state.get("garbled_laws", {})
+    if flagged:
+        print(f"  Garbled laws flagged (OCR skipped/failed — re-run without --no-ocr): {len(flagged)}")
     print(f"  Total in v2 namespace (cumulative): {state.get('total_chunks_upserted', 0)}")
     print(f"  State: {STATE_PATH}")
 

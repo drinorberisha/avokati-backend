@@ -43,8 +43,14 @@ from typing import Iterator, List, Optional
 # We accept all three. The optional inline-title group is captured but
 # title detection stays in `_detect_title` for consistency — it tries
 # the inline form first, then falls back to the next-line heuristic.
+# Article numbers are 1-4 digits. The 4th digit matters: the Law on
+# Obligations (04/L-077) runs to Neni 1059, and a `\d{1,3}` cap silently
+# merged articles 1000+ into the Neni 999 chunk. We deliberately match only
+# CONTIGUOUS digits (no internal whitespace): PyMuPDF emits page numbers on
+# their own lines right after a header (e.g. "Neni 45\n…\n10\nKanosja"), so a
+# space-tolerant number would fuse "45" and the "10" page marker into "4510".
 ARTICLE_BOUNDARY = re.compile(
-    r"(?m)^\s*Neni\s+(?P<num>\d{1,3})\s*"
+    r"(?m)^\s*Neni\s+(?P<num>\d{1,4})\s*"
     r"(?:[.\-–—:]\s*(?P<inline_title>[^\n]{1,80}?))?\s*$",
     re.IGNORECASE,
 )
@@ -66,7 +72,10 @@ class LegalChunk:
     chapter_title: Optional[str]
     chunk_type: str            # "article" | "preamble"
     content: str               # full article text including header
-    chunk_id: str              # idempotent: "{law_safe}_art{N}"
+    chunk_id: str              # idempotent: "{law_safe}_art{N}" (or "_d{i}_art{N}")
+    document_index: int = 0    # 0 unless the PDF bundles multiple documents
+                               # (e.g. a ratification law + an annexed agreement),
+                               # each restarting at Neni 1 — see chunk_law.
 
     def to_pinecone_metadata(self, max_content_chars: int = 32_000) -> dict:
         """Serialize to a Pinecone-safe metadata dict.
@@ -85,6 +94,7 @@ class LegalChunk:
             "chapter_title": self.chapter_title or "",
             "chunk_type": self.chunk_type,
             "chunk_id": self.chunk_id,
+            "document_index": self.document_index,
             "content": content,
             "content_truncated": truncated,
         }
@@ -191,13 +201,37 @@ def chunk_law(law_number: str, full_text: str) -> List[LegalChunk]:
 
     safe = _safe_law_number(law_number)
     chunks: list[LegalChunk] = []
+    # Some gazette PDFs bundle several documents (a ratification law + its
+    # annexed agreement), each numbered from "Neni 1" again. Without splitting
+    # them, the two "Neni 1" chunks share a chunk_id and one silently overwrites
+    # the other. Detect a sub-document by the article number RESETTING to a
+    # lower value, and namespace its chunk_ids with `_d{section}`.
+    section = 0
+    max_in_section: Optional[int] = None
     for i, m in enumerate(matches):
         start = m.start()
         end = matches[i + 1].start() if i + 1 < len(matches) else len(body)
         article_text = body[start:end].strip()
         if len(article_text) < 50:
             continue
-        article_number = m.group("num")
+        article_number = m.group("num").strip()
+        cur = int(article_number) if article_number.isdigit() else None
+        if cur is not None:
+            # Article numbers strictly increase within a single document, so any
+            # NON-increase starts a new section: a reset to a lower number (a
+            # bundled sub-document — ratification law + annexed agreement), OR the
+            # SAME number again (a running "Neni N" page header the clean OCR
+            # reproduces atop each continuation page, or a second sub-document that
+            # happens to reuse the number). Bumping the section on `cur <= max`
+            # keeps every (section, article_number) — and thus every chunk_id —
+            # unique, so no chunk can silently overwrite another at upsert.
+            # Strictly-increasing single-doc laws never bump (section stays 0), so
+            # their ids are byte-identical to before — no churn.
+            if max_in_section is not None and cur <= max_in_section:
+                section += 1
+                max_in_section = cur
+            else:
+                max_in_section = cur if max_in_section is None else max(max_in_section, cur)
         # Prefer the inline title if the header had one (`Neni 1 - Title`);
         # otherwise sniff the line after the header.
         inline_title = (m.groupdict().get("inline_title") or "").strip()
@@ -210,6 +244,7 @@ def chunk_law(law_number: str, full_text: str) -> List[LegalChunk]:
         chap_num, chap_title = _chapter_for(start)
         # Split if the article exceeds the embedding-input limit; almost
         # always returns a single-element list.
+        doc_prefix = "" if section == 0 else f"_d{section}"
         parts = _split_long_article(article_text)
         for sub_idx, part in enumerate(parts):
             sub_suffix = "" if len(parts) == 1 else f"_p{sub_idx}"
@@ -222,7 +257,8 @@ def chunk_law(law_number: str, full_text: str) -> List[LegalChunk]:
                     chapter_title=chap_title,
                     chunk_type="article" if len(parts) == 1 else "article_part",
                     content=part,
-                    chunk_id=f"{safe}_art{article_number}{sub_suffix}",
+                    chunk_id=f"{safe}{doc_prefix}_art{article_number}{sub_suffix}",
+                    document_index=section,
                 )
             )
     return chunks
