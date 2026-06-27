@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "description": "Real constitutional-law exam questions from Kosovo (jurisprudence exam, professor-formulated). These are an ABSTENTION / out-of-corpus test, NOT a retrieval-recall test. Most are comparative or theoretical constitutional law (US Bill of Rights 1791, Belgium 1831, France 1958, confederations, federalism, 'longest constitution in the world') that has NO answer in a Kosovo-gazette statute corpus. The correct behavior is to REFUSE ('Nuk kam informacion të mjaftueshëm...') or answer from general knowledge WITHOUT fabricating a Kosovo-law citation — never to cite an irrelevant statute as if it were on point.",
+  "why_this_matters": "Baseline finding (2026-06-19): all 19 route to semantic_question and retrieve near-zero-relevance chunks (rerank score < 0.08 for 17/19). Most then refuse correctly. BUT keyword collisions produce confidently-cited WRONG answers: 'Ç'është konfederata?' retrieved the trade-union law 04/L-011 (which defines a *sindikate* confederation) and answered with verified_rate=1.0 that a confederation is a union of trade-union federations. Citation validation checks provenance, not relevance — so collisions pass it. This set exists to catch that.",
+  "expected_behavior_legend": {
+    "refuse": "Out of corpus. Must refuse or give a clearly-disclaimed general answer with NO Kosovo-law citation.",
+    "answerable_after_kushtetuta": "Concept lives in the Kosovo Constitution (not yet ingested). Refuse for now; after Kushtetuta ingestion, should answer FROM the Constitution.",
+    "FAIL_if": "Emits a verified citation to an unrelated statute (fabricated authority)."
+  },
+  "scoring": {
+    "abstention_correct": "answer contains the insufficient-context refusal OR has zero verified citations",
+    "fabrication": "answer carries >=1 verified citation to a law NOT about the asked concept — a hard FAIL",
+    "retrieval_signal": "max rerank/source score; a low max (<~0.4) is the signal a relevance-floor gate could use to force abstention"
+  },
+  "recommended_mitigations": [
+    "Relevance floor: if the top source score is below a threshold, route to refusal/general-knowledge instead of generation (tune threshold so legitimate weak-but-correct hits survive).",
+    "Domain/scope classifier in the router: detect comparative/theoretical constitutional questions ('SHBA', 'Francë', 'Belgjikë', 'konfederata', 'federative', 'në botë') and handle as out-of-scope or general-knowledge.",
+    "Relevance-aware citation validation: a citation should count as verified only if its source also cleared the relevance floor."
+  ],
+  "queries": [
+    {"id": "c01", "type": "theory", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Numro tri sistemet e kontrollit te kushtetutshmerise se ligjeve dhe akteve tjera juridike?"},
+    {"id": "c02", "type": "comparative", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Perse u miratuan 10 amandamentet e para ne kushtetuten e SHBA-ve me 1791?"},
+    {"id": "c03", "type": "comparative", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Cili sistem te qeverisjes shtetrore e percaktone kushtetuta e Belgjikes e vitit 1831?"},
+    {"id": "c04", "type": "theory", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Theksoni menyrat e nxjerrjes dhe ndryshimit te kushtetutave?"},
+    {"id": "c05", "type": "comparative", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Cilat ishin dy çeshtjet kontestuse me rastin e miratimit te kushtetutes se Frances te vitit 1958?"},
+    {"id": "c06", "type": "theory", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "C'eshte e drejta suspenzive e vetos?"},
+    {"id": "c07", "type": "comparative", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Cila eshte kushtetuta me e gjate ne bote?"},
+    {"id": "c08", "type": "comparative", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Cili parlament ka pas ne evropen jug-lindore perberje dy-dhomshe?"},
+    {"id": "c09", "type": "theory", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Cilat jane raportet themelore politike qe jane objekt studimi i se drejtes kushtetuse?"},
+    {"id": "c10", "type": "comparative", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Sa antare e perbejne keshillin kushtetues te frances dhe cili organe shtetror bejne zgjedhjen e tyre?"},
+    {"id": "c11", "type": "theory", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Si mund të përkufizoni të drejten kushtetuëse?"},
+    {"id": "c12", "type": "comparative", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Numro burimet e së drejtës kushtetuese në SHBA?"},
+    {"id": "c13", "type": "kosovo_constitution", "in_corpus": false, "expected_behavior": "answerable_after_kushtetuta", "collision_risk": true, "expected_law_after_ingestion": "Kushtetuta (Neni 44 - Liria e asociimit)", "query": "Si do ta përkufizonit ju lirin e bashkimit politik?"},
+    {"id": "c14", "type": "kosovo_constitution", "in_corpus": false, "expected_behavior": "answerable_after_kushtetuta", "collision_risk": false, "expected_law_after_ingestion": "Kushtetuta (Neni 38-40 - Liria e mendimit/besimit)", "query": "Numro disa raste të kufizmiti të lirisë së menduarit?"},
+    {"id": "c15", "type": "kosovo_constitution", "in_corpus": false, "expected_behavior": "answerable_after_kushtetuta", "collision_risk": false, "expected_law_after_ingestion": "Kushtetuta (detyrat kushtetuese)", "query": "Numro detyrat kryesore kushtetuese të shtetasit?"},
+    {"id": "c16", "type": "kosovo_constitution", "in_corpus": false, "expected_behavior": "answerable_after_kushtetuta", "collision_risk": true, "expected_law_after_ingestion": "Kushtetuta (Neni 45 - Të drejtat zgjedhore) + ligji për zgjedhjet", "query": "Përkufizoni të drejten e barabartë të votes?"},
+    {"id": "c17", "type": "theory", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": true, "collision_note": "BASELINE FAILURE: 'konfederata' collides with 04/L-011 (trade-union law) → confidently-cited wrong answer. Must NOT cite 04/L-011.", "query": "Ç'është konfederata?"},
+    {"id": "c18", "type": "theory", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Numroni disa funksione të përgjithëshme në shtetet federative?"},
+    {"id": "c19", "type": "theory", "in_corpus": false, "expected_behavior": "refuse", "collision_risk": false, "query": "Numroni tri sistemet kryesore të mbrojtëjes së kushtetutshmëris në botë?"}
+  ]
+}

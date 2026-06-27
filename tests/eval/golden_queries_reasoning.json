@@ -1,0 +1,271 @@
+{
+  "version": 1,
+  "description": "Curated legal-reasoning golden set for AvokAI, seeded from real Kosovo law-professor exam hypotheticals ('kazus'). Unlike golden_queries.json (auto-generated keyword/citation/status queries), each item here is a multi-issue fact pattern: the model must SPOT several distinct violations ('shkelje'), and for each name the right at stake, the liable party, and the relevant law/article. Ground truth is therefore a LIST of issues, each grounded against laws that actually exist in the index. Article numbers were located by semantic search inside the named law (real article titles confirmed the match) but the LEGAL judgement of which issues apply still needs verification by the professors — see needs_expert_review.",
+  "needs_expert_review": true,
+  "scoring": {
+    "retrieval_primary": "law-level union recall@k: of expected_law_numbers_union, how many appear in the retrieved sources",
+    "retrieval_per_issue": "for each issue, was >=1 of its expected laws retrieved (issue coverage)",
+    "answer_rubric": "for LLM runs, how many rubric points the answer covers (faithfulness/coverage); judge manually or via V4-Flash",
+    "note": "known_gaps laws (Kushtetuta, KEDNJ) are NOT in the corpus, so they are excluded from recall denominators and tracked separately as a corpus-coverage finding."
+  },
+  "corpus_gaps_observed": {
+    "Kushtetuta e Republikës së Kosovës": "NOT indexed — yet it is the primary source for every 'të drejtat e njeriut' question (Neni 23-56). Human-rights hypotheticals cannot be answered from primary authority until it is ingested.",
+    "Konventa Evropiane për të Drejtat e Njeriut (KEDNJ/ECHR)": "NOT indexed — directly applicable in Kosovo via Kushtetuta Neni 22; needed for life/torture/liberty analysis."
+  },
+  "queries": [
+    {
+      "id": "r001",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_open",
+      "source": "law professor exam hypothetical (human rights / criminal liability)",
+      "language": "sq",
+      "char_len": 1701,
+      "query": "Përgjegjësitë për Ndërhyrje në të Drejtat e Njeriut\n\nNjë njeri i madh është duke ecur rrugës. Një njeri i shkurtër i afrohet nga prapa njeriut të madh duke ja vjedhur kuletën nga xhepi i prapëm. Njeriu i madh kthehet dhe e vëren hajnin. E zë hajinin dhe fillon ta rrah atë. E rraf aq shumë hajinin sa që ai rrëzohet për toke i përgjakur. Edhe përderisa ai qëndronte i shtrirë në tokë, njeriu i madh vazhdonte ta godiste. Hajni bërtiste sa herë goditej.\n\nArrijnë dy policë dhe intervenojnë. Njeriu i madh u spjegon se është policë nga një qytet tjetër por që është në pushim vjetor. Ai u tregon se njeriu në tokë është hajn. Dy policët e arrestojnë njeriun e madh, ndërsa njeriun e vogël e dërgojnë në spital.\n\nNë spitalin shtetëror, hajni menjëherë fillon ta fyej personelin mjekësorë. Ai poashtu bëhet shumë agresiv ndaj motrave medicinale. Hajni bëhet gjithnjë e më tepër histerik. Mjeku i urdhëron policët që ata ta mbajnë atë, përderisa ai të ja jep një ineksion për qetësim. Mjeku urdhëron që pacienti të lidhet për krevati dhe të lihet vetëm. Mjeku iu thotë policëve se nuk kanë më nevojë për ta, kështu që ata shkojnë. Personeli mjekësorë shkon që të kujdeset për pacientat e tjerë. Pak kohë pasi që pacienti mbes vetë, pëson një alergji si reagim në ineksionin e dhënë dhe kështu ai vdes. Mjeku e shkruan një vërtetim rreth vdekjes së tij, në të cilin si shkak të vdekjes i merr lëndimet e marra gjatë rrahjes.\n\nNjeriu i madh akuzohet për vdekjen e hajnit.\n\nA vëreni ndonjë shkelje të mundshme apo shkelje të të drejtave të njeriut në këtë rast? Spjegoni se cila e drejtë/të drejta janë shkelur. Për çdo të drejtë që mendoni se është shkelur, tregoni se çka mendoni kush është fajtor dhe pse.",
+      "issues": [
+        {
+          "issue": "Tejkalimi i kufijve të mbrojtjes së nevojshme — njeriu i madh vazhdon ta rrahë hajnin pasi ai rrëzohet i përgjakur dhe i pambrojtur",
+          "right": "Integriteti trupor / ndalimi i keqtrajtimit",
+          "liable_party": "njeriu i madh",
+          "expected_law_numbers": ["KUV-06/L-074-KOD", "04/L-082"],
+          "expected_article_numbers": ["12", "186", "185"],
+          "in_corpus": true,
+          "confidence": "high"
+        },
+        {
+          "issue": "E drejta për jetë — vdekja e hajnit; shkaku i vërtetë (alergjia ndaj injeksionit + lënia vetëm i lidhur) vs. shkaku i shkruar nga mjeku (rrahja)",
+          "right": "E drejta për jetë (Kushtetuta Neni 25; KEDNJ Neni 2)",
+          "liable_party": "mjeku (kryesisht) / njeriu i madh (sipas shkakësisë)",
+          "expected_law_numbers": ["KUV-06/L-074-KOD", "04/L-082"],
+          "expected_article_numbers": ["254", "255", "175"],
+          "in_corpus": true,
+          "confidence": "medium"
+        },
+        {
+          "issue": "Trajtimi i pandërgjegjshëm mjekësor / mosdhënia e ndihmës — pacienti lidhet dhe lihet vetëm, pa mbikëqyrje, dhe vdes nga reaksioni alergjik",
+          "right": "E drejta për kujdes shëndetësor / jetë",
+          "liable_party": "mjeku",
+          "expected_law_numbers": ["KUV-06/L-074-KOD", "04/L-125"],
+          "expected_article_numbers": ["254", "255"],
+          "in_corpus": true,
+          "confidence": "high"
+        },
+        {
+          "issue": "Falsifikimi i vërtetimit të vdekjes — mjeku shkruan si shkak të vdekjes lëndimet nga rrahja, duke fshehur neglizhencën e vet",
+          "right": "Integriteti i dokumenteve zyrtare / drejtësia",
+          "liable_party": "mjeku",
+          "expected_law_numbers": ["KUV-06/L-074-KOD"],
+          "expected_article_numbers": ["427", "390"],
+          "in_corpus": true,
+          "confidence": "high"
+        },
+        {
+          "issue": "Privimi i lirisë / kufizimi fizik — lidhja e pacientit për krevat dhe arrestimi; ligjshmëria e masave",
+          "right": "E drejta e lirisë dhe sigurisë (Kushtetuta Neni 29; KEDNJ Neni 5)",
+          "liable_party": "mjeku / policia (sipas ligjshmërisë së masës)",
+          "expected_law_numbers": ["KUV-06/L-074-KOD"],
+          "expected_article_numbers": ["193"],
+          "in_corpus": true,
+          "confidence": "medium"
+        }
+      ],
+      "expected_law_numbers_union": ["KUV-06/L-074-KOD", "04/L-082", "04/L-125", "04/L-077"],
+      "known_gaps": ["Kushtetuta e Republikës së Kosovës (Neni 23, 25, 27, 29)", "KEDNJ (Neni 2, 3, 5)"],
+      "answer_rubric": [
+        "Identifikon tejkalimin e mbrojtjes së nevojshme nga njeriu i madh (vazhdimi i rrahjes pas neutralizimit)",
+        "Identifikon çështjen e të drejtës për jetë dhe vdekjen e hajnit",
+        "Ngre dyshimin për shkakësinë: rrahja vs. neglizhenca/alergjia ndaj injeksionit",
+        "Identifikon përgjegjësinë e mundshme të mjekut (trajtim i pandërgjegjshëm / lënia vetëm)",
+        "Identifikon falsifikimin e vërtetimit të vdekjes nga mjeku",
+        "Adreson ligjshmërinë e privimit të lirisë (lidhja/arrestimi)",
+        "Cakton fajtorin për secilën shkelje veç e veç me arsyetim"
+      ]
+    },
+    {
+      "id": "r002",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_mcq",
+      "source": "law professor exam hypothetical (property / necessity easement / human-rights interference)",
+      "language": "sq",
+      "char_len": 1287,
+      "query": "Ju jeni zyrtarë i lartë komunal. Fqiu juaj është një bujk i thjeshtë i cili nuk ka dalje në rrugën kryesore. Ai nuk ka mundesi tjetër ti transportoi produktet nga toka e tij në treg. Ju që të gjithmonë keni refuzuar të diskutoni rreth lejës së fqiut tuaj që të kaloj përskaj tokës suaj në ndonjë mënyrë tjetër përpos që këtë ta bëj në këmbë. Fqiu juaj ka kërkuar nga Gjykata Komunale të ju urdhëroi që të lejoni ndërtimin e rrugës në mes të tokës së tij dhe rrugës kryesore. Ju keni refuzuar të paraqiteni në gjyq, dhe Gjykata Komunale merr vendim që fqiu juaj mund të ndërtoi një rrugë në mes të tokës së tij dhe rrugës kryesore me qëllim që të ketë dalje jashtë.\n\nNjë mëngjes ngriteni prej gjumit dhe shihni policët që arrijnë duke bërë përcjelljen e një makine të madhe dhe një ekipi të punëtorëve. Këta punëtorë fillojnë ta përdorin makinën dhe të gërrmojnë përgjatë pronës tuaj në mes të rrugës kryesore dhe tokës së fqiut tuaj. Ju shkoni që të ndërpritni një gjë të tillë. Policia ju njeh se kush jeni dhe e ndërprenë punën.\n\nKush është përgjegjës për ndërhyrje me të drejtat e kujt? Zgjidhni vetëm një përgjigje:\n- Punëtorët ndërhyjnë me të drejtat e tuaja\n- Policia ndërhynë me të drejtat e tuaja\n- Gjykata ndërhynë me të drejtat e tuaja\n- Ju ndërhyni me të drejtat e fqiut tuaj",
+      "options": [
+        "Punëtorët ndërhyjnë me të drejtat e tuaja",
+        "Policia ndërhynë me të drejtat e tuaja",
+        "Gjykata ndërhynë me të drejtat e tuaja",
+        "Ju ndërhyni me të drejtat e fqiut tuaj"
+      ],
+      "expected_answer": "Gjykata ndërhynë me të drejtat e tuaja",
+      "expected_answer_confidence": "medium",
+      "expected_answer_reasoning": "Ndërhyrja në të drejtën e pronës duhet të jetë 'e parashikuar me ligj' dhe i atribuohet autoritetit publik akti i të cilit e autorizon ndërhyrjen — këtu vendimi i Gjykatës Komunale që lejon servitutin/kalimin e domosdoshëm. Punëtorët dhe policia vetëm e ekzekutojnë vendimin. Ndërhyrja është e ligjshme (kalimi i domosdoshëm sipas 03/L-154 Neni 86), por bartës i saj është gjykata. ÇËSHTJE E DISKUTUESHME — kërkon konfirmim nga profesorët.",
+      "issues": [
+        {
+          "issue": "E drejta e kalimit të domosdoshëm (servituti) — fqiu pa dalje në rrugë publike fiton të drejtën e kalimit përmes pronës fqinje",
+          "right": "E drejta e kalimit të domosdoshëm / servituti sendor",
+          "liable_party": "n/a (baza ligjore e ndërhyrjes)",
+          "expected_law_numbers": ["03/L-154"],
+          "expected_article_numbers": ["86", "87", "252", "254"],
+          "in_corpus": true,
+          "confidence": "high"
+        },
+        {
+          "issue": "Ndërhyrja në të drejtën e pronës — gërmimi përgjatë pronës suaj në bazë të vendimit gjyqësor",
+          "right": "E drejta e pronës (Kushtetuta Neni 46)",
+          "liable_party": "gjykata (akti autorizues) / shteti",
+          "expected_law_numbers": ["03/L-154"],
+          "expected_article_numbers": ["18", "230"],
+          "in_corpus": true,
+          "confidence": "medium"
+        },
+        {
+          "issue": "Kyçja në rrugë publike — ndërtimi i daljes në rrugën kryesore",
+          "right": "Qasja në infrastrukturën rrugore",
+          "liable_party": "n/a",
+          "expected_law_numbers": ["08/L-275"],
+          "expected_article_numbers": ["19"],
+          "in_corpus": true,
+          "confidence": "low"
+        }
+      ],
+      "expected_law_numbers_union": ["03/L-154", "08/L-275"],
+      "known_gaps": ["Kushtetuta e Republikës së Kosovës (Neni 46 — Mbrojtja e pronës)"],
+      "answer_rubric": [
+        "Identifikon institutin e kalimit/servitutit të domosdoshëm (03/L-154)",
+        "Shpjegon se ndërhyrja në pronë duhet bazuar në ligj dhe i atribuohet autoritetit publik",
+        "Zgjedh një përgjigje dhe e arsyeton (gjykata si akti autorizues)",
+        "Dallon ekzekutuesit (punëtorët/policia) nga bartësi i ndërhyrjes (gjykata)"
+      ]
+    },
+    {
+      "id": "a001",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r001 — isolates single-issue retrieval",
+      "language": "sq",
+      "query": "Si e rregullon Kodi Penal i Kosovës mbrojtjen e nevojshme dhe tejkalimin e kufijve të saj?",
+      "expected_law_numbers": ["KUV-06/L-074-KOD"],
+      "expected_article_numbers": ["12"],
+      "confidence": "high"
+    },
+    {
+      "id": "a002",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r001",
+      "language": "sq",
+      "query": "Cili nen i Kodit Penal parashikon vrasjen nga pakujdesia?",
+      "expected_law_numbers": ["KUV-06/L-074-KOD"],
+      "expected_article_numbers": ["175"],
+      "confidence": "high"
+    },
+    {
+      "id": "a003",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r001",
+      "language": "sq",
+      "query": "Çfarë konsiderohet lëndim i rëndë trupor sipas Kodit Penal?",
+      "expected_law_numbers": ["KUV-06/L-074-KOD"],
+      "expected_article_numbers": ["186"],
+      "confidence": "high"
+    },
+    {
+      "id": "a004",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r001",
+      "language": "sq",
+      "query": "Si dënohet trajtimi i pandërgjegjshëm mjekësor në Kodin Penal?",
+      "expected_law_numbers": ["KUV-06/L-074-KOD"],
+      "expected_article_numbers": ["254"],
+      "confidence": "high"
+    },
+    {
+      "id": "a005",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r001",
+      "language": "sq",
+      "query": "Çfarë parashikon ligji për mosdhënien e ndihmës mjekësore?",
+      "expected_law_numbers": ["KUV-06/L-074-KOD"],
+      "expected_article_numbers": ["255"],
+      "confidence": "high"
+    },
+    {
+      "id": "a006",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r001",
+      "language": "sq",
+      "query": "Cili nen rregullon falsifikimin e dokumentit zyrtar?",
+      "expected_law_numbers": ["KUV-06/L-074-KOD"],
+      "expected_article_numbers": ["427"],
+      "confidence": "high"
+    },
+    {
+      "id": "a007",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r001",
+      "language": "sq",
+      "query": "Si rregullohet privimi i kundërligjshëm i lirisë në Kodin Penal?",
+      "expected_law_numbers": ["KUV-06/L-074-KOD"],
+      "expected_article_numbers": ["193"],
+      "confidence": "high"
+    },
+    {
+      "id": "a008",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r001",
+      "language": "sq",
+      "query": "Çfarë është keqtrajtimi gjatë ushtrimit të detyrës zyrtare?",
+      "expected_law_numbers": ["KUV-06/L-074-KOD"],
+      "expected_article_numbers": ["195"],
+      "confidence": "high"
+    },
+    {
+      "id": "a009",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r002",
+      "language": "sq",
+      "query": "Si rregullohet e drejta e kalimit të domosdoshëm sipas ligjit për pronësinë dhe të drejtat tjera sendore?",
+      "expected_law_numbers": ["03/L-154"],
+      "expected_article_numbers": ["86"],
+      "confidence": "high"
+    },
+    {
+      "id": "a010",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r002",
+      "language": "sq",
+      "query": "Çfarë janë servitutet sendore dhe si ushtrohen sipas Ligjit 03/L-154?",
+      "expected_law_numbers": ["03/L-154"],
+      "expected_article_numbers": ["252", "254"],
+      "confidence": "high"
+    },
+    {
+      "id": "a011",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r002",
+      "language": "sq",
+      "query": "Si mbrohen të drejtat e pronarit ndaj ndërhyrjeve të paligjshme?",
+      "expected_law_numbers": ["03/L-154"],
+      "expected_article_numbers": ["230"],
+      "confidence": "medium"
+    },
+    {
+      "id": "a012",
+      "category": "legal_reasoning",
+      "subtype": "atomic_decomposed",
+      "source": "decomposed from r002",
+      "language": "sq",
+      "query": "Si rregullohet kyçja e një prone në rrugë publike?",
+      "expected_law_numbers": ["08/L-275"],
+      "expected_article_numbers": ["19"],
+      "confidence": "medium"
+    }
+  ]
+}

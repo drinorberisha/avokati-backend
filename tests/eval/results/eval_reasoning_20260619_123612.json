@@ -1,0 +1,233 @@
+{
+  "timestamp": "20260619_123612",
+  "namespace": "default_v2",
+  "rows": [
+    {
+      "id": "rc01",
+      "subtype": "issue_spotting_open",
+      "intent": "semantic_question",
+      "union_recall@5": 0.5,
+      "union_hit": [
+        "04/L-077"
+      ],
+      "union_total": 2,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 0.5,
+      "issue_article_coverage@5": 0.0,
+      "issues": [
+        {
+          "issue": "Mjetet procedurale për realizimin e borxhit (urdhërpagesa / ",
+          "law@5": false,
+          "art@5": false
+        },
+        {
+          "issue": "Detyrimi i blerësit për pagesën e çmimit nga kontrata e shit",
+          "law@5": true,
+          "art@5": false
+        }
+      ],
+      "known_gaps": []
+    },
+    {
+      "id": "rc02",
+      "subtype": "issue_spotting_open",
+      "intent": "semantic_question",
+      "union_recall@5": 0.0,
+      "union_hit": [],
+      "union_total": 2,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 0.0,
+      "issue_article_coverage@5": 0.0,
+      "issues": [
+        {
+          "issue": "Natyra e çështjes: publiko-juridike (prokurim publik), jo pr",
+          "law@5": false,
+          "art@5": false
+        },
+        {
+          "issue": "Kompetenca: organi shqyrtues i prokurimit / gjykata administ",
+          "law@5": false,
+          "art@5": false
+        }
+      ],
+      "known_gaps": []
+    },
+    {
+      "id": "rc03",
+      "subtype": "issue_spotting_open",
+      "intent": "semantic_question",
+      "union_recall@5": 0.5,
+      "union_hit": [
+        "04/L-077"
+      ],
+      "union_total": 2,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 0.5,
+      "issue_article_coverage@5": 0.0,
+      "issues": [
+        {
+          "issue": "Klauzola e heqjes dorë nga mbrojtja gjyqësore është e pavlef",
+          "law@5": false,
+          "art@5": false
+        },
+        {
+          "issue": "Kufijtë e lirisë së kontraktimit; pacta sunt servanda nuk vl",
+          "law@5": true,
+          "art@5": false
+        }
+      ],
+      "known_gaps": []
+    },
+    {
+      "id": "rc04",
+      "subtype": "issue_spotting_open",
+      "intent": "semantic_question",
+      "union_recall@5": 0.5,
+      "union_hit": [
+        "04/L-077"
+      ],
+      "union_total": 2,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 0.5,
+      "issue_article_coverage@5": 0.0,
+      "issues": [
+        {
+          "issue": "Vetëgjyqësia/vetëndihma është e ndaluar — A nuk ka të drejtë",
+          "law@5": true,
+          "art@5": false
+        },
+        {
+          "issue": "Edhe me aktgjykim në favor, realizimi bëhet me përmbarim gjy",
+          "law@5": false,
+          "art@5": false
+        }
+      ],
+      "known_gaps": []
+    },
+    {
+      "id": "rc05",
+      "subtype": "issue_spotting_open",
+      "intent": "semantic_question",
+      "union_recall@5": 0.0,
+      "union_hit": [],
+      "union_total": 1,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 0.0,
+      "issue_article_coverage@5": 0.0,
+      "issues": [
+        {
+          "issue": "Tejkalimi i kërkesëpadisë (ultra/extra petita) — gjykata nuk",
+          "law@5": false,
+          "art@5": false
+        }
+      ],
+      "known_gaps": []
+    },
+    {
+      "id": "rc06",
+      "subtype": "issue_spotting_open",
+      "intent": "semantic_question",
+      "union_recall@5": 1.0,
+      "union_hit": [
+        "03/L-006"
+      ],
+      "union_total": 1,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 1.0,
+      "issue_article_coverage@5": 0.0,
+      "issues": [
+        {
+          "issue": "Ujdia gjyqësore — palët mund të pajtohen gjatë procesit; baz",
+          "law@5": true,
+          "art@5": false
+        }
+      ],
+      "known_gaps": []
+    },
+    {
+      "id": "rc07",
+      "subtype": "issue_spotting_open",
+      "intent": "semantic_question",
+      "union_recall@5": 1.0,
+      "union_hit": [
+        "03/L-006"
+      ],
+      "union_total": 1,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 1.0,
+      "issue_article_coverage@5": 0.0,
+      "issues": [
+        {
+          "issue": "Parimi i drejtpërdrejtësisë — gjyqtari i ri duhet të përsëri",
+          "law@5": true,
+          "art@5": false
+        },
+        {
+          "issue": "Provat e marra nga gjykata e lutur — përjashtim nga drejtpër",
+          "law@5": true,
+          "art@5": false
+        }
+      ],
+      "known_gaps": []
+    },
+    {
+      "id": "rc08",
+      "subtype": "issue_spotting_open",
+      "intent": "semantic_question",
+      "union_recall@5": 0.0,
+      "union_hit": [],
+      "union_total": 1,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 0.0,
+      "issue_article_coverage@5": 0.0,
+      "issues": [
+        {
+          "issue": "Tejkalimi i kërkesëpadisë (ultra petita) — 2.100 € > 1.700 €",
+          "law@5": false,
+          "art@5": false
+        }
+      ],
+      "known_gaps": []
+    },
+    {
+      "id": "rc09",
+      "subtype": "issue_spotting_open",
+      "intent": "semantic_question",
+      "union_recall@5": 1.0,
+      "union_hit": [
+        "03/L-006"
+      ],
+      "union_total": 1,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 1.0,
+      "issue_article_coverage@5": 0.0,
+      "issues": [
+        {
+          "issue": "Parimi i kontradiktoritetit / e drejta për t'u dëgjuar — ven",
+          "law@5": true,
+          "art@5": false
+        }
+      ],
+      "known_gaps": []
+    },
+    {
+      "id": "rc10",
+      "subtype": "issue_spotting_open",
+      "intent": "semantic_question",
+      "union_recall@5": 0.0,
+      "union_hit": [],
+      "union_total": 1,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 0.0,
+      "issue_article_coverage@5": 0.0,
+      "issues": [
+        {
+          "issue": "Parimi i drejtpërdrejtësisë — gjyqtari R nuk mund të vendosë",
+          "law@5": false,
+          "art@5": false
+        }
+      ],
+      "known_gaps": []
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{"dir": "04_L-253", "garbled_chunks": 1, "pages": 2, "status": "ERROR", "detail": "httpx.ConnectError: [Errno -3] Temporary failure in name resolution", "secs": 17}
+{"dir": "04_L-058", "garbled_chunks": 2, "pages": 3, "status": "GATE_FAILED", "detail": "— garble=0.03 dup_ids=False chunks 9→10. Skipping (review + re-run with --force).", "secs": 85}
+{"dir": "04_L-253", "garbled_chunks": 1, "pages": 2, "status": "INGESTED", "detail": "6 chunks", "secs": 52}
+{"dir": "03_L-220", "garbled_chunks": 1, "pages": 4, "status": "GATE_FAILED", "detail": "— garble=0.03 dup_ids=False chunks 5→5. Skipping (review + re-run with --force).", "secs": 70}
+{"dir": "08_L-030", "garbled_chunks": 1, "pages": 4, "status": "INGESTED", "detail": "4 chunks", "secs": 79}
+{"dir": "05_L-032", "garbled_chunks": 1, "pages": 5, "status": "INGESTED", "detail": "18 chunks", "secs": 67}
+{"dir": "08_L-098", "garbled_chunks": 6, "pages": 6, "status": "INGESTED", "detail": "21 chunks", "secs": 126}
+{"dir": "04_L-084", "garbled_chunks": 1, "pages": 7, "status": "INGESTED", "detail": "31 chunks", "secs": 143}
+{"dir": "08_L-119", "garbled_chunks": 2, "pages": 7, "status": "INGESTED", "detail": "27 chunks", "secs": 100}
+{"dir": "08_L-240", "garbled_chunks": 3, "pages": 7, "status": "INGESTED", "detail": "21 chunks", "secs": 134}
+{"dir": "04_L-083", "garbled_chunks": 6, "pages": 8, "status": "GATE_FAILED", "detail": "— garble=0.05 dup_ids=False chunks 19→18. Skipping (review + re-run with --force).", "secs": 125}
+{"dir": "08_L-227", "garbled_chunks": 1, "pages": 8, "status": "INGESTED", "detail": "30 chunks", "secs": 118}
+{"dir": "04_L-061", "garbled_chunks": 4, "pages": 9, "status": "INGESTED", "detail": "35 chunks", "secs": 197}
+{"dir": "04_L-164", "garbled_chunks": 2, "pages": 9, "status": "INGESTED", "detail": "31 chunks", "secs": 111}
+{"dir": "08_L-009", "garbled_chunks": 2, "pages": 9, "status": "ERROR", "detail": "RuntimeError: OCR page 8 of /home/drberisha/3PROJEKTET/LAW-OFFICE/Scraping/data/laws/08_L-009/08_L-009.pdf did not finish cleanly: MAX_TOKENS", "secs": 263}
+{"dir": "08_L-106", "garbled_chunks": 12, "pages": 9, "status": "ERROR", "detail": "RuntimeError: OCR page 8 of /home/drberisha/3PROJEKTET/LAW-OFFICE/Scraping/data/laws/08_L-106/08_L-106.pdf did not finish cleanly: MAX_TOKENS", "secs": 208}
+{"dir": "08_L-009", "garbled_chunks": 2, "pages": 9, "status": "INGESTED", "detail": "5 chunks", "secs": 82}
+{"dir": "08_L-106", "garbled_chunks": 12, "pages": 9, "status": "INGESTED", "detail": "23 chunks", "secs": 74}
+{"dir": "08_L-229", "garbled_chunks": 14, "pages": 9, "status": "INGESTED", "detail": "32 chunks", "secs": 81}
+{"dir": "08_L-232", "garbled_chunks": 2, "pages": 9, "status": "INGESTED", "detail": "4 chunks", "secs": 62}
+{"dir": "05_L-040", "garbled_chunks": 2, "pages": 10, "status": "GATE_FAILED", "detail": "— garble=0.00 dup_ids=True chunks 38→39. Skipping (review + re-run with --force).", "secs": 8}
+{"dir": "07_L-009", "garbled_chunks": 4, "pages": 10, "status": "INGESTED", "detail": "9 chunks", "secs": 81}
+{"dir": "07_L-011", "garbled_chunks": 2, "pages": 10, "status": "INGESTED", "detail": "10 chunks", "secs": 59}
+{"dir": "08_L-230", "garbled_chunks": 7, "pages": 10, "status": "INGESTED", "detail": "31 chunks", "secs": 96}
+{"dir": "08_L-008", "garbled_chunks": 9, "pages": 11, "status": "INGESTED", "detail": "19 chunks", "secs": 86}
+{"dir": "08_L-097", "garbled_chunks": 8, "pages": 11, "status": "INGESTED", "detail": "23 chunks", "secs": 96}
+{"dir": "08_L-231", "garbled_chunks": 15, "pages": 11, "status": "INGESTED", "detail": "29 chunks", "secs": 111}
+{"dir": "07_L-003", "garbled_chunks": 3, "pages": 15, "status": "GATE_FAILED", "detail": "— garble=0.00 dup_ids=False chunks 6→5. Skipping (review + re-run with --force).", "secs": 87}
+{"dir": "07_L-008", "garbled_chunks": 3, "pages": 18, "status": "INGESTED", "detail": "6 chunks", "secs": 107}
+{"dir": "08_L-250", "garbled_chunks": 1, "pages": 22, "status": "INGESTED", "detail": "42 chunks", "secs": 26}
+{"dir": "08_L-100", "garbled_chunks": 12, "pages": 23, "status": "INGESTED", "detail": "18 chunks", "secs": 186}
+{"dir": "08_L-096", "garbled_chunks": 5, "pages": 27, "status": "INGESTED", "detail": "8 chunks", "secs": 188}
+{"dir": "08_L-068", "garbled_chunks": 5, "pages": 31, "status": "INGESTED", "detail": "10 chunks", "secs": 189}
+{"dir": "07_L-031", "garbled_chunks": 24, "pages": 46, "status": "INGESTED", "detail": "40 chunks", "secs": 458}
+{"dir": "07_L-010", "garbled_chunks": 16, "pages": 66, "status": "GATE_FAILED", "detail": "— garble=0.00 dup_ids=True chunks 19→27. Skipping (review + re-run with --force).", "secs": 494}
+{"dir": "08_L-069", "garbled_chunks": 20, "pages": 83, "status": "GATE_FAILED", "detail": "— garble=0.00 dup_ids=True chunks 24→34. Skipping (review + re-run with --force).", "secs": 818}
+{"dir": "08_L-148", "garbled_chunks": 57, "pages": 103, "status": "INGESTED", "detail": "147 chunks", "secs": 1054}

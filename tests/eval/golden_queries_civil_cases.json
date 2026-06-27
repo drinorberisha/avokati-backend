@@ -1,0 +1,374 @@
+{
+  "version": 1,
+  "description": "Curated CIVIL / CIVIL-PROCEDURE case hypotheticals (kazus) from Kosovo law exams (professor-formulated, 2026-06-19). Same multi-issue schema as golden_queries_reasoning.json. Dominant law = Ligji per Proceduren Kontestimore (LPK) 03/L-006; also Obligations 04/L-077, Execution 04/L-139, Public Procurement 04/L-042, Admin Procedure 05/L-031.",
+  "needs_expert_review": true,
+  "article_grounding_note": "Laws are grounded by presence+relevance in the index. ARTICLE numbers are LOW-CONFIDENCE candidates: 03/L-006 chunks have empty article_title metadata and noisy embeddings (article 388 recurred across unrelated concepts), so the exact LPK articles must be verified by the professors. Scoring leans on law-level union recall, not article hits.",
+  "scoring": {
+    "retrieval_primary": "law-level union recall@5",
+    "retrieval_per_issue": "per-issue law coverage@5 (article coverage reported but low-confidence)",
+    "answer_rubric": "manual/LLM-judged coverage of the procedural principle"
+  },
+  "queries": [
+    {
+      "id": "rc01",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_open",
+      "source": "law professor exam case (civil / civil procedure)",
+      "language": "sq",
+      "char_len": 481,
+      "query": "Personi A kishte ble nga personi B më datë 22 Janar 2010 një makinë të tipit “Volvo” në shumën prej 9.000 euro. Personi kishte pranuar makinën dhe kishte paguar 5.500 euro. Sipas marrëveshjes, personi A është dashur më datë 15 Prill 2010 me paguar edhe 3.500 euro. Pasi A nuk kishte paguar pjesën e mbetur të çmimit të shitjes, shkon te avokati C dhe dëshiron të dijë se si mund të realizoj pjesën e mbetur të çmimit të shitjes. Çka duhet të ndërmerr avokati C lidhur me këtë rast?",
+      "issues": [
+        {
+          "issue": "Mjetet procedurale për realizimin e borxhit (urdhërpagesa / padia për përmbushje)",
+          "expected_law_numbers": [
+            "03/L-006"
+          ],
+          "expected_article_numbers": [
+            "495",
+            "493",
+            "497"
+          ],
+          "confidence": "low",
+          "in_corpus": true
+        },
+        {
+          "issue": "Detyrimi i blerësit për pagesën e çmimit nga kontrata e shitjes",
+          "expected_law_numbers": [
+            "04/L-077"
+          ],
+          "expected_article_numbers": [
+            "527",
+            "652"
+          ],
+          "confidence": "low",
+          "in_corpus": true
+        }
+      ],
+      "expected_law_numbers_union": [
+        "03/L-006",
+        "04/L-077"
+      ],
+      "known_gaps": [],
+      "answer_rubric": [
+        "Këshillon ngritjen e padisë ose urdhërpagesës për 3.500 € të mbetura",
+        "Identifikon bazën në kontratën e shitjes (04/L-077)",
+        "Përmend kamatën/afatin nëse relevante"
+      ]
+    },
+    {
+      "id": "rc02",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_open",
+      "source": "law professor exam case (civil / civil procedure)",
+      "language": "sq",
+      "char_len": 645,
+      "query": "Komuna e Prizrenit në mars të vitit 2013 kishte hapur një tender për renovimin e objektit të Kuvendit Komunal. Në atë tender kishin aplikuar shumë ndërmarrje ndërtimi, në mesin e të cilave edhe ndërmarrja “Betoni”. Pas shqyrtimit të dokumentacionit, Komuna kishte vendosur që ndërmarrja “Hekuri” të kryente renovimet e nevojshme. Ndërmarrja “Betoni” nuk ishte pajtuar, me pretendimin se i ka plotësuar kushtet më mirë dhe se janë shkelur ligjet gjatë procedurës së tenderimit, dhe autorizon avokatin A. a) A është kjo çështje me karakter publiko-juridik apo privato-juridik? b) A është kompetente gjykata dhe cila gjykatë do të ishte kompetente?",
+      "issues": [
+        {
+          "issue": "Natyra e çështjes: publiko-juridike (prokurim publik), jo privato-juridike",
+          "expected_law_numbers": [
+            "04/L-042"
+          ],
+          "expected_article_numbers": [],
+          "confidence": "low",
+          "in_corpus": true
+        },
+        {
+          "issue": "Kompetenca: organi shqyrtues i prokurimit / gjykata administrative, jo gjykata e rregullt civile",
+          "expected_law_numbers": [
+            "05/L-031"
+          ],
+          "expected_article_numbers": [],
+          "confidence": "low",
+          "in_corpus": true
+        }
+      ],
+      "expected_law_numbers_union": [
+        "04/L-042",
+        "05/L-031"
+      ],
+      "known_gaps": [],
+      "answer_rubric": [
+        "Klasifikon çështjen si publiko-juridike (prokurim publik)",
+        "Identifikon organin/gjykatën kompetente (OSHP/administrative), jo gjykatën civile"
+      ]
+    },
+    {
+      "id": "rc03",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_open",
+      "source": "law professor exam case (civil / civil procedure)",
+      "language": "sq",
+      "char_len": 551,
+      "query": "Personi A blen një makinë të re “Mercedes” te autosalloni “King” për 43.500 euro. Kontrata me shkrim përmbante dy klauzola me font të vogël: (1) përjashtohet çdo përgjegjësi e shitësit për të metat materiale; (2) palët merren vesh se në asnjë rrethanë nuk do të kërkojnë mbrojtje gjyqësore në rast kontesti. Lind një kontest për dëm material. A i drejtohet gjykatës. Shitësi mbrohet me parimin “pacta sunt servanda” dhe lirinë e kontraktimit si parim absolut nga e drejta romake. Si do të vendosë gjykata? (Aspektet materialo-juridike nuk diskutohen.)",
+      "issues": [
+        {
+          "issue": "Klauzola e heqjes dorë nga mbrojtja gjyqësore është e pavlefshme — nuk mund të kontraktohet",
+          "expected_law_numbers": [
+            "03/L-006"
+          ],
+          "expected_article_numbers": [
+            "251"
+          ],
+          "confidence": "low",
+          "in_corpus": true
+        },
+        {
+          "issue": "Kufijtë e lirisë së kontraktimit; pacta sunt servanda nuk vlefshmëron klauzolë të kundërligjshme",
+          "expected_law_numbers": [
+            "04/L-077"
+          ],
+          "expected_article_numbers": [
+            "61",
+            "59"
+          ],
+          "confidence": "low",
+          "in_corpus": true
+        }
+      ],
+      "expected_law_numbers_union": [
+        "03/L-006",
+        "04/L-077"
+      ],
+      "known_gaps": [],
+      "answer_rubric": [
+        "Klauzola 'pa mbrojtje gjyqësore' është e pavlefshme — e drejta për gjykim nuk hiqet dorë",
+        "Gjykata mbetet kompetente pavarësisht klauzolës",
+        "pacta sunt servanda nuk mbron një klauzolë të paligjshme"
+      ]
+    },
+    {
+      "id": "rc04",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_open",
+      "source": "law professor exam case (civil / civil procedure)",
+      "language": "sq",
+      "char_len": 439,
+      "query": "Personi A punon si shitës te ndërmarrja “TTT” e pronarit B; janë miq. Në 2009 ndërmarrja bie në krizë; B merr hua 1.500 € nga A dhe duhej ta kthente në Prill 2009. B nuk e kthen. Pas paralajmërimeve, A merr 1.500 € nga arka e ndërmarrjes, duke thënë se 'mori vetëm pjesën që i takon'. a) A ka të drejtë A? (aspektet penalo-juridike nuk merren parasysh) b) Si do të ishte nëse A e ka fituar procesin gjyqësor kundër B për kthimin e borxhit?",
+      "issues": [
+        {
+          "issue": "Vetëgjyqësia/vetëndihma është e ndaluar — A nuk ka të drejtë të marrë vetë paratë",
+          "expected_law_numbers": [
+            "04/L-077"
+          ],
+          "expected_article_numbers": [],
+          "confidence": "low",
+          "in_corpus": true
+        },
+        {
+          "issue": "Edhe me aktgjykim në favor, realizimi bëhet me përmbarim gjyqësor, jo vetëndihmë",
+          "expected_law_numbers": [
+            "04/L-139"
+          ],
+          "expected_article_numbers": [],
+          "confidence": "low",
+          "in_corpus": true
+        }
+      ],
+      "expected_law_numbers_union": [
+        "04/L-077",
+        "04/L-139"
+      ],
+      "known_gaps": [],
+      "answer_rubric": [
+        "Vetëgjyqësia e ndaluar — A nuk ka të drejtë të marrë vetë nga arka",
+        "Edhe pas fitimit të gjyqit, realizimi bëhet përmes përmbarimit (04/L-139), jo vetëndihmës"
+      ]
+    },
+    {
+      "id": "rc05",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_open",
+      "source": "law professor exam case (civil / civil procedure)",
+      "language": "sq",
+      "char_len": 296,
+      "query": "Personi B i shkaktoi dëm A-së. B nuk e shpërbleu vullnetarisht, prandaj A paraqiti padi dhe kërkoi 450 euro. Gjykata vendosi dëmshpërblim prej 680 euro, duke arsyetuar se dëmi nuk ishte llogaritur drejt. a) A ka vepruar drejt gjykata? b) Si do të ishte nëse gjykata do të kishte caktuar 350 euro?",
+      "issues": [
+        {
+          "issue": "Tejkalimi i kërkesëpadisë (ultra/extra petita) — gjykata nuk mund të caktojë mbi 450 € të kërkuara",
+          "expected_law_numbers": [
+            "03/L-006"
+          ],
+          "expected_article_numbers": [
+            "501",
+            "168"
+          ],
+          "confidence": "low",
+          "in_corpus": true
+        }
+      ],
+      "expected_law_numbers_union": [
+        "03/L-006"
+      ],
+      "known_gaps": [],
+      "answer_rubric": [
+        "Identifikon parimin e disponimit — gjykata e lidhur me kërkesëpadinë",
+        "680 € > 450 € = vendim i gabuar (ultra petita)",
+        "350 € < 450 € = brenda kufijve, i lejuar"
+      ]
+    },
+    {
+      "id": "rc06",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_open",
+      "source": "law professor exam case (civil / civil procedure)",
+      "language": "sq",
+      "char_len": 220,
+      "query": "A dhe B kanë një kontest pronësor. Pa arritur marrëveshje, i drejtohen gjykatës. Gjatë procesit, A dhe B dëshirojnë ta zgjidhin kontestin me marrëveshje. a) A ekziston baza juridike për këtë? b) Si do të vendosë gjykata?",
+      "issues": [
+        {
+          "issue": "Ujdia gjyqësore — palët mund të pajtohen gjatë procesit; baza ligjore ekziston",
+          "expected_law_numbers": [
+            "03/L-006"
+          ],
+          "expected_article_numbers": [
+            "252",
+            "448"
+          ],
+          "confidence": "low",
+          "in_corpus": true
+        }
+      ],
+      "expected_law_numbers_union": [
+        "03/L-006"
+      ],
+      "known_gaps": [],
+      "answer_rubric": [
+        "Konfirmon bazën ligjore për ujdinë gjyqësore",
+        "Gjykata e vërteton ujdinë dhe e përfundon procesin me të"
+      ]
+    },
+    {
+      "id": "rc07",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_open",
+      "source": "law professor exam case (civil / civil procedure)",
+      "language": "sq",
+      "char_len": 340,
+      "query": "A kërkoi me padi kthimin e huas nga B. Menjëherë pas seancës kryesore, ku ishin marrë në pyetje disa dëshmitarë, vdes gjyqtari i çështjes. Caktohet një gjyqtar tjetër, i cili vendos në bazë të procesverbalit. a) Si është situata juridike? b) Si do të ishte nëse nuk ka pasur dëshmitarë, por provat janë marrë nga një gjykatë tjetër e lutur?",
+      "issues": [
+        {
+          "issue": "Parimi i drejtpërdrejtësisë — gjyqtari i ri duhet të përsërisë shqyrtimin kryesor, s'mund të vendosë vetëm mbi procesverbal",
+          "expected_law_numbers": [
+            "03/L-006"
+          ],
+          "expected_article_numbers": [
+            "388"
+          ],
+          "confidence": "low",
+          "in_corpus": true
+        },
+        {
+          "issue": "Provat e marra nga gjykata e lutur — përjashtim nga drejtpërdrejtësia",
+          "expected_law_numbers": [
+            "03/L-006"
+          ],
+          "expected_article_numbers": [],
+          "confidence": "low",
+          "in_corpus": true
+        }
+      ],
+      "expected_law_numbers_union": [
+        "03/L-006"
+      ],
+      "known_gaps": [],
+      "answer_rubric": [
+        "Shkelje e drejtpërdrejtësisë — gjyqtari i ri vendos vetëm mbi procesverbal",
+        "Gjyqtari i ri duhet të përsërisë marrjen e provave/dëshmitarëve",
+        "Provat nga gjykata e lutur janë përjashtim i lejuar"
+      ]
+    },
+    {
+      "id": "rc08",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_open",
+      "source": "law professor exam case (civil / civil procedure)",
+      "language": "sq",
+      "char_len": 315,
+      "query": "A shkaktoi aksident; B pësoi dëm material në makinë. A kërkoi në gjyq shpërblim dëmi prej 1.700 euro. Gjykata e obligoi A të shpërblejë 2.100 euro, duke arsyetuar se nga administrimi i provave dëmi del shumë më i lartë dhe se dëshiron rivendosjen e plotë të gjendjes para dëmit. A është vendimi i gjykatës i drejtë?",
+      "issues": [
+        {
+          "issue": "Tejkalimi i kërkesëpadisë (ultra petita) — 2.100 € > 1.700 € të kërkuara = vendim i gabuar",
+          "expected_law_numbers": [
+            "03/L-006"
+          ],
+          "expected_article_numbers": [
+            "501",
+            "168"
+          ],
+          "confidence": "low",
+          "in_corpus": true
+        }
+      ],
+      "expected_law_numbers_union": [
+        "03/L-006"
+      ],
+      "known_gaps": [],
+      "answer_rubric": [
+        "Identifikon tejkalimin e kërkesëpadisë",
+        "2.100 € > 1.700 € = vendim i gabuar pavarësisht arsyetimit për 'restituim të plotë'"
+      ]
+    },
+    {
+      "id": "rc09",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_open",
+      "source": "law professor exam case (civil / civil procedure)",
+      "language": "sq",
+      "char_len": 290,
+      "query": "A dhe B kanë kontest pronësor. Gjykata nxjerr vendim në favor të B, duke u mbështetur në disa fakte që B i kishte paraqitur më herët, për të cilat nuk është diskutuar fare para gjykatës. a) A ka vendosur drejt gjykata? b) Si do të vendoste gjykata nëse faktet e prezantuara janë të vërteta?",
+      "issues": [
+        {
+          "issue": "Parimi i kontradiktoritetit / e drejta për t'u dëgjuar — vendimi mbi fakte të padiskutuara është shkelje",
+          "expected_law_numbers": [
+            "03/L-006"
+          ],
+          "expected_article_numbers": [
+            "373",
+            "378"
+          ],
+          "confidence": "low",
+          "in_corpus": true
+        }
+      ],
+      "expected_law_numbers_union": [
+        "03/L-006"
+      ],
+      "known_gaps": [],
+      "answer_rubric": [
+        "Shkelje e kontradiktoritetit — vendim mbi fakte të padiskutuara",
+        "Vërtetësia e fakteve nuk e shëron shkeljen procedurale; duhej diskutuar para gjykatës"
+      ]
+    },
+    {
+      "id": "rc10",
+      "category": "legal_reasoning",
+      "subtype": "issue_spotting_open",
+      "source": "law professor exam case (civil / civil procedure)",
+      "language": "sq",
+      "char_len": 333,
+      "query": "A inicioi proces kundër B në Gjykatën komunale në Prizren për kthim borxhi prej 750 euro. Seancën kryesore e drejtoi gjyqtari T. Pas saj, T pëson aksident dhe s'mund të ushtrojë profesionin për kohë të gjatë. Caktohet gjyqtari R, i cili nxjerr vendim duke u bazuar në procesverbalin e seancës kryesore. A ka vepruar drejt gjyqtari R?",
+      "issues": [
+        {
+          "issue": "Parimi i drejtpërdrejtësisë — gjyqtari R nuk mund të vendosë vetëm mbi procesverbal (si Rasti 7)",
+          "expected_law_numbers": [
+            "03/L-006"
+          ],
+          "expected_article_numbers": [
+            "388"
+          ],
+          "confidence": "low",
+          "in_corpus": true
+        }
+      ],
+      "expected_law_numbers_union": [
+        "03/L-006"
+      ],
+      "known_gaps": [],
+      "answer_rubric": [
+        "Shkelje e drejtpërdrejtësisë",
+        "Gjyqtari R duhej të përsëriste shqyrtimin kryesor para se të vendoste"
+      ]
+    }
+  ]
+}

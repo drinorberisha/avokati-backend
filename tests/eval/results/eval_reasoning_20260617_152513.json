@@ -1,0 +1,243 @@
+{
+  "timestamp": "20260617_152513",
+  "namespace": "default_v2",
+  "rows": [
+    {
+      "id": "r001",
+      "subtype": "issue_spotting_open",
+      "intent": "semantic_question",
+      "union_recall@5": 1.0,
+      "union_hit": [
+        "KUV-06/L-074-KOD",
+        "04/L-082",
+        "04/L-125",
+        "04/L-077"
+      ],
+      "union_total": 4,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 1.0,
+      "issue_article_coverage@5": 0.0,
+      "issues": [
+        {
+          "issue": "Tejkalimi i kufijve të mbrojtjes së nevojshme — njeriu i mad",
+          "law@5": true,
+          "art@5": false
+        },
+        {
+          "issue": "E drejta për jetë — vdekja e hajnit; shkaku i vërtetë (alerg",
+          "law@5": true,
+          "art@5": false
+        },
+        {
+          "issue": "Trajtimi i pandërgjegjshëm mjekësor / mosdhënia e ndihmës — ",
+          "law@5": true,
+          "art@5": false
+        },
+        {
+          "issue": "Falsifikimi i vërtetimit të vdekjes — mjeku shkruan si shkak",
+          "law@5": true,
+          "art@5": false
+        },
+        {
+          "issue": "Privimi i lirisë / kufizimi fizik — lidhja e pacientit për k",
+          "law@5": true,
+          "art@5": false
+        }
+      ],
+      "known_gaps": [
+        "Kushtetuta e Republikës së Kosovës (Neni 23, 25, 27, 29)",
+        "KEDNJ (Neni 2, 3, 5)"
+      ]
+    },
+    {
+      "id": "r002",
+      "subtype": "issue_spotting_mcq",
+      "intent": "semantic_question",
+      "union_recall@5": 0.5,
+      "union_hit": [
+        "08/L-275"
+      ],
+      "union_total": 2,
+      "union_recoverable_in_pool@200": 1.0,
+      "issue_law_coverage@5": 0.333,
+      "issue_article_coverage@5": 0.333,
+      "issues": [
+        {
+          "issue": "E drejta e kalimit të domosdoshëm (servituti) — fqiu pa dalj",
+          "law@5": false,
+          "art@5": false
+        },
+        {
+          "issue": "Ndërhyrja në të drejtën e pronës — gërmimi përgjatë pronës s",
+          "law@5": false,
+          "art@5": false
+        },
+        {
+          "issue": "Kyçja në rrugë publike — ndërtimi i daljes në rrugën kryesor",
+          "law@5": true,
+          "art@5": true
+        }
+      ],
+      "known_gaps": [
+        "Kushtetuta e Republikës së Kosovës (Neni 46 — Mbrojtja e pronës)"
+      ]
+    },
+    {
+      "id": "a001",
+      "subtype": "atomic_decomposed",
+      "intent": "semantic_question",
+      "law_hit@5": true,
+      "article_hit@5": true,
+      "expected": [
+        "KUV-06/L-074-KOD"
+      ],
+      "expected_art": [
+        "12"
+      ]
+    },
+    {
+      "id": "a002",
+      "subtype": "atomic_decomposed",
+      "intent": "semantic_question",
+      "law_hit@5": true,
+      "article_hit@5": true,
+      "expected": [
+        "KUV-06/L-074-KOD"
+      ],
+      "expected_art": [
+        "175"
+      ]
+    },
+    {
+      "id": "a003",
+      "subtype": "atomic_decomposed",
+      "intent": "semantic_question",
+      "law_hit@5": true,
+      "article_hit@5": true,
+      "expected": [
+        "KUV-06/L-074-KOD"
+      ],
+      "expected_art": [
+        "186"
+      ]
+    },
+    {
+      "id": "a004",
+      "subtype": "atomic_decomposed",
+      "intent": "semantic_question",
+      "law_hit@5": true,
+      "article_hit@5": true,
+      "expected": [
+        "KUV-06/L-074-KOD"
+      ],
+      "expected_art": [
+        "254"
+      ]
+    },
+    {
+      "id": "a005",
+      "subtype": "atomic_decomposed",
+      "intent": "semantic_question",
+      "law_hit@5": true,
+      "article_hit@5": true,
+      "expected": [
+        "KUV-06/L-074-KOD"
+      ],
+      "expected_art": [
+        "255"
+      ]
+    },
+    {
+      "id": "a006",
+      "subtype": "atomic_decomposed",
+      "intent": "semantic_question",
+      "law_hit@5": true,
+      "article_hit@5": true,
+      "expected": [
+        "KUV-06/L-074-KOD"
+      ],
+      "expected_art": [
+        "427"
+      ]
+    },
+    {
+      "id": "a007",
+      "subtype": "atomic_decomposed",
+      "intent": "semantic_question",
+      "law_hit@5": true,
+      "article_hit@5": true,
+      "expected": [
+        "KUV-06/L-074-KOD"
+      ],
+      "expected_art": [
+        "193"
+      ]
+    },
+    {
+      "id": "a008",
+      "subtype": "atomic_decomposed",
+      "intent": "semantic_question",
+      "law_hit@5": true,
+      "article_hit@5": true,
+      "expected": [
+        "KUV-06/L-074-KOD"
+      ],
+      "expected_art": [
+        "195"
+      ]
+    },
+    {
+      "id": "a009",
+      "subtype": "atomic_decomposed",
+      "intent": "semantic_question",
+      "law_hit@5": true,
+      "article_hit@5": true,
+      "expected": [
+        "03/L-154"
+      ],
+      "expected_art": [
+        "86"
+      ]
+    },
+    {
+      "id": "a010",
+      "subtype": "atomic_decomposed",
+      "intent": "citation_lookup",
+      "law_hit@5": true,
+      "article_hit@5": false,
+      "expected": [
+        "03/L-154"
+      ],
+      "expected_art": [
+        "252",
+        "254"
+      ]
+    },
+    {
+      "id": "a011",
+      "subtype": "atomic_decomposed",
+      "intent": "semantic_question",
+      "law_hit@5": true,
+      "article_hit@5": true,
+      "expected": [
+        "03/L-154"
+      ],
+      "expected_art": [
+        "230"
+      ]
+    },
+    {
+      "id": "a012",
+      "subtype": "atomic_decomposed",
+      "intent": "semantic_question",
+      "law_hit@5": true,
+      "article_hit@5": true,
+      "expected": [
+        "08/L-275"
+      ],
+      "expected_art": [
+        "19"
+      ]
+    }
+  ]
+}
