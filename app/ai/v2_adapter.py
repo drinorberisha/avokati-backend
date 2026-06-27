@@ -45,6 +45,16 @@ def adapt_source_for_v2(
     chunk_type = meta.get("chunk_type") or "article"
     score = float(s.get("score") or 0.0)
 
+    # bge-reranker-v2-m3 (via sentence-transformers CrossEncoder) already
+    # returns a SIGMOID probability in [0,1] — verified empirically: a
+    # matching (query, article) pair scores ~0.96, an unrelated pair ~0.00.
+    # So band directly on the rerank score; do NOT sigmoid it again (that bug
+    # compressed everything into [0.5, 0.73] → everything read "strong").
+    # Non-semantic sources (citation/status) have no _rerank_score and are
+    # banded by chunk_type below, so `score` is the right fallback.
+    rerank_score = s.get("_rerank_score")
+    band_score = float(rerank_score) if rerank_score is not None else score
+
     info = registry.lookup(law) if law else None
     is_abolished = bool(info) and info.status in (
         "fully_abolished",
@@ -71,7 +81,7 @@ def adapt_source_for_v2(
         content=s.get("content") or meta.get("content") or "",
         content_truncated=bool(meta.get("content_truncated")),
         score=score,
-        score_band=score_to_band(score, chunk_type),
+        score_band=score_to_band(band_score, chunk_type),
         is_primary=(chunk_id == primary_source_id),
         is_cited=(chunk_id in cited_source_ids),
         is_abolished=is_abolished,

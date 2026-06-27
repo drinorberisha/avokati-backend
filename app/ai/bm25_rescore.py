@@ -41,16 +41,20 @@ ALBANIAN_STOPWORDS = frozenset({
 })
 
 
-_TOKEN_RE = re.compile(r"[A-Za-zëçËÇ]+", re.UNICODE)
+_TOKEN_RE = re.compile(r"[A-Za-zëçËÇ]+|\d+", re.UNICODE)
 
 
 def tokenize(text: str) -> list[str]:
-    """Lowercase Albanian tokenizer that strips stopwords and very short tokens."""
+    """Lowercase Albanian tokenizer that strips stopwords and very short tokens.
+
+    Numeric tokens are kept regardless of length — article/paragraph numbers
+    and years ("neni 42", "2004") are strong lexical signals in legal text.
+    """
     if not text:
         return []
     out: list[str] = []
     for tok in _TOKEN_RE.findall(text.lower()):
-        if len(tok) < 3:
+        if len(tok) < 3 and not tok.isdigit():
             continue
         if tok in ALBANIAN_STOPWORDS:
             continue

@@ -64,14 +64,14 @@ _CITATION_RE = re.compile(
     \b
     (?:
         # "Neni N ... Ligji X/L-Y" ordering
-        {_NEN}\.?\s*(?P<num1>\d{{1,3}})
+        {_NEN}\.?\s*(?P<num1>\d{{1,4}})
         [^.\n\[\]\(\)]{{0,40}}?
         {_LIGJ}\.?{_NR_OPT}\s*(?P<law1>{_LAW_PATTERN})
       |
         # "Ligji X/L-Y ... Neni N" ordering
         {_LIGJ}\.?{_NR_OPT}\s*(?P<law2>{_LAW_PATTERN})
         [^.\n\[\]\(\)]{{0,40}}?
-        {_NEN}\.?\s*(?P<num2>\d{{1,3}})
+        {_NEN}\.?\s*(?P<num2>\d{{1,4}})
       |
         # Bare law (no article)
         {_LIGJ}\.?{_NR_OPT}\s*(?P<law3>{_LAW_PATTERN})

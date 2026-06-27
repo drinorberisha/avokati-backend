@@ -49,7 +49,8 @@ _GREETING_RE = re.compile(
     r"^(?:\s*)(?:"
     r"përshëndetje|pershendetje|tungjatjeta|tung|mirëdita|mire dita|mirëmëngjes|"
     r"mirembrema|miremengjes|hello|hi|hey|"
-    r"si\s+jeni|si\s+je|c'kemi|qkemi|ckemi|ç'kemi"
+    r"si\s+jeni|si\s+je|a\s+je\s+mir[ëe]?|a\s+jeni\s+mir[ëe]?|qysh\s+je(ni)?|"
+    r"si\s+po\s+(ja\s+)?kalon|c'kemi|qkemi|ckemi|ç'kemi|ckemi"
     r")\b\s*[!?\.\s]*$",
     re.IGNORECASE,
 )
@@ -70,6 +71,39 @@ _OUT_OF_SCOPE_PATTERNS = [
     re.compile(r"(?<![A-Za-zëçËÇ])(mjekim|sëmundje|semundje|mjekësi|mjekesi)", re.IGNORECASE),
     # Cybersec / illegal
     re.compile(r"\b(hack|exploit|crack|breach)\b", re.IGNORECASE),
+]
+
+
+# Out-of-CORPUS legal questions: comparative/foreign law, EU law, legal
+# philosophy, world-trivia. These ARE legal questions, but the answer is not in
+# the Kosovo gazette corpus, so generating from whatever retrieves anyway risks
+# a confidently-cited WRONG answer (the "konfederata" → trade-union-law failure).
+# This is the precise, pre-retrieval half of the anti-fabrication gate (the
+# post-retrieval half is the relevance floor in pipeline.py); the floor backstops
+# whatever these patterns miss.
+#
+# Tuned for PRECISION: validated at 0 false positives across 83 in-corpus golden
+# queries. We would rather miss an out-of-corpus query (the floor catches it) than
+# refuse a legitimate Kosovo-law question. Use diacritic-safe lookarounds, not \b,
+# around Albanian stems (Python word boundaries misbehave on ë/ç).
+_OUT_OF_CORPUS_PATTERNS = [
+    # United States / comparative constitutional law
+    re.compile(r"\bSHBA\b|\bUSA\b|shtetet?\s+e\s+bashkuara", re.IGNORECASE),
+    # Other foreign jurisdictions
+    re.compile(r"(?<![A-Za-zëçËÇ])(franc[ëe]s|francez|belgjik|gjermani|britani|britanik|zvicr|amerikan)", re.IGNORECASE),
+    # EU institutions
+    re.compile(r"bashkimi\s+evropian|\bUE\b|\bBE\b|parlament\w*\s+evropian|banka\s+qendrore\s+evropiane|gjykat\w*\s+e\s+drejt[ëe]sis[ëe]\s+s[ëe]\s+(ue|be)|komision\w*\s+evropian|kart\w*\s+(themelore|sociale)\s+\w*(evropian|europian|e\s+be)", re.IGNORECASE),
+    # EU treaties / integration history
+    re.compile(r"traktat\w*\s+(i\s+)?(rom[ëe]s|mastrit|lisbon|nic[ëe]s|parisit|amsterdam|bruksel|kushtetues)|akti\s+unik\s+(evropian|europian)|plani\s+marshall|tregu\s+i\s+brend|ant[ëa]r[ëe]sim\w*\s+n[ëe]\s+bashk[ëe]si|trio\s+presidency|presidenc\w*\s+e\s+tresh", re.IGNORECASE),
+    # Legal philosophy / theorists (specific declensions, to avoid e.g. "hartë"=map)
+    re.compile(r"(?<![A-Za-zëçËÇ])(hartit|hobs|hobbes|kelzen|kelsen|akuin|benthamit|monteskje|rusoi)", re.IGNORECASE),
+    # Comparative state forms
+    re.compile(r"(?<![A-Za-zëçËÇ])konfederat", re.IGNORECASE),
+    re.compile(r"shtet(e|et)\s+federativ|federaliz\w*", re.IGNORECASE),
+    # World-comparative trivia ("...më e gjatë në botë")
+    re.compile(r"n[ëe]\s+bot[ëe](?![A-Za-zëçËÇ])", re.IGNORECASE),
+    # International covenants / ILO conventions by number
+    re.compile(r"pakti\s+nd[ëe]rkomb[ëe]tar|konvent\w*\s+(numer|nr)\.?\s*\d|drejt[ëe]s?\s+nd[ëe]rkomb[ëe]tar\w*\s+t[ëe]\s+pun", re.IGNORECASE),
 ]
 
 
@@ -102,6 +136,12 @@ def classify(query: str) -> RoutingDecision:
         if pat.search(query):
             return RoutingDecision("out_of_scope", None, f"matched_oos:{pat.pattern!r}")
 
+    # Out-of-corpus legal questions (comparative/EU/philosophy/foreign) →
+    # refuse before retrieval rather than risk fabricating a Kosovo-law citation.
+    for pat in _OUT_OF_CORPUS_PATTERNS:
+        if pat.search(query):
+            return RoutingDecision("out_of_scope", None, "matched_out_of_corpus")
+
     citation = parse_citation(query)
     if citation is not None and is_status_query(query):
         return RoutingDecision("status_lookup", citation, "citation+status_keyword")
@@ -120,9 +160,10 @@ GREETING_RESPONSE = (
 )
 
 OUT_OF_SCOPE_RESPONSE = (
-    "Më vjen keq, por unë jam i specializuar vetëm në legjislacionin e Kosovës "
-    "dhe nuk mund t'ju ndihmoj me pyetje jashtë kësaj fushe. Ju lutem më drejtoni "
-    "një pyetje ligjore."
+    "Më vjen keq, por kjo pyetje del jashtë legjislacionit në fuqi të Republikës "
+    "së Kosovës, që është fusha që mbuloj. Nuk mund të ndihmoj me të drejtën e huaj "
+    "ose krahasuese, të drejtën e Bashkimit Evropian, teorinë/filozofinë juridike, "
+    "apo tema joligjore. Ju lutem parashtroni një pyetje për legjislacionin e Kosovës."
 )
 
 

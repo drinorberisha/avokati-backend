@@ -83,37 +83,46 @@ class CompletionResult:
         return cost
 
 
+# Cached per-process clients. The SDK keeps an httpx connection pool per
+# client instance — constructing one per request meant a fresh TLS handshake
+# to api.deepseek.com on every query (~100-300 ms of TTFT).
+_cached_clients: dict[str, Any] = {}
+
+
 def get_client():
-    """Return a sync OpenAI SDK client configured for the DeepSeek API.
+    """Return the shared sync OpenAI SDK client configured for DeepSeek.
 
     Lazy-imported so this module is still importable without `openai`
     installed (e.g. during chunker-only unit tests).
     """
-    api_key = os.environ.get("DEEPSEEK_API_KEY")
-    if not api_key:
-        raise RuntimeError(
-            "DEEPSEEK_API_KEY is not set. Add it to backend/.env to enable "
-            "AvokAI generation. Embeddings still use OPENAI_API_KEY."
-        )
-    from openai import OpenAI
-    return OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
+    if "sync" not in _cached_clients:
+        api_key = os.environ.get("DEEPSEEK_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "DEEPSEEK_API_KEY is not set. Add it to backend/.env to enable "
+                "AvokAI generation. Embeddings still use OPENAI_API_KEY."
+            )
+        from openai import OpenAI
+        _cached_clients["sync"] = OpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
+    return _cached_clients["sync"]
 
 
 def get_async_client():
-    """Async OpenAI SDK client for streaming (used by SSE endpoint).
+    """Shared async OpenAI SDK client for streaming (used by SSE endpoint).
 
     Separate from the sync client because the SDK keeps a per-client
-    connection pool; mixing them in the same module is fine but each is
-    its own resource.
+    connection pool; each is its own cached resource.
     """
-    api_key = os.environ.get("DEEPSEEK_API_KEY")
-    if not api_key:
-        raise RuntimeError(
-            "DEEPSEEK_API_KEY is not set. Add it to backend/.env to enable "
-            "AvokAI generation. Embeddings still use OPENAI_API_KEY."
-        )
-    from openai import AsyncOpenAI
-    return AsyncOpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
+    if "async" not in _cached_clients:
+        api_key = os.environ.get("DEEPSEEK_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "DEEPSEEK_API_KEY is not set. Add it to backend/.env to enable "
+                "AvokAI generation. Embeddings still use OPENAI_API_KEY."
+            )
+        from openai import AsyncOpenAI
+        _cached_clients["async"] = AsyncOpenAI(api_key=api_key, base_url=DEEPSEEK_BASE_URL)
+    return _cached_clients["async"]
 
 
 def complete(

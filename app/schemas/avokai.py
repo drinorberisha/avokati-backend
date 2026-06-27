@@ -82,17 +82,30 @@ class LlmUsage(BaseModel):
     finish_reason: Optional[str] = None
 
 
+class ChatTurn(BaseModel):
+    """One prior conversation turn.
+
+    Role is restricted to user/assistant — a client-supplied `system` entry
+    would be spliced between our system prompt and the question, i.e. a
+    direct prompt-injection channel. Content is capped to bound token cost.
+    """
+
+    role: Literal["user", "assistant"]
+    content: str = Field(..., max_length=8000)
+
+
 class AskV2Request(BaseModel):
-    query: str = Field(..., description="The user's question, in any language")
+    query: str = Field(..., min_length=1, max_length=2000, description="The user's question, in any language")
     use_llm: bool = Field(True, description="If False, skip generation and return retrieval only (used by eval / debug)")
-    namespace: Optional[str] = Field(None, description="Pinecone namespace override; defaults to env PINECONE_NAMESPACE_V2 (=default_v2)")
+    namespace: Optional[Literal["default_v2"]] = Field(None, description="Pinecone namespace; only the live v2 namespace is accepted. Defaults to env PINECONE_NAMESPACE_V2 (=default_v2)")
     response_language: Literal["sq", "en"] = Field(
         "sq",
         description="Language AvokAI must use for user-facing answers: sq=Albanian, en=English.",
     )
-    conversation_history: Optional[list[dict[str, str]]] = Field(
+    conversation_history: Optional[list[ChatTurn]] = Field(
         None,
-        description="Optional prior turns in OpenAI message format ({role, content}). Capped at 6 entries server-side.",
+        max_length=12,
+        description="Optional prior turns ({role: user|assistant, content}). Server uses the last 6 entries.",
     )
     session_id: Optional[str] = Field(
         None,
@@ -124,6 +137,7 @@ class AskV2Response(BaseModel):
 __all__ = [
     "AskV2Request",
     "AskV2Response",
+    "ChatTurn",
     "SourceCard",
     "CitationRecord",
     "LlmUsage",

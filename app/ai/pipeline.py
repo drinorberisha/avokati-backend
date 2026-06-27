@@ -56,6 +56,47 @@ EMBED_MODEL = os.environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
 DENSE_POOL_SIZE = 200
 RESCORE_ALPHA = 0.2
 TOP_K = 5  # what the LLM gets
+# Output cap for generation. Unbounded answers were the main driver of the
+# 75s p95 wall time (and proportional output cost). 2048 tokens ≈ 6-8K chars
+# of Albanian — enough for any structured legal answer with citations.
+MAX_ANSWER_TOKENS = int(os.environ.get("AVOKAI_MAX_ANSWER_TOKENS", "2048"))
+
+# Relevance floor (anti-fabrication gate). bge-reranker scores are sigmoid
+# probabilities in [0,1]. If the BEST semantic source scores below the floor,
+# the corpus almost certainly doesn't hold the answer — refuse instead of
+# letting the LLM fabricate from low-relevance chunks (the konfederata →
+# trade-union-law failure: a confident, "verified", wrong answer).
+#
+# Gated to SHORT queries only. A long fact-pattern (kazus) legitimately scores
+# low per chunk because the single embedding is a blurry average of many issues
+# — that's a query-decomposition problem, not an out-of-corpus signal, so
+# refusing it would wrongly reject real legal questions. Measured separation:
+# out-of-corpus shorts incl. konfederata < 0.40 < weakest legit atomic (0.441);
+# civil kazus (>1200 chars) sit at 0.02-0.05 and are exempted by length.
+RELEVANCE_FLOOR_ENABLED = os.environ.get("AVOKAI_RELEVANCE_FLOOR_ENABLED", "true").lower() in ("true", "1", "yes")
+RELEVANCE_FLOOR = float(os.environ.get("AVOKAI_RELEVANCE_FLOOR", "0.40"))
+RELEVANCE_FLOOR_MAX_QUERY_LEN = int(os.environ.get("AVOKAI_RELEVANCE_FLOOR_MAX_QUERY_LEN", "300"))
+
+
+def _below_relevance_floor(query: str, sources: list[dict[str, Any]]) -> bool:
+    """True when the best reranked source is too weak to answer from.
+
+    Only fires on the semantic path (sources carry `_rerank_score` in [0,1]),
+    and only for short queries — long fact patterns score low by nature and
+    must not be refused on that basis. Returns False if the reranker didn't run
+    (no comparable score scale) so we never gate blind.
+    """
+    if not RELEVANCE_FLOOR_ENABLED or not sources:
+        return False
+    if len(query or "") > RELEVANCE_FLOOR_MAX_QUERY_LEN:
+        return False
+    top = max(
+        (float(s["_rerank_score"]) for s in sources if s.get("_rerank_score") is not None),
+        default=None,
+    )
+    if top is None:
+        return False
+    return top < RELEVANCE_FLOOR
 
 
 @dataclass
@@ -92,8 +133,10 @@ _MESSAGES = {
             "specific article, the status of a law, or legal provisions on a topic."
         ),
         "out_of_scope": (
-            "Sorry, I specialize only in Kosovo legislation and cannot help with "
-            "questions outside that area. Please ask a legal question."
+            "Sorry, this question falls outside the legislation in force in the "
+            "Republic of Kosovo, which is the area I cover. I cannot help with "
+            "foreign or comparative law, EU law, legal theory/philosophy, or "
+            "non-legal topics. Please ask about Kosovo legislation."
         ),
         "insufficient_context": (
             "I do not have enough information in the database to provide a "
@@ -378,6 +421,22 @@ def answer(
     if decision.intent == "semantic_question" and not sources:
         sources = _semantic_retrieve(query, ns)
 
+    # Anti-fabrication gate: on the semantic path, if the best source is below
+    # the relevance floor, refuse rather than generate from irrelevant chunks.
+    relevance_gated = (
+        decision.intent == "semantic_question"
+        and _below_relevance_floor(query, sources)
+    )
+    if relevance_gated:
+        trace["relevance_floor_triggered"] = True
+        trace["relevance_top_score"] = round(
+            max((float(s.get("_rerank_score") or 0.0) for s in sources), default=0.0), 4
+        )
+        # The retrieved chunks scored below the floor — they're irrelevant, so
+        # don't surface them in the UI (or the abolishment scan). The answer is
+        # a refusal; showing the rejected sources just looks broken.
+        sources = []
+
     # Cross-reference abolishment for ANY retrieved chunk (even when the
     # primary route wasn't status). A semantic hit on an abolished law
     # should still warn the user.
@@ -409,6 +468,9 @@ def answer(
         # prepended banner entirely.
         if warnings and not _warning_already_in_text(final_answer, warnings):
             final_answer = "⚠️ KUJDES: " + warnings[0] + ". " + final_answer
+    elif relevance_gated:
+        # Best source below the relevance floor → refuse rather than fabricate.
+        final_answer = _localized_message("insufficient_context", lang)
     elif not use_llm:
         # Retrieval-only mode (used by retrieval eval). Stub out generation.
         final_answer = "[retrieval-only mode; no LLM answer generated]"
@@ -426,7 +488,7 @@ def answer(
                 primary_source_id=primary_id,
                 response_language=lang,
             )
-            result = complete(messages, temperature=0.1)
+            result = complete(messages, temperature=0.1, max_tokens=MAX_ANSWER_TOKENS)
             final_answer = result.text
             llm_usage = {
                 "model": result.model,
@@ -506,6 +568,7 @@ def answer(
             "llm_usd_cost": (llm_usage or {}).get("usd_cost_estimate"),
             "llm_used": llm_usage is not None,
             "had_llm_error": "llm_error" in trace,
+            "relevance_floor": trace.get("relevance_floor_triggered", False),
         }
         print("avokai_query_log " + _json.dumps(_log_payload, separators=(",", ":")))
     except Exception:
@@ -692,6 +755,20 @@ async def answer_stream(
         )
         return
 
+    relevance_gated = (
+        decision.intent == "semantic_question"
+        and _below_relevance_floor(query, sources)
+    )
+    if relevance_gated:
+        trace["relevance_floor_triggered"] = True
+        trace["relevance_top_score"] = round(
+            max((float(s.get("_rerank_score") or 0.0) for s in sources), default=0.0), 4
+        )
+        # The retrieved chunks scored below the floor — they're irrelevant, so
+        # don't surface them in the UI (or the abolishment scan). The answer is
+        # a refusal; showing the rejected sources just looks broken.
+        sources = []
+
     warnings = _abolishment_warnings(sources, registry)
     if sources:
         # Emit only what the UI needs to render the sidebar — same shape as
@@ -721,6 +798,10 @@ async def answer_stream(
         # No LLM streaming; emit the full text as a single delta so the
         # frontend's incremental render code-path is uniform across routes.
         yield ("delta", {"text": final_answer})
+    elif relevance_gated:
+        # Best source below the relevance floor → refuse rather than fabricate.
+        final_answer = _localized_message("insufficient_context", lang)
+        yield ("delta", {"text": final_answer})
     elif not use_llm:
         final_answer = "[retrieval-only mode; no LLM answer generated]"
         yield ("delta", {"text": final_answer})
@@ -740,7 +821,9 @@ async def answer_stream(
                 response_language=lang,
             )
             buf_parts: list[str] = []
-            async for event_type, payload in acomplete_stream(messages, temperature=0.1):
+            async for event_type, payload in acomplete_stream(
+                messages, temperature=0.1, max_tokens=MAX_ANSWER_TOKENS
+            ):
                 if event_type == "delta":
                     buf_parts.append(payload)
                     yield ("delta", {"text": payload})
@@ -815,6 +898,7 @@ async def answer_stream(
             "llm_usd_cost": (llm_usage or {}).get("usd_cost_estimate"),
             "llm_used": llm_usage is not None,
             "had_llm_error": "llm_error" in trace,
+            "relevance_floor": trace.get("relevance_floor_triggered", False),
             "streamed": True,
         }
         print("avokai_query_log " + _json.dumps(_log_payload, separators=(",", ":")))
