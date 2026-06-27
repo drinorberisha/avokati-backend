@@ -33,30 +33,45 @@ from typing import Any, Iterable
 #
 # Article references:
 #   Neni 5, neni 5, NENI 5
-#   Article numbers are 1–3 digits.
+#   Article numbers are 1–4 digits (the Law on Obligations runs to Neni 1059).
 
+# Users (and the UI/dir names) often type the separator as `_` instead of `/`
+# — "04_L-086" for "04/L-086". Accept both `[/_]`; canonicalize_law_number then
+# normalizes `_`→`/` so the metadata filter matches the index's slash form.
 LAW_NUMBER_PATTERNS = [
     # Most-specific first: Kuvendi-style "KUV-NN/L-NNN-KOD"
-    re.compile(r"\b(?P<law>KUV-\d{1,2}/L-\d{1,4}-[A-Z]+)\b", re.IGNORECASE),
-    # Standard "NN/L-NNN" (with optional space inside the L)
-    re.compile(r"\b(?P<law>\d{1,2}\s*/\s*[Ll]\s*-\s*\d{1,4}[A-Za-z0-9-]*)\b"),
+    re.compile(r"\b(?P<law>KUV\s*-?\s*\d{1,2}\s*[-/_]?\s*[Ll]\s*-?\s*\d{1,4}\s*-?\s*[A-Z]+)\b", re.IGNORECASE),
+    # Standard "NN/L-NNN". Be liberal about how the user separates the parts:
+    # the canonical "02/L-10" but also "02 L10", "02L10", "02/L10", "02-L-10",
+    # "02 L 10" — any of `/ _ -` space or nothing between the pieces. The literal
+    # "L" flanked by digits is the anchor; canonicalize_law_number rebuilds the
+    # canonical "NN/L-NNN" form. (Users type this a dozen ways — see the tests.)
+    re.compile(r"\b(?P<law>\d{1,2}\s*[-/_]?\s*[Ll]\s*-?\s*\d{1,4}[A-Za-z0-9-]*)\b"),
     # UNMIK-era "YYYY/N"
-    re.compile(r"\b(?P<law>(?:19|20)\d{2}\s*/\s*\d{1,3})\b"),
+    re.compile(r"\b(?P<law>(?:19|20)\d{2}\s*[/_]\s*\d{1,3})\b"),
 ]
 
 # Match Albanian "neni" with any case ending: neni, nenit, nenin, nenet, nenve, nenës, etc.
 # Also tolerates an optional period: "Nenit 5." in answer text.
 ARTICLE_REF_PATTERN = re.compile(
-    r"\bnen(?:i|it|in|et|ve|ës|eve|i|e)?\s*\.?\s*(?P<n>\d{1,3})\b",
+    r"\bnen(?:i|it|in|et|ve|ës|eve|i|e)?\s*\.?\s*(?P<n>\d{1,4})\b",
     re.IGNORECASE,
 )
 
 # Article header inside chunk content. The cleaner extractor uses Markdown:
 #   "## Neni 12", "# Neni 10", sometimes "Neni 12<br>", with optional period
 ARTICLE_HEADER_PATTERN = re.compile(
-    r"(?:^|\n)\s*#{0,3}\s*Neni\s+(?P<n>\d{1,3})\b",
+    r"(?:^|\n)\s*#{0,3}\s*Neni\s+(?P<n>\d{1,4})\b",
     re.IGNORECASE,
 )
+
+# Some primary sources are referenced by NAME, not an "NN/L-NNN" number. The
+# Constitution is indexed under law_number "KUSHTETUTA". Match its forms
+# (Kushtetuta / Kushtetutës / Kushtetutën / Kushtetutë) but NOT "Kushtetuese"
+# (the *Constitutional Court* — that stem is "kushtetu-ese", with no second 't').
+_NAMED_LAW_PATTERNS = [
+    (re.compile(r"\bkushtetut\w*", re.IGNORECASE), "KUSHTETUTA"),
+]
 
 
 # ----- public API --------------------------------------------------------
@@ -70,9 +85,24 @@ class Citation:
     raw_law: str             # the substring that matched in the user's query
 
 
+_LAW_SHAPE_RE = re.compile(r"(KUV-)?(\d{1,4})[-/]?L-?(\d{1,4})(-?[A-Z0-9]+)?")
+
+
 def canonicalize_law_number(raw: str) -> str:
-    """Normalize a law number to its canonical form: uppercase, no whitespace."""
-    return re.sub(r"\s+", "", raw).upper()
+    """Normalize a law number to the canonical form stored in the index
+    ("02/L-10", "KUV-08/L-247-KOD").
+
+    Strips whitespace, uppercases, and — crucially — rebuilds the "NN/L-NNN"
+    shape from however the user separated the parts, so "02 L10", "02L10",
+    "02/L10", "02-L-10", "02_L-10" all collapse to "02/L-10". UNMIK-era
+    "YYYY/N" numbers (no "L") pass through unchanged.
+    """
+    s = re.sub(r"\s+", "", raw).upper().replace("_", "/")
+    m = _LAW_SHAPE_RE.fullmatch(s)
+    if m:
+        prefix, series, num, suffix = m.group(1) or "", m.group(2), m.group(3), m.group(4) or ""
+        return f"{prefix}{series}/L-{num}{suffix}"
+    return s
 
 
 def parse_citation(query: str) -> Citation | None:
@@ -90,16 +120,21 @@ def parse_citation(query: str) -> Citation | None:
         if m:
             law_match = m
             break
-    if not law_match:
-        return None
-
-    raw_law = law_match.group("law")
-    canonical = canonicalize_law_number(raw_law)
 
     art_match = ARTICLE_REF_PATTERN.search(query)
     article = art_match.group("n") if art_match else None
 
-    return Citation(law_number=canonical, article_number=article, raw_law=raw_law)
+    if law_match:
+        raw_law = law_match.group("law")
+        return Citation(law_number=canonicalize_law_number(raw_law),
+                        article_number=article, raw_law=raw_law)
+
+    # Named-source fallback: primary sources cited by name, not an NN/L-NNN number.
+    for pat, canonical in _NAMED_LAW_PATTERNS:
+        nm = pat.search(query)
+        if nm:
+            return Citation(law_number=canonical, article_number=article, raw_law=nm.group(0))
+    return None
 
 
 def law_number_variants(law_number: str) -> list[str]:
@@ -158,45 +193,61 @@ def lookup_by_citation(
     dummy_vector: list[float],
     top_k: int = 10,
 ) -> dict[str, Any]:
-    """Retrieve chunks for a parsed citation using only metadata filtering.
+    """Retrieve chunks for a parsed citation using metadata filtering.
 
     Strategy:
-      1. Try each `law_number` variant. Stop at the first one with hits.
-      2. If `article_number` is set, prefer chunks where content begins
-         with `## Neni N`. Fall back to chunks that mention it.
-      3. If nothing found at all, return an empty list — better to say
+      1. Find which `law_number` spelling the index uses (variant probe).
+      2. If `article_number` is set, filter directly on the `article_number`
+         metadata for {N-1, N, N+1} — exact, and crucially independent of
+         how many articles the law has. (The old approach pulled a top_k=100
+         sample of the law and content-scanned it, which silently missed the
+         target on laws with >100 articles, e.g. 04/L-077's Neni 1059.)
+         A content-scan fallback covers any chunk that lacks the metadata
+         field (legacy v1 schema).
+      3. If the law isn't found at all, return empty — better to say
          "law not indexed" than to return a wrong law (the failure mode
          the user already saw with "ligji 05/L-065" → returned 05/L-085).
 
     `dummy_vector` is a placeholder embedding; Pinecone's `query()` requires
-    a vector even when filtering. We pass a constant zero-ish embedding —
-    rank order isn't meaningful (we re-rank below) but the matches list is.
+    a vector even for filter-only queries. Score order is meaningless here —
+    we order results by article number, not similarity.
 
     Returns:
         {
             "matched_law_variant": str | None,
             "found_law": bool,
             "article_match_quality": "exact_start" | "mentions" | "none",
-            "matches": list[dict],   # each: {id, score, metadata}
+            "matches": list[dict],   # each: {id, score, metadata, content}
         }
     """
-    matched_variant: str | None = None
-    raw_matches: list[Any] = []
+    def _format(matches: Iterable[Any]) -> list[dict]:
+        out: list[dict] = []
+        for m in matches:
+            meta = dict(m.metadata or {})
+            out.append({
+                "id": m.id,
+                "score": float(m.score) if m.score is not None else 0.0,
+                "metadata": meta,
+                "content": meta.get("content") or meta.get("text") or "",
+            })
+        return out
 
+    # 1. Identify the law_number spelling the index actually uses. A tiny
+    #    probe (top_k=1, no metadata) is enough and cheap.
+    matched_variant: str | None = None
     for variant in law_number_variants(citation.law_number):
-        res = pinecone_index.query(
+        probe = pinecone_index.query(
             namespace=namespace,
             vector=dummy_vector,
-            top_k=100,  # pull a generous superset; we'll re-rank locally
-            include_metadata=True,
+            top_k=1,
+            include_metadata=False,
             filter={"law_number": variant},
         )
-        if res.matches:
+        if probe.matches:
             matched_variant = variant
-            raw_matches = list(res.matches)
             break
 
-    if not raw_matches:
+    if matched_variant is None:
         return {
             "matched_law_variant": None,
             "found_law": False,
@@ -204,20 +255,21 @@ def lookup_by_citation(
             "matches": [],
         }
 
-    # Format matches uniformly
-    formatted = []
-    for m in raw_matches:
-        meta = dict(m.metadata or {})
-        formatted.append({
-            "id": m.id,
-            "score": float(m.score) if m.score is not None else 0.0,
-            "metadata": meta,
-            "content": meta.get("content") or meta.get("text") or "",
-        })
-
-    # If no article number, return the law's chunks ordered by chunk_id when possible
+    # 2. No article requested — return the law's OPENING articles (purpose,
+    #    scope, definitions), which is what "what does law X regulate" wants.
+    #    Filter explicitly on the low article numbers so we get 1,2,3... and
+    #    not an arbitrary dummy-vector sample of the law.
     if citation.article_number is None:
-        formatted.sort(key=lambda c: _chunk_sort_key(c["id"]))
+        wanted = [str(i) for i in range(1, max(top_k, 10) + 1)]
+        res = pinecone_index.query(
+            namespace=namespace,
+            vector=dummy_vector,
+            top_k=len(wanted) * 2,  # headroom for multi-part `_p` chunks
+            include_metadata=True,
+            filter={"law_number": matched_variant, "article_number": {"$in": wanted}},
+        )
+        formatted = _format(res.matches)
+        formatted.sort(key=_article_sort_key)
         return {
             "matched_law_variant": matched_variant,
             "found_law": True,
@@ -225,25 +277,59 @@ def lookup_by_citation(
             "matches": formatted[:top_k],
         }
 
-    # Article requested — prefer chunks whose content STARTS with that article
-    starts: list[dict] = []
-    mentions: list[dict] = []
-    for c in formatted:
-        if chunk_starts_article(c["content"], citation.article_number):
-            starts.append(c)
-        elif chunk_mentions_article(c["content"], citation.article_number):
-            mentions.append(c)
+    # 3. Article requested — targeted metadata filter on {N-1, N, N+1}.
+    art = citation.article_number
+    try:
+        n = int(art)
+        wanted = [str(n - 1), str(n), str(n + 1)]
+    except ValueError:
+        wanted = [art]
+
+    res = pinecone_index.query(
+        namespace=namespace,
+        vector=dummy_vector,
+        top_k=50,  # the article + neighbors, plus any multi-part `_p` chunks
+        include_metadata=True,
+        filter={"law_number": matched_variant, "article_number": {"$in": wanted}},
+    )
+    formatted = _format(res.matches)
+    exact = [
+        c for c in formatted
+        if str((c["metadata"] or {}).get("article_number", "")).strip() == art
+    ]
+    if exact:
+        # Requested article first (parts in id order), then neighbors for
+        # legal context — adjacent articles often qualify a provision.
+        exact.sort(key=lambda c: c["id"])
+        neighbors = [c for c in formatted if c not in exact]
+        neighbors.sort(key=_article_sort_key)
+        ranked = exact + neighbors
+        return {
+            "matched_law_variant": matched_variant,
+            "found_law": True,
+            "article_match_quality": "exact_start",
+            "matches": ranked[:top_k],
+        }
+
+    # 4. Fallback for chunks without article_number metadata (legacy v1):
+    #    pull a pool of the law and content-scan for the `Neni N` header.
+    res = pinecone_index.query(
+        namespace=namespace,
+        vector=dummy_vector,
+        top_k=100,
+        include_metadata=True,
+        filter={"law_number": matched_variant},
+    )
+    formatted = _format(res.matches)
+    starts = [c for c in formatted if chunk_starts_article(c["content"], art)]
+    mentions = [
+        c for c in formatted
+        if c not in starts and chunk_mentions_article(c["content"], art)
+    ]
 
     if starts:
-        quality = "exact_start"
-        # The asked-for article comes first, then immediate neighbors as
-        # supporting context (legal interpretation depends on adjacent
-        # articles), then any chunks that just mention it. Neighbors are
-        # the chunks whose article_number metadata is N±1, falling back to
-        # a chunk_id-adjacency heuristic when metadata is null (v1 schema).
         primary = starts[0]
-        neighbors = _find_neighbor_chunks(formatted, primary, citation.article_number)
-        # De-dup by id, preserve order: primary, neighbors, other-starts, mentions
+        neighbors = _find_neighbor_chunks(formatted, primary, art)
         seen_ids: set[str] = {primary["id"]}
         ranked = [primary]
         for c in neighbors + starts[1:] + mentions:
@@ -252,6 +338,7 @@ def lookup_by_citation(
                 continue
             seen_ids.add(cid)
             ranked.append(c)
+        quality = "exact_start"
     elif mentions:
         quality = "mentions"
         ranked = mentions
@@ -318,6 +405,18 @@ def _find_neighbor_chunks(
 
 
 # ----- internals ---------------------------------------------------------
+
+
+def _article_sort_key(c: dict) -> tuple[int, int]:
+    """Order chunks by their article number (v2 metadata), falling back to
+    the v1 chunk-id index. Chunks with neither sort last."""
+    meta = c.get("metadata") or {}
+    a = meta.get("article_number")
+    try:
+        return (0, int(a))
+    except (TypeError, ValueError):
+        return (1, _chunk_sort_key(c.get("id") or ""))
+
 
 _CHUNK_NUM_RE = re.compile(r"chunk[_-](\d+)")
 

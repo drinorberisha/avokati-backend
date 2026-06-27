@@ -28,7 +28,22 @@ from pathlib import Path
 from typing import Optional
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
+# Comprehensive per-law catalog (every law's date/gazette/url), built by
+# `Scraping/gazette_fetch.py catalog`. The BUNDLED copy lives inside this repo
+# so it ships in the Docker image — Cloud Run has no sibling `Scraping/` dir, so
+# without it the catalog would be empty in prod (no dates). Fall back to the
+# Scraping working copy, then the scraper's legacy `law_results.json`, for local
+# dev when the bundle is absent.
+BUNDLED_CATALOG_PATH = Path(__file__).resolve().parent / "data" / "law_catalog.json"
+LAW_CATALOG_PATH = REPO_ROOT / "Scraping" / "data" / "law_catalog.json"
 LAW_RESULTS_PATH = REPO_ROOT / "Scraping" / "data" / "law_results.json"
+
+
+def _default_catalog_path() -> Path:
+    for p in (BUNDLED_CATALOG_PATH, LAW_CATALOG_PATH, LAW_RESULTS_PATH):
+        if p.exists():
+            return p
+    return BUNDLED_CATALOG_PATH
 
 
 @dataclass(frozen=True)
@@ -50,8 +65,8 @@ class LawCatalog:
     _lock = threading.Lock()
     _instance: "LawCatalog | None" = None
 
-    def __init__(self, path: Path = LAW_RESULTS_PATH) -> None:
-        self.path = path
+    def __init__(self, path: Path | None = None) -> None:
+        self.path = path or _default_catalog_path()
         self._by_number: dict[str, LawCatalogEntry] = {}
         self._load()
 

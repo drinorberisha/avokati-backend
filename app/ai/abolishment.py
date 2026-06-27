@@ -22,7 +22,12 @@ from pathlib import Path
 from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
-ABOLISHMENT_PATH = REPO_ROOT / "Scraping" / "data" / "abolishment_relations.json"
+# Bundled in-repo copy ships in the Docker image (Cloud Run has no sibling
+# Scraping/ dir, so reading from there would yield an empty registry in prod).
+# Fall back to the Scraping working copy for local dev.
+_BUNDLED_ABOLISHMENT = Path(__file__).resolve().parent / "data" / "abolishment_relations.json"
+_SCRAPING_ABOLISHMENT = REPO_ROOT / "Scraping" / "data" / "abolishment_relations.json"
+ABOLISHMENT_PATH = _BUNDLED_ABOLISHMENT if _BUNDLED_ABOLISHMENT.exists() else _SCRAPING_ABOLISHMENT
 
 # Albanian status-question markers. We only treat a query as a status query
 # if it contains a law number AND one of these markers — without the
