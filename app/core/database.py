@@ -38,6 +38,11 @@ try:
         # asyncpg-specific connect args
         connect_args={
             "command_timeout": settings.DB_COMMAND_TIMEOUT,  # Maximum time for a command to run
+            # Bound a single connect (TCP + TLS handshake) so a flaky-network
+            # stall fails fast and retries, instead of hanging on asyncpg's
+            # 60s default and killing startup (the Supabase pooler's TLS
+            # handshake occasionally stalls from this environment).
+            "timeout": settings.DB_CONNECT_TIMEOUT,
         }
     )
     
@@ -79,14 +84,30 @@ async def get_db_context():
         await session.close()
 
 # Function to initialize database connection
-async def initialize_db():
+async def initialize_db(retries: int | None = None, base_delay: float = 1.0) -> bool:
+    """Verify the database connection at startup, retrying transient failures.
+
+    The Supabase pooler's TLS handshake intermittently stalls from flaky
+    networks, which used to crash startup outright. We retry with backoff and
+    return a bool so the caller can degrade gracefully (the AvokAI/legal-ai
+    path doesn't depend on this SQLAlchemy engine) rather than exit.
     """
-    Initialize database connection and verify it's working.
-    """
-    async with engine.begin() as conn:
-        logger.info("Database connection initialized successfully")
-    
-    return True
+    import asyncio
+
+    attempts = retries if retries is not None else settings.DB_INIT_RETRIES
+    last_exc: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            async with engine.begin():
+                logger.info("Database connection initialized successfully")
+            return True
+        except Exception as e:  # asyncpg TimeoutError / OSError / etc.
+            last_exc = e
+            logger.warning("DB connect attempt %d/%d failed: %r", attempt, attempts, e)
+            if attempt < attempts:
+                await asyncio.sleep(base_delay * (2 ** (attempt - 1)))
+    logger.error("Database connection failed after %d attempts: %r", attempts, last_exc)
+    return False
 
 # Function to close database connection
 async def close_db_connection():

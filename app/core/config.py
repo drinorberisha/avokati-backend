@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     DB_POOL_RECYCLE: int = 1800  # 30 minutes
     DB_STATEMENT_TIMEOUT: int = 60000  # 60 seconds in milliseconds
     DB_COMMAND_TIMEOUT: int = 60  # 60 seconds
+    DB_CONNECT_TIMEOUT: int = 15  # seconds to wait for a single connect (TCP+TLS) before retrying
+    DB_INIT_RETRIES: int = 5  # startup connection attempts before degrading to no-DB mode
     SQL_ECHO: bool = False  # Set to True to log SQL queries (development only)
 
     # Supabase

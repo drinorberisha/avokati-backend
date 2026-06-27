@@ -30,9 +30,17 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting application...")
 
-    # Initialize database connection
-    await initialize_db()
-    logger.info("Database connection initialized")
+    # Initialize database connection. Non-fatal: a transient pooler/TLS stall
+    # must not prevent the server from starting — the AvokAI/legal-ai path is
+    # DB-independent, and pool_pre_ping reconnects DB-backed endpoints once the
+    # database is reachable again.
+    if await initialize_db():
+        logger.info("Database connection initialized")
+    else:
+        logger.error(
+            "Starting WITHOUT a verified database connection — DB-backed endpoints "
+            "will error until it recovers; AvokAI/legal-ai works independently."
+        )
 
     # Warm up the cross-encoder reranker so the first user query doesn't pay
     # the 3-5s model-load cost. Runs in a thread because sentence-transformers

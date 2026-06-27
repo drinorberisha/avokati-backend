@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
@@ -7,6 +8,8 @@ from app.core.auth import get_current_user
 from app.crud.user import sync_user_to_db
 from sqlalchemy.orm import Session
 from app.core.database import get_db
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -42,12 +45,22 @@ async def register(
         db_user = await sync_user_to_db(db, auth_response.user, user_in)
         return db_user
         
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"Registration error: {str(e)}")  # Debug print
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+        # Log the raw error server-side; return a clean, safe message to the
+        # client (never leak internal/Supabase error text).
+        logger.error("Registration error: %s", e)
+        msg = str(e).lower()
+        if any(k in msg for k in ("already", "exists", "registered", "duplicate")):
+            detail = "An account with this email already exists."
+        elif "password" in msg:
+            detail = "Password does not meet the requirements (minimum 6 characters)."
+        elif "email" in msg and "valid" in msg:
+            detail = "Please enter a valid email address."
+        else:
+            detail = "Registration failed. Please check your details and try again."
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
 @router.post("/login", response_model=Token)
 async def login(
@@ -84,9 +97,10 @@ async def logout(current_user: User = Depends(get_current_user)):
         supabase.auth.sign_out()
         return {"message": "Successfully logged out"}
     except Exception as e:
+        logger.error("Logout error: %s", e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail="Logout failed. Please try again."
         )
 
 @router.post("/refresh-token", response_model=Token)
