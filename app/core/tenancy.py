@@ -9,10 +9,47 @@ parallel guard for the frontend's direct anon-key Supabase calls.)
 See docs/BUILD_ORDER.md and docs/MULTI_TENANCY_PLAN.md.
 """
 
+import logging
+
 from fastapi import Depends, HTTPException, status
 
-from app.core.auth import get_current_user
+from app.core.auth import get_current_user, oauth2_scheme
+from app.core.supabase import get_user_client
 from app.schemas.user import User
+
+logger = logging.getLogger(__name__)
+
+
+def get_user_supabase_client(token: str = Depends(oauth2_scheme)):
+    """RLS-enforcing Supabase client bound to the calling user.
+
+    Use this for ALL per-office data endpoints instead of the service-role
+    ``get_supabase_client`` — it makes Postgres RLS (not app-layer ``.eq``
+    discipline) the thing that refuses cross-office access. The manual
+    ``office_id`` filters stay as defense-in-depth. See docs/PRODUCT_ROADMAP.md P1.
+    """
+    return get_user_client(token)
+
+
+def assert_office_scoped(rows, office_id: str, *, where: str = ""):
+    """Canary: every returned row's ``office_id`` MUST equal the request's.
+
+    RLS already guarantees this; the canary turns a future regression (someone
+    reverts to the service-role client, a policy gets dropped) into a LOUD log
+    line instead of a silent cross-tenant leak. Rows that don't carry
+    ``office_id`` in their projection are skipped. Returns ``rows`` unchanged.
+    """
+    leaked = [
+        r.get("id")
+        for r in (rows or [])
+        if r.get("office_id") is not None and str(r.get("office_id")) != str(office_id)
+    ]
+    if leaked:
+        logger.error(
+            "TENANCY CANARY TRIPPED at %s: rows outside office %s leaked (ids=%s)",
+            where or "?", office_id, leaked[:5],
+        )
+    return rows
 
 
 def require_office(current_user: User = Depends(get_current_user)) -> str:

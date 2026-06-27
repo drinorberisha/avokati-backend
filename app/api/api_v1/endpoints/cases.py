@@ -5,8 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from postgrest.exceptions import APIError
 
 from app.core.auth import get_current_user
-from app.core.supabase import get_supabase_client
-from app.core.tenancy import require_office, assert_in_office
+from app.core.tenancy import require_office, assert_in_office, get_user_supabase_client
 from app.schemas.case import Case, CaseCreate, CaseStatus, CaseUpdate
 from app.schemas.case_milestone import CaseMilestone, CaseMilestoneCreate, CaseMilestoneUpdate
 from app.schemas.user import User
@@ -46,7 +45,7 @@ async def create_case(
     case_in: CaseCreate,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     payload = case_in.model_dump(mode="json")
     # The referenced client must belong to the caller's office.
@@ -70,7 +69,7 @@ async def create_case(
 async def get_cases(
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
     client_id: Optional[UUID] = Query(None),
     status: Optional[CaseStatus] = Query(None),
 ) -> Any:
@@ -89,7 +88,7 @@ async def read_case(
     case_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     response = (
         supabase.table("cases")
@@ -111,7 +110,7 @@ async def update_case(
     case_in: CaseUpdate,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     try:
         update_data = case_in.model_dump(mode="json", exclude_unset=True)
@@ -149,7 +148,7 @@ async def delete_case(
     case_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     try:
         # Ownership guard before cascading.
@@ -173,7 +172,7 @@ async def get_case_milestones(
     case_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     assert_in_office(supabase, "cases", case_id, office_id, detail="Case not found")
     response = (
@@ -194,7 +193,7 @@ async def create_case_milestone(
     milestone_in: CaseMilestoneCreate,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     assert_in_office(supabase, "cases", case_id, office_id, detail="Case not found")
     payload = milestone_in.model_dump(mode="json")
@@ -214,7 +213,7 @@ async def update_case_milestone(
     milestone_in: CaseMilestoneUpdate,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     payload = milestone_in.model_dump(mode="json", exclude_unset=True)
     payload.pop("office_id", None)
@@ -238,7 +237,7 @@ async def delete_case_milestone(
     milestone_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     response = (
         supabase.table("case_milestones")

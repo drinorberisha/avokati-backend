@@ -3,8 +3,7 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.auth import get_current_user
-from app.core.supabase import get_supabase_client
-from app.core.tenancy import require_office, assert_in_office
+from app.core.tenancy import require_office, assert_in_office, get_user_supabase_client
 from app.schemas.invoice import Invoice, InvoiceCreate, InvoiceUpdate
 from app.schemas.user import User
 
@@ -29,7 +28,7 @@ def _normalize_invoice(row: dict) -> dict:
 async def get_invoices(
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     response = (
         supabase.table("invoices")
@@ -46,7 +45,7 @@ async def create_invoice(
     invoice_in: InvoiceCreate,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     payload = invoice_in.model_dump(mode="json")
     # Referenced client (and optional case) must belong to the caller's office.
@@ -75,7 +74,7 @@ async def update_invoice(
     invoice_in: InvoiceUpdate,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     update_data = invoice_in.model_dump(mode="json", exclude_unset=True)
     update_data.pop("office_id", None)
@@ -109,7 +108,7 @@ async def delete_invoice(
     invoice_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     response = supabase.table("invoices").delete().eq("id", invoice_id).eq("office_id", office_id).execute()
     if not response.data:

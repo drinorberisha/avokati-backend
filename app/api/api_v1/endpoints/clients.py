@@ -3,8 +3,12 @@ from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.auth import get_current_user
-from app.core.supabase import get_supabase_client
-from app.core.tenancy import require_office, assert_in_office
+from app.core.tenancy import (
+    require_office,
+    assert_in_office,
+    get_user_supabase_client,
+    assert_office_scoped,
+)
 from app.schemas.client import Client, ClientCreate, ClientUpdate
 from app.schemas.user import User
 
@@ -45,7 +49,7 @@ async def create_client(
     client_in: ClientCreate,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     existing = (
         supabase.table("clients")
@@ -69,15 +73,17 @@ async def create_client(
 async def get_clients(
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     response = (
         supabase.table("clients")
-        .select("id, name, email, phone, address, created_at, client_since")
+        .select("id, name, email, phone, address, created_at, client_since, office_id")
         .eq("office_id", office_id)
         .execute()
     )
-    clients = response.data or []
+    # RLS already scopes this to the caller's office; the canary is a tripwire
+    # for any future regression. office_id is dropped by _normalize_client.
+    clients = assert_office_scoped(response.data or [], office_id, where="clients.list")
     grouped = _case_ids_by_client(supabase, office_id, [client["id"] for client in clients])
     return [_normalize_client(client, grouped.get(client["id"], [])) for client in clients]
 
@@ -88,7 +94,7 @@ async def read_client(
     client_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     response = (
         supabase.table("clients")
@@ -111,7 +117,7 @@ async def update_client(
     client_in: ClientUpdate,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     update_data = client_in.model_dump(mode="json", exclude_unset=True)
     # Never let a client payload move a row to another office.
@@ -135,7 +141,7 @@ async def delete_client(
     client_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     # Ownership guard: only cascade-delete a client that belongs to this office.
     assert_in_office(supabase, "clients", client_id, office_id, detail="Client not found")
@@ -164,7 +170,7 @@ async def get_client_cases(
     client_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     response = (
         supabase.table("cases")
@@ -194,7 +200,7 @@ async def get_client_metrics(
     client_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     response = (
         supabase.table("cases")

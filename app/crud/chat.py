@@ -1,125 +1,140 @@
 """
 CRUD operations for AvokAI chat sessions + messages.
 
-All operations scope by `user_id` to enforce per-user privacy — callers
-pass the authenticated user's ID and any session not owned by them is
-treated as not-found.
+Runs over the **RLS-bound user-JWT Supabase client** (PostgREST), NOT the
+SQLAlchemy `postgres` connection — that role has BYPASSRLS, so the database
+never enforced ownership there. With these calls going through the user's
+token, the `chat_sessions_owner` / `chat_messages_owner` policies make Postgres
+itself refuse cross-user access (see supabase/migrations/20260621_chat_rls.sql).
+The `user_id` filters below are kept as defense-in-depth.
+
+Each function takes the per-request user-scoped client (`get_user_supabase_client`)
+and returns plain dicts shaped for the chat response schemas.
 """
 
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone
 from typing import Any, Optional
 from uuid import UUID
 
-from sqlalchemy import select, update, delete, func
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import selectinload
-
-from app.db.models.chat_session import ChatSession, ChatMessage
-
 logger = logging.getLogger(__name__)
 
-# How many chars of the first user message become the auto-generated title.
 TITLE_MAX_CHARS = 80
+_DEFAULT_TITLE = "Bisedë e re"
+_SESSION_COLS = "id, title, created_at, last_message_at"
+_MESSAGE_COLS = "id, role, content, intent, sources, citations, abolishment_warnings, llm_usage, elapsed_ms, created_at"
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _make_title_from_first_message(content: str) -> str:
-    """Truncate user's first message to a sidebar-friendly title."""
     cleaned = (content or "").strip().replace("\n", " ")
     if not cleaned:
-        return "Bisedë e re"
+        return _DEFAULT_TITLE
     if len(cleaned) <= TITLE_MAX_CHARS:
         return cleaned
     return cleaned[: TITLE_MAX_CHARS - 1].rstrip() + "…"
 
 
-async def list_sessions(db: AsyncSession, user_id: UUID, limit: int = 100) -> list[ChatSession]:
-    """Return user's sessions, newest activity first."""
+async def list_sessions(supabase, user_id: UUID, limit: int = 100) -> list[dict]:
+    """User's sessions, newest activity first. RLS scopes to the caller."""
     try:
-        result = await db.execute(
-            select(ChatSession)
-            .where(ChatSession.user_id == user_id)
-            .order_by(ChatSession.last_message_at.desc())
+        res = (
+            supabase.table("chat_sessions")
+            .select(_SESSION_COLS)
+            .eq("user_id", str(user_id))
+            .order("last_message_at", desc=True)
             .limit(limit)
+            .execute()
         )
-        return list(result.scalars().all())
-    except SQLAlchemyError as e:
+        return res.data or []
+    except Exception as e:
         logger.error("list_sessions failed: %s", e)
         return []
 
 
-async def create_session(db: AsyncSession, user_id: UUID, title: Optional[str] = None) -> Optional[ChatSession]:
-    """Create an empty session. Title can be set explicitly or left as default."""
+async def create_session(supabase, user_id: UUID, title: Optional[str] = None) -> Optional[dict]:
+    """Create an empty session (title defaults to 'Bisedë e re' at the DB)."""
     try:
-        session = ChatSession(user_id=user_id)
+        payload: dict[str, Any] = {"user_id": str(user_id)}
         if title:
-            session.title = title[:200]
-        db.add(session)
-        await db.commit()
-        await db.refresh(session)
-        return session
-    except SQLAlchemyError as e:
-        await db.rollback()
+            payload["title"] = title[:200]
+        res = supabase.table("chat_sessions").insert(payload).execute()
+        return res.data[0] if res.data else None
+    except Exception as e:
         logger.error("create_session failed: %s", e)
         return None
 
 
 async def get_session(
-    db: AsyncSession, session_id: UUID, user_id: UUID, *, with_messages: bool = False
-) -> Optional[ChatSession]:
-    """Fetch a session, scoped to the owning user. Returns None if not owned."""
+    supabase, session_id: UUID, user_id: UUID, *, with_messages: bool = False
+) -> Optional[dict]:
+    """Fetch a session (RLS-scoped to the owner). None if not owned/found."""
     try:
-        stmt = select(ChatSession).where(
-            ChatSession.id == session_id,
-            ChatSession.user_id == user_id,
-        )
+        sel = _SESSION_COLS
         if with_messages:
-            stmt = stmt.options(selectinload(ChatSession.messages))
-        result = await db.execute(stmt)
-        return result.scalar_one_or_none()
-    except SQLAlchemyError as e:
+            sel = f"{_SESSION_COLS}, messages:chat_messages({_MESSAGE_COLS})"
+        res = (
+            supabase.table("chat_sessions")
+            .select(sel)
+            .eq("id", str(session_id))
+            .eq("user_id", str(user_id))
+            .limit(1)
+            .execute()
+        )
+        if not res.data:
+            return None
+        row = res.data[0]
+        if with_messages:
+            row["messages"] = sorted(
+                row.get("messages") or [], key=lambda m: m.get("created_at") or ""
+            )
+        return row
+    except Exception as e:
         logger.error("get_session failed: %s", e)
         return None
 
 
 async def update_session_title(
-    db: AsyncSession, session_id: UUID, user_id: UUID, title: str
-) -> Optional[ChatSession]:
-    """Rename a session."""
-    session = await get_session(db, session_id, user_id)
-    if session is None:
-        return None
+    supabase, session_id: UUID, user_id: UUID, title: str
+) -> Optional[dict]:
+    """Rename a session (no update trigger exists → stamp updated_at here)."""
     try:
-        session.title = title[:200]
-        session.updated_at = func.current_timestamp()
-        await db.commit()
-        await db.refresh(session)
-        return session
-    except SQLAlchemyError as e:
-        await db.rollback()
+        res = (
+            supabase.table("chat_sessions")
+            .update({"title": title[:200], "updated_at": _now()})
+            .eq("id", str(session_id))
+            .eq("user_id", str(user_id))
+            .execute()
+        )
+        return res.data[0] if res.data else None
+    except Exception as e:
         logger.error("update_session_title failed: %s", e)
         return None
 
 
-async def delete_session(db: AsyncSession, session_id: UUID, user_id: UUID) -> bool:
-    """Hard-delete a session (cascade deletes messages). Returns True on success."""
+async def delete_session(supabase, session_id: UUID, user_id: UUID) -> bool:
+    """Hard-delete a session; messages cascade via FK. True on success."""
     try:
-        result = await db.execute(
-            delete(ChatSession)
-            .where(ChatSession.id == session_id, ChatSession.user_id == user_id)
+        res = (
+            supabase.table("chat_sessions")
+            .delete()
+            .eq("id", str(session_id))
+            .eq("user_id", str(user_id))
+            .execute()
         )
-        await db.commit()
-        return result.rowcount > 0
-    except SQLAlchemyError as e:
-        await db.rollback()
+        return bool(res.data)
+    except Exception as e:
         logger.error("delete_session failed: %s", e)
         return False
 
 
 async def append_turn(
-    db: AsyncSession,
+    supabase,
     *,
     session_id: UUID,
     user_id: UUID,
@@ -133,56 +148,59 @@ async def append_turn(
     elapsed_ms: Optional[int] = None,
     auto_title_if_empty: bool = True,
 ) -> bool:
-    """Persist one user→assistant exchange and bump the session's activity timestamp.
+    """Persist one user→assistant exchange and bump the session activity time.
 
-    If the session is empty and `auto_title_if_empty` is True, the title is
-    set to the first ~80 chars of `user_content` so the sidebar gets a useful
-    label instead of "Bisedë e re".
-
-    Returns True on success.
+    Ownership is enforced by RLS: the session lookup returns nothing if the
+    caller doesn't own it, and the message-insert policy checks the parent
+    session's owner. Three PostgREST calls (no cross-statement transaction) —
+    acceptable since chat persistence is best-effort.
     """
-    session = await get_session(db, session_id, user_id, with_messages=False)
-    if session is None:
-        logger.warning("append_turn: session %s not found for user %s", session_id, user_id)
+    sess = (
+        supabase.table("chat_sessions")
+        .select("id, title")
+        .eq("id", str(session_id))
+        .eq("user_id", str(user_id))
+        .limit(1)
+        .execute()
+    ).data
+    if not sess:
+        logger.warning("append_turn: session %s not owned by user %s", session_id, user_id)
         return False
 
     try:
-        if auto_title_if_empty and session.title == "Bisedë e re":
-            # Check whether any messages exist already; if not, set title.
-            existing_count = await db.execute(
-                select(func.count())
-                .select_from(ChatMessage)
-                .where(ChatMessage.session_id == session_id)
-            )
-            if (existing_count.scalar() or 0) == 0:
-                session.title = _make_title_from_first_message(user_content)
+        new_title: Optional[str] = None
+        if auto_title_if_empty and sess[0].get("title") == _DEFAULT_TITLE:
+            existing = (
+                supabase.table("chat_messages")
+                .select("id")
+                .eq("session_id", str(session_id))
+                .limit(1)
+                .execute()
+            ).data
+            if not existing:
+                new_title = _make_title_from_first_message(user_content)
 
-        user_msg = ChatMessage(
-            session_id=session_id,
-            role="user",
-            content=user_content,
-        )
-        assistant_msg = ChatMessage(
-            session_id=session_id,
-            role="assistant",
-            content=assistant_content,
-            intent=intent,
-            sources=sources,
-            citations=citations,
-            abolishment_warnings=abolishment_warnings,
-            llm_usage=llm_usage,
-            elapsed_ms=elapsed_ms,
-        )
-        db.add(user_msg)
-        db.add(assistant_msg)
+        supabase.table("chat_messages").insert([
+            {"session_id": str(session_id), "role": "user", "content": user_content},
+            {
+                "session_id": str(session_id),
+                "role": "assistant",
+                "content": assistant_content,
+                "intent": intent,
+                "sources": sources,
+                "citations": citations,
+                "abolishment_warnings": abolishment_warnings,
+                "llm_usage": llm_usage,
+                "elapsed_ms": elapsed_ms,
+            },
+        ]).execute()
 
-        session.last_message_at = func.current_timestamp()
-        session.updated_at = func.current_timestamp()
-
-        await db.commit()
+        bump: dict[str, Any] = {"last_message_at": _now(), "updated_at": _now()}
+        if new_title:
+            bump["title"] = new_title
+        supabase.table("chat_sessions").update(bump).eq("id", str(session_id)).eq("user_id", str(user_id)).execute()
         return True
-    except SQLAlchemyError as e:
-        await db.rollback()
+    except Exception as e:
         logger.error("append_turn failed: %s", e)
         return False
 

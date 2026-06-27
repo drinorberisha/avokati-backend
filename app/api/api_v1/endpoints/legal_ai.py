@@ -1,53 +1,15 @@
-from typing import List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, Query, BackgroundTasks, status
-from sqlalchemy.ext.asyncio import AsyncSession
+import asyncio
+from typing import List, Optional, Any
+from fastapi import APIRouter, Depends, HTTPException, status
 import logging
-import uuid
-from datetime import datetime
-from pydantic import BaseModel
 
-from app.core.database import get_db
+from app.core.tenancy import get_user_supabase_client
 from app.core.auth import get_current_active_user
 from app.db.models import User
 from app.core.consent import require_ai_consent
 
-from app.ai.retrieval.langchain_service import langchain_service
-
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-class AskQuestionRequest(BaseModel):
-    query: str
-    document_type: Optional[str] = None
-    top_k: Optional[int] = 5
-
-@router.post("/ask", response_model=Dict[str, Any])
-async def ask_legal_question(
-    request: AskQuestionRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """
-    Ask a legal question and get an answer based on the indexed legal documents.
-
-    LEGACY endpoint (v1 namespace + English prompt + no citation validation).
-    For new frontend code, use `/legal-ai/ask-v2` which returns a rich
-    response in a single call.
-    """
-    # Create filter if document type is specified
-    filter_dict = None
-    if request.document_type:
-        filter_dict = {"document_type": request.document_type}
-
-    # Answer the question
-    result = await langchain_service.answer_question(
-        question=request.query,
-        filter=filter_dict,
-        top_k=request.top_k
-    )
-
-    return result
 
 
 # ---- /legal-ai/ask-v2: post-rebuild AvokAI endpoint ----------------------
@@ -56,11 +18,9 @@ async def ask_legal_question(
 # with abolishment status + per-law catalog data (gazette URL, publication
 # date), and returns everything the new sidebar UI needs.
 #
-# Why a new endpoint instead of replacing /ask:
-#   - Reversible: legacy /ask still works for any client that hasn't migrated
-#   - Different response shape: this one is structured for direct UI render
-#   - Different namespace: defaults to default_v2 instead of legacy default
-# Once the React app is fully migrated, /ask can be deleted.
+# The legacy POST /ask endpoint (v1 namespace, langchain path, no consent
+# gate) was removed in June 2026 — it bypassed require_ai_consent and the
+# frontend had fully migrated to ask-v2.
 
 from uuid import UUID  # noqa: E402
 
@@ -77,11 +37,38 @@ from app.schemas.chat import (  # noqa: E402
 from app.crud import chat as chat_crud  # noqa: E402
 
 
+# route_trace keys safe to expose to the browser. Everything else (e.g.
+# `llm_error`, which carries exception reprs) stays in server logs only.
+_PUBLIC_TRACE_KEYS = frozenset({
+    "intent",
+    "reason",
+    "namespace",
+    "citation_parsed",
+    "citation_match_quality",
+    "matched_law_variant",
+    "abolishment_status",
+    "citation_miss",
+    "relevance_floor_triggered",
+    "relevance_top_score",
+})
+
+# Generic client-facing message for mid-stream failures; the real exception
+# is logged server-side. Albanian first — the UI default language.
+_STREAM_ERROR_MESSAGE = (
+    "Ndodhi një gabim teknik gjatë përpunimit të kërkesës. "
+    "Ju lutemi provoni përsëri."
+)
+
+
+def _public_trace(trace: dict[str, Any] | None) -> dict[str, Any]:
+    return {k: v for k, v in (trace or {}).items() if k in _PUBLIC_TRACE_KEYS}
+
+
 @router.post("/ask-v2", response_model=AskV2Response)
 async def ask_legal_question_v2(
     request: AskV2Request,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    supabase=Depends(get_user_supabase_client),
     _consent: None = Depends(require_ai_consent),
 ):
     """Single-call rich answer for AvokAI.
@@ -102,9 +89,13 @@ async def ask_legal_question_v2(
         so the frontend can show "Shërbimi i kërkimit nuk është i
         disponueshëm momentalisht" instead of a generic toast.
     """
-    history = list(request.conversation_history or [])[-6:]
+    history = [t.model_dump() for t in (request.conversation_history or [])][-6:]
     try:
-        result = pipeline_answer(
+        # The pipeline is sync (embed → Pinecone → rerank → full DeepSeek
+        # generation, up to ~minutes). Offload to a thread so one in-flight
+        # question doesn't freeze the event loop for every other request.
+        result = await asyncio.to_thread(
+            pipeline_answer,
             request.query,
             namespace=request.namespace,
             use_llm=request.use_llm,
@@ -129,6 +120,7 @@ async def ask_legal_question_v2(
             },
         )
     response = adapt_pipeline_result_to_v2(result)
+    response.route_trace = _public_trace(response.route_trace)
 
     # Best-effort persistence. The pipeline already ran; if storage fails
     # we still want the user to see their answer.
@@ -136,7 +128,7 @@ async def ask_legal_question_v2(
         try:
             sid = UUID(request.session_id)
             await chat_crud.append_turn(
-                db,
+                supabase,
                 session_id=sid,
                 user_id=current_user.id,
                 user_content=request.query,
@@ -186,7 +178,7 @@ def _sse_format(event: str, payload: Any) -> str:
 async def ask_legal_question_v2_stream(
     request: AskV2Request,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    supabase=Depends(get_user_supabase_client),
     _consent: None = Depends(require_ai_consent),
 ):
     """SSE streaming version of /ask-v2.
@@ -196,7 +188,7 @@ async def ask_legal_question_v2_stream(
     errors; errors AFTER the stream has begun are emitted as an `error`
     SSE event because we can't change the response status code mid-stream.
     """
-    history = list(request.conversation_history or [])[-6:]
+    history = [t.model_dump() for t in (request.conversation_history or [])][-6:]
     session_uuid: UUID | None = None
     if request.session_id:
         try:
@@ -235,6 +227,10 @@ async def ask_legal_question_v2_stream(
         # gets forwarded. SSE comments (`:...\n\n`) are ignored by clients.
         HEARTBEAT_PAYLOAD = ":" + ("h" * 64) + "\n\n"
         HEARTBEAT_INTERVAL = 0.25
+        # Hard wall-clock cap on the whole stream. A hung DeepSeek call
+        # otherwise holds the connection (and its thread) forever — the
+        # heartbeat keeps bytes flowing, so no proxy timeout saves us.
+        STREAM_TIMEOUT_S = 300.0
 
         async def pipeline_task() -> None:
             try:
@@ -261,9 +257,21 @@ async def ask_legal_question_v2_stream(
 
         ptask = _asyncio.create_task(pipeline_task())
         hbtask = _asyncio.create_task(heartbeat_task())
+        t_start = _asyncio.get_running_loop().time()
 
         try:
             while True:
+                if _asyncio.get_running_loop().time() - t_start > STREAM_TIMEOUT_S:
+                    logger.error(
+                        "ask-v2/stream: timed out after %.0fs (session %s)",
+                        STREAM_TIMEOUT_S, session_uuid,
+                    )
+                    yield _sse_format(
+                        "error",
+                        {"code": "STREAM_TIMEOUT", "message": _STREAM_ERROR_MESSAGE},
+                    )
+                    break
+
                 item = await queue.get()
                 kind = item[0]
 
@@ -279,7 +287,7 @@ async def ask_legal_question_v2_stream(
                     logger.exception("ask-v2/stream: pipeline error: %r", e)
                     yield _sse_format(
                         "error",
-                        {"code": "PIPELINE_ERROR", "message": repr(e)},
+                        {"code": "PIPELINE_ERROR", "message": _STREAM_ERROR_MESSAGE},
                     )
                     continue
 
@@ -293,6 +301,20 @@ async def ask_legal_question_v2_stream(
                     text = payload.get("text", "")
                     accumulated_answer += text
                     yield _sse_format("delta", {"text": text})
+                elif event_name == "route":
+                    yield _sse_format("route", _public_trace(payload))
+                elif event_name == "error":
+                    # Pipeline-emitted error events (e.g. retrieval failure)
+                    # may carry exception text — log it, send a generic
+                    # message with the structured code preserved.
+                    logger.error("ask-v2/stream: pipeline error event: %s", payload)
+                    yield _sse_format(
+                        "error",
+                        {
+                            "code": payload.get("code", "PIPELINE_ERROR"),
+                            "message": _STREAM_ERROR_MESSAGE,
+                        },
+                    )
                 elif event_name == "done":
                     final_payload = payload
                     raw_sources = payload.get("sources") or []
@@ -305,23 +327,22 @@ async def ask_legal_question_v2_stream(
                         "abolishment_warnings": payload.get("abolishment_warnings", []),
                         "llm_usage": payload.get("llm_usage"),
                         "elapsed_ms": payload.get("elapsed_ms", 0),
-                        "route_trace": payload.get("route_trace", {}),
+                        "route_trace": _public_trace(payload.get("route_trace")),
                     }
                     yield _sse_format("done", out)
                 else:
                     yield _sse_format(event_name, payload)
         finally:
+            # Cancel both tasks. On the normal path they're already done
+            # (sentinel received) and cancel() is a no-op; on the timeout
+            # path this is what actually releases the hung pipeline.
             hbtask.cancel()
-            try:
-                await hbtask
-            except _asyncio.CancelledError:
-                pass
-            # Wait for pipeline task to finish naturally — if it raised, it
-            # already pushed an error item and we yielded it above.
-            try:
-                await ptask
-            except Exception:
-                pass
+            ptask.cancel()
+            for task in (hbtask, ptask):
+                try:
+                    await task
+                except (_asyncio.CancelledError, Exception):
+                    pass
 
         # Best-effort persistence — runs after the stream has finished
         # producing events but before the connection closes. Same rule as
@@ -330,7 +351,7 @@ async def ask_legal_question_v2_stream(
         if session_uuid is not None and final_payload is not None:
             try:
                 await chat_crud.append_turn(
-                    db,
+                    supabase,
                     session_id=session_uuid,
                     user_id=current_user.id,
                     user_content=request.query,
@@ -369,7 +390,7 @@ async def ask_legal_question_v2_stream(
 async def create_chat_session(
     body: Optional[ChatSessionCreate] = None,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    supabase=Depends(get_user_supabase_client),
 ):
     """Create a new (empty) chat session for the current user.
 
@@ -378,7 +399,7 @@ async def create_chat_session(
     when the first user message is appended by /ask-v2.
     """
     title = body.title if body else None
-    session = await chat_crud.create_session(db, current_user.id, title=title)
+    session = await chat_crud.create_session(supabase, current_user.id, title=title)
     if session is None:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -390,24 +411,24 @@ async def create_chat_session(
 @router.get("/chat/sessions", response_model=List[ChatSessionSummary])
 async def list_chat_sessions(
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    supabase=Depends(get_user_supabase_client),
 ):
     """List the current user's chat sessions, newest activity first."""
-    return await chat_crud.list_sessions(db, current_user.id)
+    return await chat_crud.list_sessions(supabase, current_user.id)
 
 
 @router.get("/chat/sessions/{session_id}", response_model=ChatSessionDetail)
 async def get_chat_session(
     session_id: UUID,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    supabase=Depends(get_user_supabase_client),
 ):
     """Fetch a session with all its messages.
 
     404 if the session doesn't exist or isn't owned by the caller (no
     information leak about other users' sessions).
     """
-    session = await chat_crud.get_session(db, session_id, current_user.id, with_messages=True)
+    session = await chat_crud.get_session(supabase, session_id, current_user.id, with_messages=True)
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     return session
@@ -418,10 +439,10 @@ async def rename_chat_session(
     session_id: UUID,
     body: ChatSessionUpdate,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    supabase=Depends(get_user_supabase_client),
 ):
     """Rename a chat session."""
-    session = await chat_crud.update_session_title(db, session_id, current_user.id, body.title)
+    session = await chat_crud.update_session_title(supabase, session_id, current_user.id, body.title)
     if session is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     return session
@@ -431,10 +452,10 @@ async def rename_chat_session(
 async def delete_chat_session(
     session_id: UUID,
     current_user: User = Depends(get_current_active_user),
-    db: AsyncSession = Depends(get_db),
+    supabase=Depends(get_user_supabase_client),
 ):
     """Delete a chat session and all its messages (cascade)."""
-    ok = await chat_crud.delete_session(db, session_id, current_user.id)
+    ok = await chat_crud.delete_session(supabase, session_id, current_user.id)
     if not ok:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
     return None

@@ -6,8 +6,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 
 from app.core.auth import get_current_user
 from app.core.gcs import gcs
-from app.core.supabase import get_supabase_client
-from app.core.tenancy import require_office, assert_in_office
+from app.core.tenancy import require_office, assert_in_office, get_user_supabase_client
 from app.schemas.document import Document, DocumentCategory, DocumentUpdate
 from app.schemas.user import User
 
@@ -58,7 +57,7 @@ async def create_document(
     data: str = Form(...),
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     payload = json.loads(data)
     case_id = payload.get("case_id")
@@ -98,7 +97,7 @@ async def create_document(
 async def get_documents(
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     response = (
         supabase.table("documents")
@@ -114,7 +113,7 @@ async def read_document(
     document_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     response = (
         supabase.table("documents")
@@ -136,7 +135,7 @@ async def update_document(
     data: str = Form(...),
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     payload = json.loads(data)
     update_data = DocumentUpdate(**payload).model_dump(mode="json", exclude_unset=True)
@@ -168,7 +167,7 @@ async def delete_document(
     document_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     # Fetch the object key first so we can remove the file too.
     existing = (

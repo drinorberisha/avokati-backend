@@ -14,8 +14,7 @@ from fastapi import APIRouter, Depends
 
 from app.core.auth import get_current_user
 from app.core.consent import AI_CONSENT_PURPOSE, AI_CONSENT_VERSION, get_ai_consent_row, is_ai_consented
-from app.core.supabase import get_supabase_client
-from app.core.tenancy import require_office
+from app.core.tenancy import require_office, get_user_supabase_client
 from app.schemas.consent import ConsentStatusOut
 from app.schemas.user import User
 
@@ -38,7 +37,7 @@ def _status(row: dict | None) -> ConsentStatusOut:
 @router.get("/ai-processing", response_model=ConsentStatusOut)
 async def get_ai_consent_status(
     current_user: User = Depends(get_current_user),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     row = get_ai_consent_row(supabase, str(current_user.id))
     return _status(row)
@@ -48,7 +47,7 @@ async def get_ai_consent_status(
 async def grant_ai_consent(
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     now = datetime.now(timezone.utc).isoformat()
     record = {
@@ -68,7 +67,7 @@ async def grant_ai_consent(
 @router.post("/ai-processing/withdraw", response_model=ConsentStatusOut)
 async def withdraw_ai_consent(
     current_user: User = Depends(get_current_user),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     now = datetime.now(timezone.utc).isoformat()
     (

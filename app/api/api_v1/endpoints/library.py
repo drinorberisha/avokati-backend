@@ -16,8 +16,7 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, s
 from app.core.auth import get_current_user
 from app.core.config import settings
 from app.core.gcs import gcs
-from app.core.supabase import get_supabase_client
-from app.core.tenancy import require_office
+from app.core.tenancy import require_office, get_user_supabase_client
 from app.schemas.library import LibraryDocumentOut, LibraryDownloadOut
 from app.schemas.user import User
 
@@ -49,7 +48,7 @@ def _file_key(office_id: str, filename: str) -> str:
 async def list_documents(
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     resp = (
         supabase.table("library_documents")
@@ -69,7 +68,7 @@ async def upload_document(
     document_type: str = Form("other"),
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     content_type = file.content_type or "application/octet-stream"
     if content_type not in settings.ALLOWED_UPLOAD_TYPES:
@@ -117,7 +116,7 @@ async def download_document(
     document_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     resp = (
         supabase.table("library_documents")
@@ -141,7 +140,7 @@ async def delete_document(
     document_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     resp = (
         supabase.table("library_documents")
@@ -167,7 +166,7 @@ async def delete_document(
 async def delete_all_documents(
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     resp = supabase.table("library_documents").select("file_url").eq("office_id", office_id).execute()
     for row in resp.data or []:

@@ -12,8 +12,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
 from app.core.auth import get_current_user
 from app.core.consent import require_ai_consent
-from app.core.supabase import get_supabase_client
-from app.core.tenancy import require_office
+from app.core.tenancy import require_office, get_user_supabase_client
 from app.schemas.template import TemplateCreate, TemplateOut, TemplateUpdate
 from app.schemas.user import User
 
@@ -161,7 +160,7 @@ async def extract_template(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
     _consent: None = Depends(require_ai_consent),
 ) -> Any:
     """Upload a PDF/DOCX/image contract → analyse it → create a draft template
@@ -252,7 +251,7 @@ async def extract_template(
 async def list_templates(
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     resp = (
         supabase.table("templates")
@@ -270,7 +269,7 @@ async def create_template(
     template_in: TemplateCreate,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     payload = template_in.model_dump(mode="json")
     payload["office_id"] = office_id
@@ -288,7 +287,7 @@ async def read_template(
     template_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     resp = (
         supabase.table("templates")
@@ -310,7 +309,7 @@ async def update_template(
     template_in: TemplateUpdate,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     update_data = template_in.model_dump(mode="json", exclude_unset=True)
     # Never let a payload move a template to another office.
@@ -335,7 +334,7 @@ async def delete_template(
     template_id: str,
     current_user: User = Depends(get_current_user),
     office_id: str = Depends(require_office),
-    supabase=Depends(get_supabase_client),
+    supabase=Depends(get_user_supabase_client),
 ) -> Any:
     resp = (
         supabase.table("templates")
