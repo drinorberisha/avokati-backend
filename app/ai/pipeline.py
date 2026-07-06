@@ -434,14 +434,10 @@ def _embed_query(query: str) -> list[float]:
 # ----- retrieval primitives ----------------------------------------------
 
 
-# Future backstop (deferred): a bare article reference with no law that slips past
-# the pre-retrieval `article_without_law` clarify route (novel spelling/typo) lands
-# here and can retrieve the same article number across many unrelated laws, which the
-# LLM then synthesizes ("Neni 47" from 5 laws). If we ever see that recur, add a guard:
-# when the query has an article ref but no law (router.incomplete_reference /
-# citation.parse_citation) AND the same article_number spans ≥3 distinct law_numbers in
-# the top sources, refuse-with-`clarify_missing_law` instead of generating. Needs
-# threshold tuning against the LIVE index to avoid refusing legitimate topical queries.
+# NOTE: the multi-law bare-article ambiguity backstop (G3) is IMPLEMENTED — see
+# `_multilaw_ambiguous()` and its use in `answer()` / `answer_stream()`. This function
+# stays retrieval-only and makes no gating decisions. (The G3 threshold still wants
+# tuning against the LIVE index to avoid refusing legitimate topical queries.)
 def _semantic_retrieve(query: str, namespace: str) -> list[dict[str, Any]]:
     """Dense top-200 → BM25-rescored top-20 → cross-encoder reranked top-K.
 
@@ -668,6 +664,13 @@ def answer(
             trace["multilaw_distinct_laws"] = n_laws
             sources = []
             decision = RoutingDecision("clarify", None, "multilaw_ambiguous")
+
+    # Keep route_trace's intent/reason in sync with the FINAL decision — it may have
+    # been reassigned above (citation_miss_fallback → semantic_question, or the G3
+    # multi-law gate → clarify), and AnswerResult.intent uses the final decision. The
+    # citation_miss / multilaw_ambiguous trace flags still record the original routing.
+    trace["intent"] = decision.intent
+    trace["reason"] = decision.reason
 
     # Cross-reference abolishment for ANY retrieved chunk (even when the
     # primary route wasn't status). A semantic hit on an abolished law
@@ -1046,6 +1049,12 @@ async def answer_stream(
             trace["multilaw_distinct_laws"] = n_laws
             sources = []
             decision = RoutingDecision("clarify", None, "multilaw_ambiguous")
+
+    # Keep the final `done` route_trace consistent with the FINAL decision (it may have
+    # been reassigned by citation_miss_fallback or the G3 multi-law gate). The earlier
+    # `route` event intentionally kept the initial classify snapshot.
+    trace["intent"] = decision.intent
+    trace["reason"] = decision.reason
 
     warnings = _abolishment_warnings(sources, registry)
     if sources:
