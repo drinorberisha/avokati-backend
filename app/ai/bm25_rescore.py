@@ -26,6 +26,8 @@ from typing import Any, Iterable
 
 from rank_bm25 import BM25Okapi
 
+from app.ai.text_norm import fold
+
 
 # Albanian stopwords — short, conservative list. Removing more words risks
 # dropping useful context; this list is just the obvious noise.
@@ -39,24 +41,31 @@ ALBANIAN_STOPWORDS = frozenset({
     "ligji", "ligjit", "ligjin", "ligje", "ligjet",  # match too broadly to be useful as keywords
     "neni", "nenit", "nenin", "nenet", "neneve",
 })
+# Folded form, so stopword filtering fires on the folded tokens tokenize() emits.
+_STOPWORDS_FOLDED = frozenset(fold(w) for w in ALBANIAN_STOPWORDS)
 
 
 _TOKEN_RE = re.compile(r"[A-Za-zëçËÇ]+|\d+", re.UNICODE)
 
 
 def tokenize(text: str) -> list[str]:
-    """Lowercase Albanian tokenizer that strips stopwords and very short tokens.
+    """Diacritic-folded Albanian tokenizer that strips stopwords and very short
+    tokens.
 
-    Numeric tokens are kept regardless of length — article/paragraph numbers
-    and years ("neni 42", "2004") are strong lexical signals in legal text.
+    Tokens are folded (ë→e, ç→c) so diacritic-free queries lexically match
+    diacritic corpus text in BM25 rescoring (e.g. "ceshtje" ↔ "çështje"). Applied
+    to both the query and chunk content by `rescore`, so both sides stay consistent.
+    Numeric tokens are kept regardless of length — article/paragraph numbers and
+    years ("neni 42", "2004") are strong lexical signals in legal text.
     """
     if not text:
         return []
     out: list[str] = []
     for tok in _TOKEN_RE.findall(text.lower()):
+        tok = fold(tok)  # ë→e, ç→c (length-preserving)
         if len(tok) < 3 and not tok.isdigit():
             continue
-        if tok in ALBANIAN_STOPWORDS:
+        if tok in _STOPWORDS_FOLDED:
             continue
         out.append(tok)
     return out

@@ -21,6 +21,7 @@ Talks to Pinecone + OpenAI embeddings + DeepSeek directly via env vars.
 from __future__ import annotations
 
 import os
+import re
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -30,7 +31,7 @@ from app.ai.abolishment import (
     render_synthetic_chunks,
 )
 from app.ai.bm25_rescore import rescore as bm25_rescore
-from app.ai.citation import lookup_by_citation
+from app.ai.citation import lookup_by_citation, parse_citation, ARTICLE_REF_PATTERN
 from app.ai.citation_validator import (
     annotate_unverified,
     extract_citations,
@@ -44,11 +45,15 @@ from app.ai.reranker import (
     rerank as cross_encoder_rerank,
 )
 from app.ai.router import (
+    CLARIFY_MISSING_LAW_RESPONSE,
+    CLARIFY_RESPONSE,
     GREETING_RESPONSE,
     OUT_OF_SCOPE_RESPONSE,
     RoutingDecision,
     classify,
+    incomplete_reference,
 )
+from app.ai.conversation import derive_context
 
 
 DEFAULT_NAMESPACE = os.environ.get("PINECONE_NAMESPACE_V2", "default_v2")
@@ -56,10 +61,17 @@ EMBED_MODEL = os.environ.get("OPENAI_EMBEDDING_MODEL", "text-embedding-3-large")
 DENSE_POOL_SIZE = 200
 RESCORE_ALPHA = 0.2
 TOP_K = 5  # what the LLM gets
-# Output cap for generation. Unbounded answers were the main driver of the
-# 75s p95 wall time (and proportional output cost). 2048 tokens ≈ 6-8K chars
-# of Albanian — enough for any structured legal answer with citations.
-MAX_ANSWER_TOKENS = int(os.environ.get("AVOKAI_MAX_ANSWER_TOKENS", "2048"))
+# Output cap for generation. This ceiling must cover BOTH the model's reasoning
+# AND the visible answer — DeepSeek V4-Pro emits reasoning tokens before content,
+# and they all count against completion_tokens. The old "2048 ≈ 6-8K chars" note
+# was wrong: diacritic-heavy legal Albanian tokenizes at ~0.6 chars/token, so 2048
+# tokens was only ~180 words — far below the prompt's ~500-word target. Measured on
+# a real labor-law query: finish_reason="length" at exactly 2048, answer cut
+# mid-word (and when reasoning alone exhausted the budget, an EMPTY answer). 8192
+# comfortably covers reasoning + a complete ~500-word Albanian answer with citations.
+# It's a CEILING, not a target — the prompt's "under 500 words" keeps typical answers
+# short, so raising it only helps the answers that were being truncated. Env-tunable.
+MAX_ANSWER_TOKENS = int(os.environ.get("AVOKAI_MAX_ANSWER_TOKENS", "8192"))
 
 # Relevance floor (anti-fabrication gate). bge-reranker scores are sigmoid
 # probabilities in [0,1]. If the BEST semantic source scores below the floor,
@@ -76,27 +88,174 @@ MAX_ANSWER_TOKENS = int(os.environ.get("AVOKAI_MAX_ANSWER_TOKENS", "2048"))
 RELEVANCE_FLOOR_ENABLED = os.environ.get("AVOKAI_RELEVANCE_FLOOR_ENABLED", "true").lower() in ("true", "1", "yes")
 RELEVANCE_FLOOR = float(os.environ.get("AVOKAI_RELEVANCE_FLOOR", "0.40"))
 RELEVANCE_FLOOR_MAX_QUERY_LEN = int(os.environ.get("AVOKAI_RELEVANCE_FLOOR_MAX_QUERY_LEN", "300"))
+# Fallback floor on the RAW dense cosine (`_dense_score`), used ONLY when the
+# cross-encoder rerank score is absent (reranker disabled or crashed at runtime).
+# The reranker floor (0.40) is a bge sigmoid probability; this is a text-embedding-
+# 3-large cosine, a different scale — relevant legal chunks land ~0.30-0.60,
+# irrelevant ~0.10-0.25, so 0.28 is a conservative separator. NEEDS production
+# calibration against the live index; tune via env without a redeploy. The point
+# is that the anti-fabrication gate is NEVER silently off just because the reranker
+# didn't run (audit finding G1).
+RELEVANCE_FLOOR_DENSE = float(os.environ.get("AVOKAI_RELEVANCE_FLOOR_DENSE", "0.28"))
+
+# Tier of the relevance gate that produced a decision — surfaced in route_trace so
+# a degraded reranker is observable rather than silent.
+#   rerank          → trusted bge score used
+#   dense           → reranker absent; fell back to raw dense cosine
+#   no_signal       → no relevance signal at all → fail-closed (refuse)
+#   exempt_long     → query too long to gate per-chunk (see G2)
+#   exempt_disabled → floor turned off / no sources
+#   above           → a signal existed and cleared its floor
+RelevanceTier = str
 
 
-def _below_relevance_floor(query: str, sources: list[dict[str, Any]]) -> bool:
-    """True when the best reranked source is too weak to answer from.
+def _relevance_gate(query: str, sources: list[dict[str, Any]]) -> tuple[bool, RelevanceTier, float | None]:
+    """Decide whether the best semantic source is too weak to answer from.
 
-    Only fires on the semantic path (sources carry `_rerank_score` in [0,1]),
-    and only for short queries — long fact patterns score low by nature and
-    must not be refused on that basis. Returns False if the reranker didn't run
-    (no comparable score scale) so we never gate blind.
+    Returns `(gated, tier, top_score)`. Layered so the gate is never silently
+    off (G1): prefer the trusted rerank score; if the reranker didn't run, fall
+    back to the raw dense cosine against a conservative floor; if there is no
+    relevance signal at all, fail closed. Only fires on the semantic path and
+    only for short queries — long fact patterns score low by nature and must not
+    be refused on that basis (that exemption is G2, unchanged here).
     """
     if not RELEVANCE_FLOOR_ENABLED or not sources:
-        return False
+        return (False, "exempt_disabled", None)
     if len(query or "") > RELEVANCE_FLOOR_MAX_QUERY_LEN:
-        return False
-    top = max(
+        return (False, "exempt_long", None)
+
+    rerank_top = max(
         (float(s["_rerank_score"]) for s in sources if s.get("_rerank_score") is not None),
         default=None,
     )
-    if top is None:
-        return False
-    return top < RELEVANCE_FLOOR
+    if rerank_top is not None:
+        return (rerank_top < RELEVANCE_FLOOR, "rerank", rerank_top)
+
+    # Reranker absent (disabled / crashed) — back off to the raw dense cosine.
+    dense_top = max(
+        (float(s["_dense_score"]) for s in sources if s.get("_dense_score") is not None),
+        default=None,
+    )
+    if dense_top is not None:
+        return (dense_top < RELEVANCE_FLOOR_DENSE, "dense", dense_top)
+
+    # No trusted relevance signal at all → refuse rather than fabricate.
+    return (True, "no_signal", None)
+
+
+def _below_relevance_floor(query: str, sources: list[dict[str, Any]]) -> bool:
+    """Back-compat boolean wrapper over `_relevance_gate`."""
+    gated, _tier, _top = _relevance_gate(query, sources)
+    return gated
+
+
+# Long-query anti-fabrication gate (audit finding G2). `_relevance_gate` exempts
+# queries > RELEVANCE_FLOOR_MAX_QUERY_LEN because a long fact-pattern's single
+# averaged embedding scores low per chunk — refusing on that would reject real
+# kazus. That exemption left long OUT-OF-corpus queries ungated (fabrication risk).
+# Fix: decompose the long query into sentence/clause parts and refuse ONLY if NO
+# part clears the normal short-query floor. Each part is short, so the validated
+# 0.40 floor applies — no new threshold to calibrate. Gate-only: generation still
+# uses the full-query retrieval. Deterministic; fail-open on any error.
+#
+# Additional `_relevance_gate` tiers this introduces: "decomposed_pass" (a sub-issue
+# is in corpus → answer), "decomposed_all_below" (every part below floor → refuse),
+# "exempt_long_error" (decomposition failed → fail-open).
+LONGQUERY_GATE_ENABLED = os.environ.get("AVOKAI_LONGQUERY_GATE_ENABLED", "true").lower() in ("true", "1", "yes")
+LONGQUERY_MAX_PARTS = int(os.environ.get("AVOKAI_LONGQUERY_MAX_PARTS", "6"))
+
+_SENTENCE_SPLIT_RE = re.compile(r"[.!?;\n]+")
+
+
+def _split_query_parts(query: str) -> list[str]:
+    """Split a long query into substantive sentence/clause parts for the G2
+    decomposition gate. Trivial fragments (greetings, "faleminderit") are dropped
+    by requiring ≥12 chars and ≥2 content tokens (bm25 tokenizer).
+
+    Future upgrade: an LLM (DeepSeek-Flash) semantic decomposition would split by
+    legal *issue* rather than punctuation; sentence-split is the deterministic v1.
+    """
+    from app.ai.bm25_rescore import tokenize
+
+    parts: list[str] = []
+    for raw in _SENTENCE_SPLIT_RE.split(query or ""):
+        p = raw.strip()
+        if len(p) < 12:
+            continue
+        if len(tokenize(p)) < 2:
+            continue
+        parts.append(p)
+    return parts
+
+
+def _long_query_gate(query: str, namespace: str) -> tuple[bool, RelevanceTier, float | None]:
+    """G2 decomposition gate for long queries. Returns `(gated, tier, top_score)`
+    mirroring `_relevance_gate`. Refuses only when NO substantive part is in-corpus.
+    Gate-only — the caller still generates from the full-query retrieval when this
+    passes. Fail-open: any error → exempt (never refuse a real kazus on a glitch).
+    """
+    parts = _split_query_parts(query)[:LONGQUERY_MAX_PARTS]
+    # Only parts short enough for the validated floor to apply; a lone run-on
+    # sentence (> the length cap) can't be scored reliably → keep the exemption.
+    substantive = [p for p in parts if len(p) <= RELEVANCE_FLOOR_MAX_QUERY_LEN]
+    if len(substantive) < 2:
+        return (False, "exempt_long", None)
+
+    best: float | None = None
+    try:
+        for part in substantive:
+            part_sources = _semantic_retrieve(part, namespace)
+            gated_p, _tier, top_p = _relevance_gate(part, part_sources)
+            if top_p is not None:
+                best = top_p if best is None else max(best, top_p)
+            if not gated_p:
+                # A sub-issue is answerable from the corpus → don't refuse.
+                return (False, "decomposed_pass", top_p)
+    except Exception:
+        # Decomposition/retrieval glitch → fail open, never refuse a real kazus.
+        return (False, "exempt_long_error", None)
+
+    return (True, "decomposed_all_below", best)
+
+
+# Multi-law bare-article backstop (audit finding G3). A bare-article query with
+# no law ("çfarë thotë neni 47") that slips past the pre-retrieval clarify route
+# lands here and retrieves the SAME article number from many unrelated laws; the
+# LLM then synthesizes across all of them — a wrong-law fabrication. If the exact
+# queried article number appears in ≥N distinct laws among the top sources, refuse
+# with the "which law?" clarify instead of generating. Conservative + tunable; every
+# trigger is traced so the threshold can be tightened from real data.
+MULTILAW_GATE_ENABLED = os.environ.get("AVOKAI_MULTILAW_GATE_ENABLED", "true").lower() in ("true", "1", "yes")
+MULTILAW_MIN_LAWS = int(os.environ.get("AVOKAI_MULTILAW_MIN_LAWS", "3"))
+
+
+def _multilaw_ambiguous(query: str, sources: list[dict[str, Any]]) -> tuple[bool, int]:
+    """Return `(gated, n_distinct_laws)` for the G3 backstop.
+
+    Fires only when the query references an article by number but NO law of its
+    own, and the retrieved sources spread that exact article number across
+    ≥ MULTILAW_MIN_LAWS distinct laws — i.e. the answer would be cross-law
+    synthesis of "Neni N" from unrelated laws.
+    """
+    if not MULTILAW_GATE_ENABLED or not sources:
+        return (False, 0)
+    # A query that names its own law isn't ambiguous (also exempts the
+    # citation_miss_fallback path, whose query carries a real citation).
+    if parse_citation(query) is not None:
+        return (False, 0)
+    m = ARTICLE_REF_PATTERN.search(query)
+    if m is None:
+        return (False, 0)
+    n = m.group("n")
+    laws: set[str] = set()
+    for s in sources:
+        meta = s.get("metadata") or s.get("document_metadata") or {}
+        if str(meta.get("article_number") or "").strip() != n:
+            continue
+        law = (meta.get("law_number") or "").strip()
+        if law:
+            laws.add(law)
+    return (len(laws) >= MULTILAW_MIN_LAWS, len(laws))
 
 
 @dataclass
@@ -117,6 +276,8 @@ _MESSAGES = {
     "sq": {
         "greeting": GREETING_RESPONSE,
         "out_of_scope": OUT_OF_SCOPE_RESPONSE,
+        "clarify": CLARIFY_RESPONSE,
+        "clarify_missing_law": CLARIFY_MISSING_LAW_RESPONSE,
         "insufficient_context": (
             "Nuk kam informacion të mjaftueshëm në bazën e të dhënave për "
             "të dhënë një përgjigje të verifikueshme për këtë pyetje."
@@ -137,6 +298,18 @@ _MESSAGES = {
             "Republic of Kosovo, which is the area I cover. I cannot help with "
             "foreign or comparative law, EU law, legal theory/philosophy, or "
             "non-legal topics. Please ask about Kosovo legislation."
+        ),
+        "clarify": (
+            "The law number looks incomplete. Kosovo laws are identified by a full "
+            "number in the form **NN/L-NNN** (e.g. 04/L-077); the number you gave "
+            "(e.g. 04) is only the legislative term and applies to hundreds of laws. "
+            "Please give me the full law number (e.g. *Article 47 of Law 04/L-077*) "
+            "so I can find the exact article."
+        ),
+        "clarify_missing_law": (
+            "You mentioned an article but not the law. Every law numbers its own "
+            "articles, so I need the law to find the right one. Please specify the "
+            "law number (e.g. *Article 37 of Law 03/L-212*)."
         ),
         "insufficient_context": (
             "I do not have enough information in the database to provide a "
@@ -159,6 +332,26 @@ def _localized_message(key: str, language: str) -> str:
     return _MESSAGES[lang].get(key) or _MESSAGES["sq"][key]
 
 
+def _clarify_message_key(reason: str | None) -> str:
+    """Pick the clarify wording for a pre-routed `clarify` intent from its reason.
+    `article_without_law` → ask for the law; anything else → ask for the full number."""
+    return "clarify_missing_law" if reason == "article_without_law" else "clarify"
+
+
+def _refusal_message(query: str, language: str) -> str:
+    """Message for a semantic-path refusal (relevance floor / no sources).
+
+    Post-retrieval safety net: if the query is a structurally incomplete legal
+    reference (article with no law, or a bare/partial law number) that retrieval
+    couldn't answer, steer the user with the matching clarify wording instead of
+    the dead-end "not enough info". Loose form — retrieval has already failed, so
+    this only improves wording and can never refuse an answerable query."""
+    kind = incomplete_reference(query, strict=False)
+    if kind is not None:
+        return _localized_message(_clarify_message_key(kind), language)
+    return _localized_message("insufficient_context", language)
+
+
 def _status_answer(info: Any, language: str) -> str:
     if _normalize_response_language(language) != "en":
         return ""
@@ -177,7 +370,11 @@ def _status_answer(info: Any, language: str) -> str:
             (r.get("abolished_law") or {}).get("law_number") or "?" for r in info.abolishes
         )
         return f"Law {info.law_number} is currently in force and has abolished: {old_list}."
-    return f"The status of Law {info.law_number} was not found in the abolishment relations registry."
+    return (
+        f"I found no record of Law {info.law_number} being repealed in my abolishment "
+        f"registry. This usually means the law is still in force, but I recommend "
+        f"verifying it in the Official Gazette."
+    )
 
 
 # ----- per-call infra (lazy & cached) ------------------------------------
@@ -237,6 +434,10 @@ def _embed_query(query: str) -> list[float]:
 # ----- retrieval primitives ----------------------------------------------
 
 
+# NOTE: the multi-law bare-article ambiguity backstop (G3) is IMPLEMENTED — see
+# `_multilaw_ambiguous()` and its use in `answer()` / `answer_stream()`. This function
+# stays retrieval-only and makes no gating decisions. (The G3 threshold still wants
+# tuning against the LIVE index to avoid refusing legitimate topical queries.)
 def _semantic_retrieve(query: str, namespace: str) -> list[dict[str, Any]]:
     """Dense top-200 → BM25-rescored top-20 → cross-encoder reranked top-K.
 
@@ -350,7 +551,8 @@ def answer(
     t0 = time.time()
     ns = namespace or DEFAULT_NAMESPACE
     lang = _normalize_response_language(response_language)
-    decision = classify(query)
+    context = derive_context(conversation_history)
+    decision = classify(query, context=context)
     trace: dict[str, Any] = {
         "intent": decision.intent,
         "reason": decision.reason,
@@ -379,6 +581,14 @@ def answer(
             query=query,
             intent="out_of_scope",
             answer=_localized_message("out_of_scope", lang),
+            route_trace=trace,
+            elapsed_ms=int((time.time() - t0) * 1000),
+        )
+    if decision.intent == "clarify":
+        return AnswerResult(
+            query=query,
+            intent="clarify",
+            answer=_localized_message(_clarify_message_key(decision.reason), lang),
             route_trace=trace,
             elapsed_ms=int((time.time() - t0) * 1000),
         )
@@ -423,19 +633,44 @@ def answer(
 
     # Anti-fabrication gate: on the semantic path, if the best source is below
     # the relevance floor, refuse rather than generate from irrelevant chunks.
-    relevance_gated = (
-        decision.intent == "semantic_question"
-        and _below_relevance_floor(query, sources)
-    )
-    if relevance_gated:
-        trace["relevance_floor_triggered"] = True
-        trace["relevance_top_score"] = round(
-            max((float(s.get("_rerank_score") or 0.0) for s in sources), default=0.0), 4
-        )
-        # The retrieved chunks scored below the floor — they're irrelevant, so
-        # don't surface them in the UI (or the abolishment scan). The answer is
-        # a refusal; showing the rejected sources just looks broken.
-        sources = []
+    # Layered (rerank → dense → fail-closed) so the gate is never silently off
+    # when the reranker is absent (G1); the tier is traced for observability.
+    relevance_gated = False
+    if decision.intent == "semantic_question":
+        if len(query or "") > RELEVANCE_FLOOR_MAX_QUERY_LEN and LONGQUERY_GATE_ENABLED:
+            # G2: long queries are gated by decomposition instead of the blanket
+            # length exemption (a long out-of-corpus query must not slip ungated).
+            relevance_gated, floor_tier, floor_top = _long_query_gate(query, ns)
+        else:
+            relevance_gated, floor_tier, floor_top = _relevance_gate(query, sources)
+        trace["relevance_floor_tier"] = floor_tier
+        if floor_top is not None:
+            trace["relevance_top_score"] = round(floor_top, 4)
+        if relevance_gated:
+            trace["relevance_floor_triggered"] = True
+            # The retrieved chunks scored below the floor — they're irrelevant, so
+            # don't surface them in the UI (or the abolishment scan). The answer is
+            # a refusal; showing the rejected sources just looks broken.
+            sources = []
+
+    # Multi-law bare-article backstop (G3): if a bare-article query retrieved the
+    # same article number across many unrelated laws, refuse-with-clarify rather
+    # than let the LLM synthesize across them.
+    multilaw_gated = False
+    if decision.intent == "semantic_question" and not relevance_gated:
+        multilaw_gated, n_laws = _multilaw_ambiguous(query, sources)
+        if multilaw_gated:
+            trace["multilaw_ambiguous"] = True
+            trace["multilaw_distinct_laws"] = n_laws
+            sources = []
+            decision = RoutingDecision("clarify", None, "multilaw_ambiguous")
+
+    # Keep route_trace's intent/reason in sync with the FINAL decision — it may have
+    # been reassigned above (citation_miss_fallback → semantic_question, or the G3
+    # multi-law gate → clarify), and AnswerResult.intent uses the final decision. The
+    # citation_miss / multilaw_ambiguous trace flags still record the original routing.
+    trace["intent"] = decision.intent
+    trace["reason"] = decision.reason
 
     # Cross-reference abolishment for ANY retrieved chunk (even when the
     # primary route wasn't status). A semantic hit on an abolished law
@@ -470,12 +705,16 @@ def answer(
             final_answer = "⚠️ KUJDES: " + warnings[0] + ". " + final_answer
     elif relevance_gated:
         # Best source below the relevance floor → refuse rather than fabricate.
-        final_answer = _localized_message("insufficient_context", lang)
+        # If the query is an incomplete reference, steer instead of dead-ending.
+        final_answer = _refusal_message(query, lang)
+    elif multilaw_gated:
+        # Bare-article query matched the same article across many laws → ask which.
+        final_answer = _localized_message("clarify_missing_law", lang)
     elif not use_llm:
         # Retrieval-only mode (used by retrieval eval). Stub out generation.
         final_answer = "[retrieval-only mode; no LLM answer generated]"
     elif not sources:
-        final_answer = _localized_message("insufficient_context", lang)
+        final_answer = _refusal_message(query, lang)
     else:
         try:
             from app.ai.llm import complete
@@ -490,6 +729,10 @@ def answer(
             )
             result = complete(messages, temperature=0.1, max_tokens=MAX_ANSWER_TOKENS)
             final_answer = result.text
+            if not final_answer.strip():
+                # No visible content (reasoning exhausted the budget) → never
+                # return an empty answer (G5 parity with the streaming path).
+                final_answer = _localized_message("generation_error", lang)
             llm_usage = {
                 "model": result.model,
                 "prompt_tokens": result.prompt_tokens,
@@ -653,7 +896,8 @@ async def answer_stream(
     t0 = time.time()
     ns = namespace or DEFAULT_NAMESPACE
     lang = _normalize_response_language(response_language)
-    decision = classify(query)
+    context = derive_context(conversation_history)
+    decision = classify(query, context=context)
     trace: dict[str, Any] = {
         "intent": decision.intent,
         "reason": decision.reason,
@@ -699,6 +943,24 @@ async def answer_stream(
                 "citation_summary": {},
                 "abolishment_warnings": [],
                 "intent": "out_of_scope",
+                "elapsed_ms": elapsed,
+                "llm_usage": None,
+                "route_trace": trace,
+            },
+        )
+        return
+
+    if decision.intent == "clarify":
+        elapsed = int((time.time() - t0) * 1000)
+        yield (
+            "done",
+            {
+                "answer": _localized_message(_clarify_message_key(decision.reason), lang),
+                "sources": [],
+                "citations": [],
+                "citation_summary": {},
+                "abolishment_warnings": [],
+                "intent": "clarify",
                 "elapsed_ms": elapsed,
                 "llm_usage": None,
                 "route_trace": trace,
@@ -755,19 +1017,44 @@ async def answer_stream(
         )
         return
 
-    relevance_gated = (
-        decision.intent == "semantic_question"
-        and _below_relevance_floor(query, sources)
-    )
-    if relevance_gated:
-        trace["relevance_floor_triggered"] = True
-        trace["relevance_top_score"] = round(
-            max((float(s.get("_rerank_score") or 0.0) for s in sources), default=0.0), 4
-        )
-        # The retrieved chunks scored below the floor — they're irrelevant, so
-        # don't surface them in the UI (or the abolishment scan). The answer is
-        # a refusal; showing the rejected sources just looks broken.
-        sources = []
+    # Layered anti-fabrication gate (rerank → dense → fail-closed), never
+    # silently off when the reranker is absent (G1); tier traced for observability.
+    relevance_gated = False
+    if decision.intent == "semantic_question":
+        if len(query or "") > RELEVANCE_FLOOR_MAX_QUERY_LEN and LONGQUERY_GATE_ENABLED:
+            # G2: decomposition gate for long queries (does sync embed/Pinecone/
+            # rerank, so offload like _semantic_retrieve).
+            relevance_gated, floor_tier, floor_top = await asyncio.to_thread(
+                _long_query_gate, query, ns
+            )
+        else:
+            relevance_gated, floor_tier, floor_top = _relevance_gate(query, sources)
+        trace["relevance_floor_tier"] = floor_tier
+        if floor_top is not None:
+            trace["relevance_top_score"] = round(floor_top, 4)
+        if relevance_gated:
+            trace["relevance_floor_triggered"] = True
+            # The retrieved chunks scored below the floor — they're irrelevant, so
+            # don't surface them in the UI (or the abolishment scan). The answer is
+            # a refusal; showing the rejected sources just looks broken.
+            sources = []
+
+    # Multi-law bare-article backstop (G3) — must run before the `sources` emit
+    # below so ambiguous cross-law sources are never surfaced.
+    multilaw_gated = False
+    if decision.intent == "semantic_question" and not relevance_gated:
+        multilaw_gated, n_laws = _multilaw_ambiguous(query, sources)
+        if multilaw_gated:
+            trace["multilaw_ambiguous"] = True
+            trace["multilaw_distinct_laws"] = n_laws
+            sources = []
+            decision = RoutingDecision("clarify", None, "multilaw_ambiguous")
+
+    # Keep the final `done` route_trace consistent with the FINAL decision (it may have
+    # been reassigned by citation_miss_fallback or the G3 multi-law gate). The earlier
+    # `route` event intentionally kept the initial classify snapshot.
+    trace["intent"] = decision.intent
+    trace["reason"] = decision.reason
 
     warnings = _abolishment_warnings(sources, registry)
     if sources:
@@ -800,13 +1087,18 @@ async def answer_stream(
         yield ("delta", {"text": final_answer})
     elif relevance_gated:
         # Best source below the relevance floor → refuse rather than fabricate.
-        final_answer = _localized_message("insufficient_context", lang)
+        # If the query is an incomplete reference, steer instead of dead-ending.
+        final_answer = _refusal_message(query, lang)
+        yield ("delta", {"text": final_answer})
+    elif multilaw_gated:
+        # Bare-article query matched the same article across many laws → ask which.
+        final_answer = _localized_message("clarify_missing_law", lang)
         yield ("delta", {"text": final_answer})
     elif not use_llm:
         final_answer = "[retrieval-only mode; no LLM answer generated]"
         yield ("delta", {"text": final_answer})
     elif not sources:
-        final_answer = _localized_message("insufficient_context", lang)
+        final_answer = _refusal_message(query, lang)
         yield ("delta", {"text": final_answer})
     else:
         try:
@@ -838,6 +1130,12 @@ async def answer_stream(
                         "finish_reason": result.finish_reason,
                     }
             final_answer = "".join(buf_parts)
+            if not final_answer.strip():
+                # No visible content (e.g. reasoning exhausted the token budget).
+                # Never send an empty answer — the client would fall back to the
+                # raw, UNVALIDATED accumulated deltas (G5). Emit a clear message.
+                final_answer = _localized_message("generation_error", lang)
+                yield ("delta", {"text": final_answer})
         except Exception as e:
             trace["llm_error"] = repr(e)
             final_answer = _localized_message("generation_error", lang)
