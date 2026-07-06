@@ -65,12 +65,38 @@ ARTICLE_HEADER_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
-# Some primary sources are referenced by NAME, not an "NN/L-NNN" number. The
-# Constitution is indexed under law_number "KUSHTETUTA". Match its forms
-# (Kushtetuta / Kushtetutës / Kushtetutën / Kushtetutë) but NOT "Kushtetuese"
-# (the *Constitutional Court* — that stem is "kushtetu-ese", with no second 't').
+# Some primary sources are referenced by NAME or standard abbreviation, not an
+# "NN/L-NNN" number. Each entry maps a diacritic-tolerant, declension-aware pattern
+# to a VERIFIED, in-force canonical law_number (looked up in law_catalog.json —
+# where multiple versions exist we take the current one, e.g. Criminal Code
+# 06/L-074, not the repealed 04/L-082). A wrong number here is a fabrication, so
+# this list is curated and conservative; extend it only with verified numbers.
+#
+# ORDER MATTERS: more specific patterns must come first. "Kodi i Procedurës Penale"
+# is listed before "Kodi Penal"; the inheritance pattern excludes "kulturore" so it
+# never grabs the Cultural Heritage law (02/L-88).
 _NAMED_LAW_PATTERNS = [
+    # Constitution — "Kushtetuta/Kushtetutës/…" but NOT "Kushtetuese" (Constitutional
+    # Court; stem "kushtetu-ese" has no second 't').
     (re.compile(r"\bkushtetut\w*", re.IGNORECASE), "KUSHTETUTA"),
+    # Criminal PROCEDURE code — must precede the Criminal Code below.
+    (re.compile(r"\bkod\w*\s+(?:i\s+|t[ëe]\s+)?proced\w*\s+penal\w*|(?<![A-Za-z])KPPK?(?![A-Za-z])",
+                re.IGNORECASE), "KUV-08/L-032-KOD"),
+    # Civil / contested PROCEDURE (Procedura Kontestimore).
+    (re.compile(r"\bproced\w*\s+kontestimor\w*|(?<![A-Za-z])LPK(?![A-Za-z])",
+                re.IGNORECASE), "03/L-006"),
+    # Criminal Code (Kodi Penal / KPRK).
+    (re.compile(r"\bkod\w*\s+penal\w*|(?<![A-Za-z])KPRK(?![A-Za-z])",
+                re.IGNORECASE), "KUV-06/L-074-KOD"),
+    # Law on Obligations (Marrëdhëniet e Detyrimeve / LMD).
+    (re.compile(r"\bmarr[ëe]dh[ëe]niet?\s+e\s+detyrimeve|lig\w*\s+(?:i\s+|p[ëe]r\s+)?detyrimeve|(?<![A-Za-z])LMD(?![A-Za-z])",
+                re.IGNORECASE), "04/L-077"),
+    # Labor Law (Ligji i Punës / për Punën).
+    (re.compile(r"\blig\w*\s+(?:i\s+|t[ëe]\s+|p[ëe]r\s+)?pun[ëe]s?\b", re.IGNORECASE), "03/L-212"),
+    # Family Law (Ligji për Familjen).
+    (re.compile(r"\blig\w*\s+(?:i\s+|t[ëe]\s+|p[ëe]r\s+)?familj\w*", re.IGNORECASE), "2004/32"),
+    # Inheritance Law (Ligji për Trashëgiminë) — NOT "trashëgiminë kulturore" (02/L-88).
+    (re.compile(r"\blig\w*\s+(?:i\s+|t[ëe]\s+|p[ëe]r\s+)?trash[ëe]gimin?[ëe]?(?!\w*\s+kulturor)", re.IGNORECASE), "2004/26"),
 ]
 
 
@@ -83,6 +109,7 @@ class Citation:
     law_number: str          # canonical form (uppercase, no whitespace, e.g. "04/L-079")
     article_number: str | None  # decimal string, e.g. "5", or None
     raw_law: str             # the substring that matched in the user's query
+    by_name: bool = False    # True when resolved from a law NAME/abbrev (not an NN/L number)
 
 
 _LAW_SHAPE_RE = re.compile(r"(KUV-)?(\d{1,4})[-/]?L-?(\d{1,4})(-?[A-Z0-9]+)?")
@@ -133,8 +160,16 @@ def parse_citation(query: str) -> Citation | None:
     for pat, canonical in _NAMED_LAW_PATTERNS:
         nm = pat.search(query)
         if nm:
-            return Citation(law_number=canonical, article_number=article, raw_law=nm.group(0))
+            return Citation(law_number=canonical, article_number=article,
+                            raw_law=nm.group(0), by_name=True)
     return None
+
+
+def _law_inner(canonical: str) -> str:
+    """Strip a Kuvendi code wrapper: "KUV-08/L-032-KOD" → "08/L-032". Returns the
+    input unchanged when there's no wrapper."""
+    m = re.match(r"^KUV-(\d{1,2}/L-\d{1,4})(?:-[A-Z0-9]+)?$", canonical)
+    return m.group(1) if m else canonical
 
 
 def law_number_variants(law_number: str) -> list[str]:
@@ -153,6 +188,12 @@ def law_number_variants(law_number: str) -> list[str]:
         # Some indexed laws have a stray space, e.g. "05/L -011"
         canonical.replace("/L-", "/L -"),
     ]
+    # Kuvendi code wrappers ("KUV-08/L-032-KOD") and their inner number ("08/L-032")
+    # are the same law under two naming conventions — the index may store either, so
+    # probe both. Add the inner form (and its NR. variant) when a wrapper is present.
+    inner = _law_inner(canonical)
+    if inner != canonical:
+        variants.extend([inner, f"NR.{inner}", inner.lower()])
     # Dedupe preserving order
     seen: set[str] = set()
     out: list[str] = []

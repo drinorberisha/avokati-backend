@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import List, Optional, Any
 from fastapi import APIRouter, Depends, HTTPException, status
 import logging
@@ -49,7 +50,10 @@ _PUBLIC_TRACE_KEYS = frozenset({
     "abolishment_status",
     "citation_miss",
     "relevance_floor_triggered",
+    "relevance_floor_tier",
     "relevance_top_score",
+    "multilaw_ambiguous",
+    "multilaw_distinct_laws",
 })
 
 # Generic client-facing message for mid-stream failures; the real exception
@@ -58,6 +62,29 @@ _STREAM_ERROR_MESSAGE = (
     "Ndodhi një gabim teknik gjatë përpunimit të kërkesës. "
     "Ju lutemi provoni përsëri."
 )
+
+# Hard wall-clock cap on the whole SSE stream. A hung DeepSeek call otherwise holds
+# the connection (and its thread) forever — the heartbeat keeps bytes flowing, so no
+# proxy timeout saves us. Env-configurable so it can be tuned (and lowered to force a
+# timeout when testing partial-turn persistence, G4).
+STREAM_TIMEOUT_S = float(os.environ.get("AVOKAI_STREAM_TIMEOUT_S", "300"))
+
+# Albanian markers stored as the assistant content when a stream ends WITHOUT a clean
+# `done` (timeout / mid-generation error), so the turn survives a reload (G4) instead
+# of vanishing. chat_messages.content is NOT NULL, so the empty case gets a placeholder.
+_INCOMPLETE_MARKER = "\n\n_[Përgjigjja u ndërpre para përfundimit; provoni përsëri.]_"
+_INCOMPLETE_EMPTY = "_[Përgjigjja nuk u gjenerua për shkak të një ndërprerjeje teknike.]_"
+
+
+def _partial_turn_content(accumulated_answer: str, reason: str) -> str:
+    """Assistant content to persist for an interrupted turn (G4).
+
+    Returns whatever text streamed plus a short 'interrupted' marker, or a
+    placeholder when nothing streamed (keeps `content` NOT NULL). `reason` is
+    also stored structurally in `llm_usage.incomplete` by the caller.
+    """
+    partial = (accumulated_answer or "").strip()
+    return (partial + _INCOMPLETE_MARKER) if partial else _INCOMPLETE_EMPTY
 
 
 def _public_trace(trace: dict[str, Any] | None) -> dict[str, Any]:
@@ -204,6 +231,10 @@ async def ask_legal_question_v2_stream(
 
         accumulated_answer = ""
         final_payload: dict[str, Any] | None = None
+        # Captured as events pass through, so an interrupted turn (timeout / error,
+        # no `done`) can still be persisted with what we know (G4).
+        captured_intent: str | None = None
+        incomplete_reason: str | None = None
 
         # Cloud Run's Google Front End buffers small response chunks before
         # forwarding them to the client. SSE events of <200 bytes each get
@@ -227,10 +258,6 @@ async def ask_legal_question_v2_stream(
         # gets forwarded. SSE comments (`:...\n\n`) are ignored by clients.
         HEARTBEAT_PAYLOAD = ":" + ("h" * 64) + "\n\n"
         HEARTBEAT_INTERVAL = 0.25
-        # Hard wall-clock cap on the whole stream. A hung DeepSeek call
-        # otherwise holds the connection (and its thread) forever — the
-        # heartbeat keeps bytes flowing, so no proxy timeout saves us.
-        STREAM_TIMEOUT_S = 300.0
 
         async def pipeline_task() -> None:
             try:
@@ -266,6 +293,7 @@ async def ask_legal_question_v2_stream(
                         "ask-v2/stream: timed out after %.0fs (session %s)",
                         STREAM_TIMEOUT_S, session_uuid,
                     )
+                    incomplete_reason = "stream_timeout"
                     yield _sse_format(
                         "error",
                         {"code": "STREAM_TIMEOUT", "message": _STREAM_ERROR_MESSAGE},
@@ -285,6 +313,7 @@ async def ask_legal_question_v2_stream(
                 if kind == "error":
                     e = item[1]
                     logger.exception("ask-v2/stream: pipeline error: %r", e)
+                    incomplete_reason = "pipeline_error"
                     yield _sse_format(
                         "error",
                         {"code": "PIPELINE_ERROR", "message": _STREAM_ERROR_MESSAGE},
@@ -302,12 +331,14 @@ async def ask_legal_question_v2_stream(
                     accumulated_answer += text
                     yield _sse_format("delta", {"text": text})
                 elif event_name == "route":
+                    captured_intent = payload.get("intent")
                     yield _sse_format("route", _public_trace(payload))
                 elif event_name == "error":
                     # Pipeline-emitted error events (e.g. retrieval failure)
                     # may carry exception text — log it, send a generic
                     # message with the structured code preserved.
                     logger.error("ask-v2/stream: pipeline error event: %s", payload)
+                    incomplete_reason = payload.get("code") or "pipeline_error"
                     yield _sse_format(
                         "error",
                         {
@@ -324,6 +355,7 @@ async def ask_legal_question_v2_stream(
                         "intent": payload.get("intent"),
                         "sources": enriched_sources,
                         "citations": payload.get("citations", []),
+                        "citation_summary": payload.get("citation_summary", {}),
                         "abolishment_warnings": payload.get("abolishment_warnings", []),
                         "llm_usage": payload.get("llm_usage"),
                         "elapsed_ms": payload.get("elapsed_ms", 0),
@@ -348,21 +380,37 @@ async def ask_legal_question_v2_stream(
         # producing events but before the connection closes. Same rule as
         # the non-streaming endpoint: storage failure must not be visible
         # to the user (their answer is already on screen).
-        if session_uuid is not None and final_payload is not None:
+        if session_uuid is not None:
             try:
-                await chat_crud.append_turn(
-                    supabase,
-                    session_id=session_uuid,
-                    user_id=current_user.id,
-                    user_content=request.query,
-                    assistant_content=final_payload.get("answer") or accumulated_answer,
-                    intent=final_payload.get("intent"),
-                    sources=final_payload.get("sources") or [],
-                    citations=final_payload.get("citations") or [],
-                    abolishment_warnings=list(final_payload.get("abolishment_warnings") or []),
-                    llm_usage=final_payload.get("llm_usage"),
-                    elapsed_ms=final_payload.get("elapsed_ms"),
-                )
+                if final_payload is not None:
+                    # Clean completion.
+                    await chat_crud.append_turn(
+                        supabase,
+                        session_id=session_uuid,
+                        user_id=current_user.id,
+                        user_content=request.query,
+                        assistant_content=final_payload.get("answer") or accumulated_answer,
+                        intent=final_payload.get("intent"),
+                        sources=final_payload.get("sources") or [],
+                        citations=final_payload.get("citations") or [],
+                        abolishment_warnings=list(final_payload.get("abolishment_warnings") or []),
+                        llm_usage=final_payload.get("llm_usage"),
+                        elapsed_ms=final_payload.get("elapsed_ms"),
+                    )
+                elif captured_intent is not None or accumulated_answer.strip():
+                    # G4: no clean `done` (timeout / mid-generation error) — persist the
+                    # partial so the turn isn't lost from the record on reload.
+                    elapsed = int((_asyncio.get_running_loop().time() - t_start) * 1000)
+                    await chat_crud.append_turn(
+                        supabase,
+                        session_id=session_uuid,
+                        user_id=current_user.id,
+                        user_content=request.query,
+                        assistant_content=_partial_turn_content(accumulated_answer, incomplete_reason or "unknown"),
+                        intent=captured_intent,
+                        elapsed_ms=elapsed,
+                        llm_usage={"incomplete": True, "reason": incomplete_reason or "unknown"},
+                    )
             except Exception as e:
                 logger.warning("ask-v2/stream persistence failed for session %s: %r", session_uuid, e)
 

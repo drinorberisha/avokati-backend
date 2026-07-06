@@ -157,10 +157,17 @@ Periudha e ekzekutimit të kësaj marrëveshjeje është dymbëdhjetë vite nga 
 def test_bm25_rescore() -> None:
     print("\n[bm25 rescore]")
 
-    # Tokenizer
+    # Tokenizer (now diacritic-folded — tokens come back folded, e.g. kafshëve→kafsheve)
     toks = tokenize("Çfarë thotë ligji për përkujdesjen ndaj kafshëve?")
-    expect("tokenize: includes content words", "kafshëve" in toks and "përkujdesjen" in toks)
+    expect("tokenize: includes content words (folded)", "kafsheve" in toks and "perkujdesjen" in toks)
     expect("tokenize: drops 'ligji' stopword", "ligji" not in toks)
+    # G7: diacritic and diacritic-free variants collapse to the same tokens
+    expect("tokenize: diacritic variants unify",
+           tokenize("çështje") == tokenize("ceshtje") == ["ceshtje"],
+           f"got {tokenize('çështje')} vs {tokenize('ceshtje')}")
+    expect("tokenize: dëmshpërblim ≡ demshperblim",
+           tokenize("dëmshpërblim") == tokenize("demshperblim"))
+    expect("tokenize: folded stopword still dropped", "eshte" not in tokenize("është kontrata"))
 
     # Rescoring promotes lexical match over a stronger dense score when α=0.
     # NOTE: BM25Okapi's IDF degenerates near 0 when a term appears in
@@ -182,6 +189,37 @@ def test_bm25_rescore() -> None:
     expect("bm25 α=1: dense order preserved", pure_dense[0]["id"] == "a")
 
 
+def test_partial_turn_content() -> None:
+    print("\n[partial turn content (G4)]")
+    from app.api.api_v1.endpoints.legal_ai import _partial_turn_content
+
+    partial = _partial_turn_content("Neni 80 përcakton dëmshpërblimin", "stream_timeout")
+    expect("partial: keeps streamed text", "Neni 80 përcakton dëmshpërblimin" in partial)
+    expect("partial: has interrupted marker", "u ndërpre" in partial)
+
+    empty = _partial_turn_content("", "pipeline_error")
+    expect("empty: non-empty placeholder (NOT NULL safe)", len(empty.strip()) > 0)
+    expect("empty: no double marker", "u ndërpre" not in empty)
+    expect("whitespace-only treated as empty", _partial_turn_content("   \n ", "x") == empty)
+
+
+def test_text_norm() -> None:
+    print("\n[text norm]")
+    from app.ai.text_norm import fold
+    from app.ai.abolishment import is_status_query
+
+    expect("fold: çështje → ceshtje", fold("çështje") == "ceshtje")
+    expect("fold: DËMSHPËRBLIM → demshperblim", fold("DËMSHPËRBLIM") == "demshperblim")
+    expect("fold: ascii unchanged", fold("kontrata 04/L-077") == "kontrata 04/l-077")
+    expect("fold: length preserved", len(fold("çështje")) == len("çështje"))
+
+    # status keyword gap closed (valid); is_status_query only consulted when a law is
+    # named, so this is safe against non-status "validim" text.
+    expect("status: 'valid' recognized", is_status_query("a është valid ky ligj"))
+    expect("status: 'vlen' recognized", is_status_query("a vlen ky ligj"))
+    expect("status: plain topical → False", not is_status_query("cilat janë kushtet"))
+
+
 # ----- router ------------------------------------------------------------
 
 def test_router() -> None:
@@ -195,11 +233,319 @@ def test_router() -> None:
         ("A është aktiv Ligji 04/L-051?", "status_lookup"),
         ("A është abroguar Ligji 2004/2?", "status_lookup"),
         ("Cilat janë dispozitat për shoqatat?", "semantic_question"),
+        # --- clarify: incomplete law reference (bare/partial term-prefix) ---
+        ("neni 47 i ligjit 04", "clarify"),
+        ("Çfarë thotë ligji 4?", "clarify"),
+        ("ligji nr 05 neni 12", "clarify"),
+        ("ligji 04/L", "clarify"),  # dangling /L, no number
+        # --- clarify: article referenced with no law ("of which law?") ---
+        ("neni 37", "clarify"),
+        ("Neni 5", "clarify"),
+        ("neni 1059", "clarify"),
+        ("çfarë thotë neni 37?", "clarify"),
+        ("më trego nenin 12", "clarify"),
+        ("neni 5 paragrafi 2", "clarify"),
+        # informal Kosovo / diacritic-free wrappers around a bare article → clarify
+        ("qfare thote neni 47", "clarify"),
+        ("qka thote neni 47", "clarify"),
+        ("qfar thot neni 47", "clarify"),
+        ("qysh e rregullon neni 47", "clarify"),
+        ("shka thote neni 47", "clarify"),
+        ("cfare percakton neni 12", "clarify"),
+        ("me trego neni 5", "clarify"),
+        # --- precision bar: these must NOT be treated as incomplete ---
+        ("Neni 47 i Ligjit 04/L-077", "citation_lookup"),   # complete number
+        ("nenin 24 të Kushtetutës", "citation_lookup"),      # named law
+        ("A ka ndryshuar ligji në 2020?", "semantic_question"),
+        ("Cilat janë dispozitat e ligjit të punës?", "semantic_question"),
+        # article ref + real topical content → semantic (net catches failures)
+        ("çfarë thotë neni 37 për pushimet vjetore", "semantic_question"),
+        ("si parashkruhet padia sipas nenit 37", "semantic_question"),
+        # informal wrapper BUT with a real topical noun → still semantic (not hijacked)
+        ("qfare thote neni 47 per trashegimine", "semantic_question"),
+        ("qysh e rregullon neni 47 punen jashte orarit", "semantic_question"),
+        ("neni 47 per pushimet vjetore", "semantic_question"),
         ("", "greeting"),  # empty → safe default
     ]
     for q, expected in cases:
         d = classify(q)
         expect(f"route: {q[:40]!r}", d.intent == expected, f"got {d.intent}")
+
+
+def test_relevance_gate() -> None:
+    print("\n[relevance gate]")
+    import importlib
+    from app.ai import pipeline as pl
+
+    short = "çfarë thotë ligji"  # < 300 chars, semantic-style
+
+    def src(**scores):
+        return [{"id": "x", "metadata": {}, "content": "c", **scores}]
+
+    # Trusted rerank tier
+    g, tier, top = pl._relevance_gate(short, src(_rerank_score=0.80))
+    expect("rerank strong → not gated", not g and tier == "rerank")
+    g, tier, top = pl._relevance_gate(short, src(_rerank_score=0.10))
+    expect("rerank weak → gated", g and tier == "rerank")
+
+    # Reranker absent → dense fallback (the G1 case)
+    g, tier, top = pl._relevance_gate(short, src(_dense_score=0.55))
+    expect("no rerank, strong dense → not gated", not g and tier == "dense")
+    g, tier, top = pl._relevance_gate(short, src(_dense_score=0.10))
+    expect("no rerank, weak dense → gated (dense)", g and tier == "dense")
+
+    # No trusted signal at all → fail-closed
+    g, tier, top = pl._relevance_gate(short, src(score=0.99))  # pool-relative only
+    expect("no rerank/dense → gated (no_signal, fail-closed)", g and tier == "no_signal")
+
+    # Exemptions preserved
+    long_q = "x" * (pl.RELEVANCE_FLOOR_MAX_QUERY_LEN + 1)
+    g, tier, top = pl._relevance_gate(long_q, src(_rerank_score=0.01))
+    expect("long query → exempt (not gated)", not g and tier == "exempt_long")
+    g, tier, top = pl._relevance_gate(short, [])
+    expect("no sources → exempt (not gated)", not g and tier == "exempt_disabled")
+
+    # Back-compat boolean wrapper still agrees with the rerank path
+    expect("_below_relevance_floor wrapper: weak rerank → True",
+           pl._below_relevance_floor(short, src(_rerank_score=0.10)) is True)
+    expect("_below_relevance_floor wrapper: strong rerank → False",
+           pl._below_relevance_floor(short, src(_rerank_score=0.80)) is False)
+
+
+def test_long_query_gate() -> None:
+    print("\n[long query gate]")
+    from app.ai import pipeline as pl
+
+    # _split_query_parts: multi-sentence → substantive parts; trivia dropped
+    q_multi = ("Padia u ngrit për dëmshpërblim. A parashkruhet ajo pas tre vjetësh? "
+               "Kush e mban barrën e provës në kontestet civile?")
+    expect("split: 3 substantive parts", len(pl._split_query_parts(q_multi)) == 3,
+           f"got {pl._split_query_parts(q_multi)}")
+    expect("split: drops trivial fragments", pl._split_query_parts("Faleminderit. Po.") == [])
+
+    # a > cap multi-sentence fact pattern (kazus)
+    long_q = (
+        "Klienti im pati një aksident trafiku në Prishtinë ku u dëmtua automjeti i tij. "
+        "Pala tjetër nuk kishte siguracion valid në kohën e aksidentit. "
+        "A mund të kërkojë dëmshpërblim nga fondi i kompensimit dhe brenda cilit afat? "
+        "A ndikon neglizhenca e pjesshme e klientit tim në shumën e dëmshpërblimit? "
+        "Cilat dokumente duhet të paraqiten për të vërtetuar dëmin e pësuar?"
+    )
+    expect("long_q exceeds cap", len(long_q) > pl.RELEVANCE_FLOOR_MAX_QUERY_LEN)
+
+    orig = pl._semantic_retrieve
+    calls = {"n": 0}
+    try:
+        # every part below floor → refuse
+        def weak(part, ns):
+            calls["n"] += 1
+            return [{"_rerank_score": 0.05, "metadata": {}}]
+        pl._semantic_retrieve = weak
+        g, tier, top = pl._long_query_gate(long_q, "default_v2")
+        expect("all parts below floor → gated", g and tier == "decomposed_all_below",
+               f"got {g},{tier}")
+
+        # first part clears the floor → answer AND short-circuit (1 retrieval)
+        calls["n"] = 0
+        def first_strong(part, ns):
+            calls["n"] += 1
+            return [{"_rerank_score": 0.9 if "aksident" in part else 0.05, "metadata": {}}]
+        pl._semantic_retrieve = first_strong
+        g, tier, top = pl._long_query_gate(long_q, "default_v2")
+        expect("a part clears → not gated (decomposed_pass)", (not g) and tier == "decomposed_pass")
+        expect("short-circuits on first passing part", calls["n"] == 1, f"queried {calls['n']}")
+
+        # retrieval error → fail-open (never refuse a real kazus on a glitch)
+        def boom(part, ns):
+            raise RuntimeError("pinecone down")
+        pl._semantic_retrieve = boom
+        g, tier, top = pl._long_query_gate(long_q, "default_v2")
+        expect("retrieval error → fail-open", (not g) and tier == "exempt_long_error")
+    finally:
+        pl._semantic_retrieve = orig
+
+    # single run-on (no sentence breaks) longer than the cap → can't decompose → exempt
+    runon = "Klienti im kishte një problem juridik shumë të komplikuar dhe të gjatë " * 6
+    g, tier, top = pl._long_query_gate(runon.strip(), "default_v2")
+    expect("run-on longer than cap → exempt_long", (not g) and tier == "exempt_long", f"got {tier}")
+
+
+def test_multilaw_gate() -> None:
+    print("\n[multilaw gate]")
+    from app.ai import pipeline as pl
+
+    def art47(law):
+        return {"id": f"{law}_a47", "metadata": {"law_number": law, "article_number": "47"}, "content": "c"}
+
+    # bare "neni 47", art 47 across 3 distinct laws → gated
+    srcs3 = [art47("2004/26"), art47("02/L-8"), art47("2004/18")]
+    g, n = pl._multilaw_ambiguous("çfarë thotë neni 47", srcs3)
+    expect("3 distinct laws → gated", g and n == 3)
+
+    # only 2 distinct laws → not gated
+    g, n = pl._multilaw_ambiguous("çfarë thotë neni 47", srcs3[:2])
+    expect("2 distinct laws → not gated", (not g) and n == 2)
+
+    # multi-part chunks of ONE law for art 47 → counts as 1 law
+    onelaw = [art47("2004/26"), {"id": "2004/26_a47_p2", "metadata": {"law_number": "2004/26", "article_number": "47"}, "content": "c"}]
+    g, n = pl._multilaw_ambiguous("neni 47", onelaw)
+    expect("multi-part one law → 1 distinct", (not g) and n == 1)
+
+    # query names its own law → never ambiguous (even with many art-47 sources)
+    g, n = pl._multilaw_ambiguous("neni 47 i ligjit 04/L-077", srcs3)
+    expect("query names a law → not gated", (not g) and n == 0)
+
+    # query has no article ref → not gated
+    g, n = pl._multilaw_ambiguous("Cilat janë dispozitat për shoqatat?", srcs3)
+    expect("no article ref → not gated", (not g) and n == 0)
+
+    # only sources whose article_number matches the queried N count
+    mixed = [art47("2004/26"), {"id": "x_a5", "metadata": {"law_number": "02/L-8", "article_number": "5"}, "content": "c"}, art47("2004/18")]
+    g, n = pl._multilaw_ambiguous("neni 47", mixed)
+    expect("only matching-article sources counted", (not g) and n == 2)
+
+
+def test_conversation() -> None:
+    print("\n[conversation follow-ups]")
+    from app.ai.conversation import derive_context, resolve_followup
+    from app.ai.router import classify
+
+    history = [
+        {"role": "user", "content": "Neni 37 i Ligjit 03/L-212"},
+        {"role": "assistant", "content": (
+            "Neni 37 i Ligjit 03/L-212 rregullon pushimin vjetor "
+            "[Neni 37, par. 1, Ligji 03/L-212] ... [Neni 37, par. 6, Ligji 03/L-212]."
+        )},
+    ]
+    ctx = derive_context(history)
+    expect("derive: focus law", ctx.focus_law == "03/L-212", f"got {ctx.focus_law}")
+    expect("derive: focus article", ctx.focus_article == "37", f"got {ctx.focus_article}")
+    expect("derive: empty history → no focus", not derive_context([]).has_focus)
+
+    # resolve_followup inherits the right (law, article)
+    def inh(q):
+        return resolve_followup(q, ctx)
+    expect("resolve: paragraph deepen inherits focus",
+           (c := inh("A mund te thellohesh tek Paragrafi 1 i ketij neni")) is not None
+           and c.law_number == "03/L-212" and c.article_number == "37")
+    expect("resolve: bare 'neni 38' inherits law, new article",
+           (c := inh("neni 38")) is not None
+           and c.law_number == "03/L-212" and c.article_number == "38")
+    expect("resolve: 'shpjego më shumë' inherits focus",
+           (c := inh("shpjego më shumë")) is not None and c.article_number == "37")
+    expect("resolve: 'po paragrafi 2?' inherits focus",
+           (c := inh("po paragrafi 2?")) is not None and c.article_number == "37")
+    expect("resolve: new question → None",
+           inh("Cilat janë kushtet për themelimin e OJQ-së?") is None)
+    expect("resolve: own citation → None",
+           inh("Neni 5 i Ligjit 02/L-10") is None)
+    expect("resolve: no focus → None",
+           resolve_followup("shpjego më shumë", derive_context([])) is None)
+
+    # end-to-end routing with context
+    route_cases = [
+        ("A mund te thellohesh tek Paragrafi 1 i ketij neni", "citation_lookup"),
+        ("neni 38", "citation_lookup"),
+        ("a vlen ende ky ligj?", "status_lookup"),
+        ("Cilat janë kushtet për themelimin e OJQ-së?", "semantic_question"),
+    ]
+    for q, exp in route_cases:
+        d = classify(q, context=ctx)
+        expect(f"route+ctx: {q[:34]!r}", d.intent == exp, f"got {d.intent}")
+
+    # regression: a canned clarify/greeting message's EXAMPLE citation must not
+    # become the focus (bug: "neni 5" after a clarify inherited the example 03/L-212)
+    from app.ai.router import CLARIFY_MISSING_LAW_RESPONSE, GREETING_RESPONSE
+    clarify_hist = [
+        {"role": "user", "content": "neni 37"},
+        {"role": "assistant", "content": CLARIFY_MISSING_LAW_RESPONSE},
+    ]
+    expect("clarify example not taken as focus", not derive_context(clarify_hist).has_focus)
+    expect("after clarify, bare article still clarifies",
+           classify("çfarë thotë neni 5?", context=derive_context(clarify_hist)).intent == "clarify")
+    expect("greeting example not taken as focus",
+           not derive_context([{"role": "assistant", "content": GREETING_RESPONSE}]).has_focus)
+
+    # regression: without context, behavior is unchanged (stateless)
+    expect("no-ctx 'neni 38' → clarify", classify("neni 38").intent == "clarify")
+    expect("no-ctx follow-up → semantic",
+           classify("A mund te thellohesh tek Paragrafi 1 i ketij neni").intent
+           == "semantic_question")
+
+
+def test_named_law_resolver() -> None:
+    print("\n[named-law resolver]")
+    from app.ai.citation import parse_citation, law_number_variants
+    from app.ai.router import classify
+
+    # name/abbrev + article → resolved citation with the verified number
+    resolves = [
+        ("neni 5 i Ligjit të Punës", "03/L-212", "5"),
+        ("neni 47 i LMD-së", "04/L-077", "47"),
+        ("neni 12 i LPK", "03/L-006", "12"),
+        ("neni 5 i Kodit të Procedurës Penale", "KUV-08/L-032-KOD", "5"),
+        ("neni 10 i Kodit Penal", "KUV-06/L-074-KOD", "10"),   # NOT the procedure code
+        ("çfarë thotë neni 8 i Ligjit për Familjen", "2004/32", "8"),
+        ("neni 47 i Ligjit për Trashëgiminë", "2004/26", "47"),
+    ]
+    for q, law, art in resolves:
+        c = parse_citation(q)
+        expect(f"resolve: {q[:34]!r}",
+               c is not None and c.law_number == law and c.article_number == art and c.by_name,
+               f"got {c}")
+        expect(f"route: {q[:30]!r} → citation_lookup", classify(q).intent == "citation_lookup")
+
+    # status keyword on a named law → status_lookup
+    expect("status: named law → status_lookup",
+           classify("a është në fuqi Kodi Penal?").intent == "status_lookup")
+
+    # precision: cultural-heritage inheritance must NOT map to the inheritance law
+    expect("precision: trashëgimia kulturore not mapped",
+           parse_citation("neni 5 i ligjit të trashëgimisë kulturore") is None)
+    # named law + topic, no article → stays semantic (no opening-article overview)
+    expect("precision: named law + topic → semantic",
+           classify("dispozitat e ligjit të punës për pushimin vjetor").intent == "semantic_question")
+    # numeric citations unchanged (by_name False)
+    nc = parse_citation("neni 5 i Ligjit 02/L-10")
+    expect("numeric citation: by_name False", nc is not None and not nc.by_name)
+
+    # KUV code variants bridge to the inner form (index may store either)
+    expect("variants bridge KUV → inner",
+           "06/L-074" in law_number_variants("KUV-06/L-074-KOD"))
+
+
+def test_incomplete_reference() -> None:
+    print("\n[incomplete reference]")
+    from app.ai.router import incomplete_reference
+    from app.ai.pipeline import _refusal_message, _clarify_message_key
+
+    # kind detection (strict = pre-routing)
+    expect("kind: 'neni 37' → article_without_law",
+           incomplete_reference("neni 37") == "article_without_law")
+    expect("kind: 'ligji 04' → bare_law_prefix",
+           incomplete_reference("ligji 04") == "bare_law_prefix")
+    expect("kind: topical → None",
+           incomplete_reference("Cilat janë dispozitat për shoqatat?") is None)
+    expect("kind: complete citation → None",
+           incomplete_reference("Neni 5 i Ligjit 02/L-10") is None)
+    # strict vs loose: article + topical is None strict, but caught loose (net)
+    expect("kind strict: article+topic → None",
+           incomplete_reference("neni 37 për pushimet vjetore") is None)
+    expect("kind loose: article+topic → article_without_law",
+           incomplete_reference("neni 37 për pushimet vjetore", strict=False)
+           == "article_without_law")
+
+    # message selection
+    expect("msg key: article → clarify_missing_law",
+           _clarify_message_key("article_without_law") == "clarify_missing_law")
+    expect("msg key: prefix → clarify",
+           _clarify_message_key("bare_law_prefix") == "clarify")
+    expect("refusal: article-only picks missing-law wording",
+           "nen" in _refusal_message("neni 37", "sq").lower()
+           and "numrin e ligjit" in _refusal_message("neni 37", "sq"))
+    expect("refusal: topical keeps generic insufficient-context",
+           "informacion të mjaftueshëm"
+           in _refusal_message("Cilat janë dispozitat për shoqatat?", "sq"))
 
 
 # ----- citation validator ------------------------------------------------
@@ -333,7 +679,15 @@ def main() -> None:
     test_citation_parser()
     test_v2_chunker()
     test_bm25_rescore()
+    test_text_norm()
+    test_partial_turn_content()
     test_router()
+    test_named_law_resolver()
+    test_incomplete_reference()
+    test_conversation()
+    test_relevance_gate()
+    test_long_query_gate()
+    test_multilaw_gate()
     test_citation_validator()
     test_v2_adapter()
 

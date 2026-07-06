@@ -22,6 +22,7 @@ ScoreBand = Literal["strong", "moderate", "topical", "weak"]
 Intent = Literal[
     "greeting",
     "out_of_scope",
+    "clarify",
     "status_lookup",
     "citation_lookup",
     "semantic_question",

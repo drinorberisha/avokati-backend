@@ -36,7 +36,7 @@ ABOLISHMENT_PATH = _BUNDLED_ABOLISHMENT if _BUNDLED_ABOLISHMENT.exists() else _S
 # No \b — word boundaries don't behave reliably around Albanian diacritics in
 # Python's default regex engine, so we accept these stems anywhere in the query.
 STATUS_KEYWORDS = re.compile(
-    r"(aktiv|abrogu|shfuqizu|zëvendësu|zevendesu|në fuqi|ne fuqi|ende|fuqi)",
+    r"(aktiv|abrogu|shfuqizu|zëvendësu|zevendesu|në fuqi|ne fuqi|ende|fuqi|vlen|vlefsh|valid)",
     re.IGNORECASE,
 )
 
@@ -201,7 +201,11 @@ def _verdict_content(info: AbolishmentInfo) -> str:
         return (
             f"Ligji {info.law_number} është aktualisht në fuqi dhe ka shfuqizuar: {old_list}."
         )
-    return f"Statusi i Ligjit {info.law_number} nuk gjendet në regjistrin e marrëdhënieve të shfuqizimit."
+    return (
+        f"Nuk kam gjetur asnjë të dhënë për shfuqizimin e Ligjit {info.law_number} "
+        f"në regjistrin tim të shfuqizimeve. Kjo zakonisht do të thotë se ligji është "
+        f"ende në fuqi, por ju rekomandoj ta verifikoni në Gazetën Zyrtare."
+    )
 
 
 def _canon(law: str) -> str:
