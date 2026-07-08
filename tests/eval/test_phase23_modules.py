@@ -487,6 +487,13 @@ def test_named_law_resolver() -> None:
         ("neni 10 i Kodit Penal", "KUV-06/L-074-KOD", "10"),   # NOT the procedure code
         ("çfarë thotë neni 8 i Ligjit për Familjen", "2004/32", "8"),
         ("neni 47 i Ligjit për Trashëgiminë", "2004/26", "47"),
+        # LMD by name: official genitive, adjectival colloquial form, the
+        # "marrhenieve" typo (missing d) seen in production, and "ligji për
+        # detyrimet" shorthand — all must resolve to 04/L-077.
+        ("neni 65 i marrëdhënieve të detyrimeve", "04/L-077", "65"),
+        ("Cito nenin 65 te marrhenieve detyrimore", "04/L-077", "65"),
+        ("neni 65 i marredhenieve detyrimore", "04/L-077", "65"),
+        ("çfarë thotë neni 12 i ligjit për detyrimet", "04/L-077", "12"),
     ]
     for q, law, art in resolves:
         c = parse_citation(q)

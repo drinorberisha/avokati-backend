@@ -89,8 +89,15 @@ _NAMED_LAW_PATTERNS = [
     (re.compile(r"\bkod\w*\s+penal\w*|(?<![A-Za-z])KPRK(?![A-Za-z])",
                 re.IGNORECASE), "KUV-06/L-074-KOD"),
     # Law on Obligations (Marrëdhëniet e Detyrimeve / LMD).
-    (re.compile(r"\bmarr[ëe]dh[ëe]niet?\s+e\s+detyrimeve|lig\w*\s+(?:i\s+|p[ëe]r\s+)?detyrimeve|(?<![A-Za-z])LMD(?![A-Za-z])",
-                re.IGNORECASE), "04/L-077"),
+    # The noun is matched loosely — marr[ëe]?d?h[ëe]?ni\w* — so common typos
+    # ("marrhenieve" without the d) and case endings (marrëdhëniet/-ve/-s)
+    # still resolve; "detyrim\w*" covers both the official genitive
+    # ("e detyrimeve") and the colloquial adjectival form ("detyrimore").
+    (re.compile(
+        r"\bmarr[ëe]?d?h[ëe]?ni\w*\s+(?:e\s+|t[ëe]\s+)?detyrim\w*"
+        r"|lig\w*\s+(?:i\s+|p[ëe]r\s+)?detyrim\w*"
+        r"|(?<![A-Za-z])LMD(?![A-Za-z])",
+        re.IGNORECASE), "04/L-077"),
     # Labor Law (Ligji i Punës / për Punën).
     (re.compile(r"\blig\w*\s+(?:i\s+|t[ëe]\s+|p[ëe]r\s+)?pun[ëe]s?\b", re.IGNORECASE), "03/L-212"),
     # Family Law (Ligji për Familjen).
