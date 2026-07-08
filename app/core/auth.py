@@ -45,14 +45,29 @@ async def get_current_user(
             user = supabase.auth.get_user(token)
             if not user:
                 raise credentials_exception
+        except HTTPException:
+            raise
         except Exception as e:
             if "timeout" in str(e).lower():
                 raise HTTPException(
                     status_code=status.HTTP_504_GATEWAY_TIMEOUT,
                     detail="Authentication service timeout. Please try again."
                 )
-            logger.error(f"Supabase authentication error: {e}")
-            raise credentials_exception
+            # Only a rejection of the token itself is a credentials failure.
+            # gotrue's AuthApiError carries the Supabase HTTP status on
+            # `.status`; 400/401/403 mean the token is invalid/expired.
+            if getattr(e, "status", None) in (400, 401, 403):
+                logger.info(f"Supabase rejected token: {e}")
+                raise credentials_exception
+            # Anything else (rate limit, 5xx, connection error) is a service
+            # failure, NOT an invalid session. Returning 401 here made the
+            # frontend sign the user out on transient blips (login/dashboard
+            # bounce loop) — return 503 so clients can retry instead.
+            logger.error(f"Supabase auth service error: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Authentication service temporarily unavailable. Please try again.",
+            )
             
         # Get user from our database
         db_user = await get_user_by_email(db, email=user.user.email)
