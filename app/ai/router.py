@@ -203,6 +203,27 @@ def _is_article_only(query: str) -> bool:
     return not content
 
 
+# Law-word declensions + "number" words that wrap a bare law citation. Folded.
+_LAW_WRAPPER_WORDS = frozenset({"ligj", "ligji", "ligjit", "ligjin", "ligjet", "nr", "numer", "numri", "numrin", "law"})
+
+
+def _is_law_only_completion(query: str, citation: Citation) -> bool:
+    """True when the query is JUST a law citation with nothing else — the shape a
+    user types when answering a clarify that asked for the full law number
+    ("ligji 4 l 077"). High precision: any topical/status content word → False,
+    so "a është në fuqi ligji 04/L-077" (status) and "çka thotë ligji 04/L-077
+    për pagat" (topical) never count as completions."""
+    if citation.article_number is not None or citation.by_name:
+        return False
+    stripped = query.replace(citation.raw_law, " ", 1)
+    content = [
+        t
+        for t in _WORD_RE.findall(stripped)
+        if _fold(t) not in _FILLER_WORDS and _fold(t) not in _LAW_WRAPPER_WORDS
+    ]
+    return not content
+
+
 IncompleteKind = Literal["bare_law_prefix", "article_without_law"]
 
 
@@ -274,6 +295,24 @@ def classify(query: str, context: ConversationContext | None = None) -> RoutingD
     if citation is not None:
         if is_status_query(query):
             return RoutingDecision("status_lookup", citation, "citation+status_keyword")
+        # Clarify-completion merge: the previous USER turn referenced an article
+        # ("neni 47 i ligjit 4 l77" → clarify asked for the full number) and this
+        # turn is JUST the law ("ligji 4 l 077") — inherit that article so the
+        # completion answers the original question. One-turn window
+        # (last_user_article) + citation-dominance guard keep a brand-new
+        # "ligji 08/L-035" question from inheriting stale articles.
+        if (
+            context is not None
+            and context.last_user_article is not None
+            and _is_law_only_completion(query, citation)
+        ):
+            merged = Citation(
+                law_number=citation.law_number,
+                article_number=context.last_user_article,
+                raw_law=citation.raw_law,
+                by_name=citation.by_name,
+            )
+            return RoutingDecision("citation_lookup", merged, "law_completion_inherited_article")
         # A law named-only (e.g. "ligji i punës") with no article and no status keyword
         # must NOT force a citation_lookup — that returns only the law's opening articles,
         # wrong for a topical sub-question. Route it as a normal lookup only when it

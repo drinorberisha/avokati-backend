@@ -41,6 +41,11 @@ class ConversationContext:
 
     focus_law: str | None = None       # canonical law_number, e.g. "03/L-212"
     focus_article: str | None = None   # article number, e.g. "37"
+    # Article referenced in the MOST RECENT user turn (None if that turn had no
+    # article ref). Deliberately a one-turn window: it powers the clarify-completion
+    # merge ("neni 47 i ligjit 04" → clarify → "ligji 04/L-077" inherits article 47)
+    # without letting an article from deep history hijack a brand-new law question.
+    last_user_article: str | None = None
 
     @property
     def has_focus(self) -> bool:
@@ -96,6 +101,13 @@ def _content_of(turn: Any) -> str:
     return str(getattr(turn, "content", "") or "")
 
 
+def _role_of(turn: Any) -> str:
+    """Pull the role out of a history turn (dict or object)."""
+    if isinstance(turn, dict):
+        return str(turn.get("role") or "")
+    return str(getattr(turn, "role", "") or "")
+
+
 def _focus_text(turn: Any) -> str:
     """Turn text with example-citation spans removed, for focus derivation."""
     return _EXAMPLE_SPAN_RE.sub(" ", _content_of(turn))
@@ -114,8 +126,17 @@ def derive_context(history: list[Any] | None) -> ConversationContext:
 
     focus_law: str | None = None
     focus_article: str | None = None
+    last_user_article: str | None = None
+    seen_user_turn = False
     for turn in reversed(history):
         text = _focus_text(turn)
+        if not seen_user_turn and _role_of(turn) == "user":
+            # One-turn window for the clarify-completion merge: only the most
+            # recent USER turn's article ref counts (see ConversationContext).
+            seen_user_turn = True
+            m = ARTICLE_REF_PATTERN.search(text)
+            if m:
+                last_user_article = m.group("n")
         if not text:
             continue
         if focus_law is None:
@@ -128,9 +149,13 @@ def derive_context(history: list[Any] | None) -> ConversationContext:
             m = ARTICLE_REF_PATTERN.search(text)
             if m:
                 focus_article = m.group("n")
-        if focus_law is not None and focus_article is not None:
+        if focus_law is not None and focus_article is not None and seen_user_turn:
             break
-    return ConversationContext(focus_law=focus_law, focus_article=focus_article)
+    return ConversationContext(
+        focus_law=focus_law,
+        focus_article=focus_article,
+        last_user_article=last_user_article,
+    )
 
 
 def _is_followup_signal(query: str) -> bool:
