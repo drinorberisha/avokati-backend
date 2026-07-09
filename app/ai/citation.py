@@ -52,9 +52,12 @@ LAW_NUMBER_PATTERNS = [
 ]
 
 # Match Albanian "neni" with any case ending: neni, nenit, nenin, nenet, nenve, nenës, etc.
-# Also tolerates an optional period: "Nenit 5." in answer text.
+# Also tolerates an optional period: "Nenit 5." in answer text. English queries hit the
+# same parser, so accept "article(s) N" too ("what does article 49 of law 03/L-212 say?"
+# routed right but LOST the article number before this) — full word only, no "art.",
+# so Albanian text can't match it spuriously.
 ARTICLE_REF_PATTERN = re.compile(
-    r"\bnen(?:i|it|in|et|ve|ës|eve|i|e)?\s*\.?\s*(?P<n>\d{1,4})\b",
+    r"\b(?:nen(?:i|it|in|et|ve|ës|eve|i|e)?|articles?)\s*\.?\s*(?P<n>\d{1,4})\b",
     re.IGNORECASE,
 )
 
@@ -98,8 +101,8 @@ _NAMED_LAW_PATTERNS = [
         r"|lig\w*\s+(?:i\s+|p[ëe]r\s+)?detyrim\w*"
         r"|(?<![A-Za-z])LMD(?![A-Za-z])",
         re.IGNORECASE), "04/L-077"),
-    # Labor Law (Ligji i Punës / për Punën).
-    (re.compile(r"\blig\w*\s+(?:i\s+|t[ëe]\s+|p[ëe]r\s+)?pun[ëe]s?\b", re.IGNORECASE), "03/L-212"),
+    # Labor Law (Ligji i Punës / për Punën) — genitive "punës" AND accusative "punën".
+    (re.compile(r"\blig\w*\s+(?:i\s+|t[ëe]\s+|p[ëe]r\s+)?pun[ëe][sn]?\b", re.IGNORECASE), "03/L-212"),
     # Family Law (Ligji për Familjen).
     (re.compile(r"\blig\w*\s+(?:i\s+|t[ëe]\s+|p[ëe]r\s+)?familj\w*", re.IGNORECASE), "2004/32"),
     # Inheritance Law (Ligji për Trashëgiminë) — NOT "trashëgiminë kulturore" (02/L-88).

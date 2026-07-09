@@ -132,6 +132,8 @@ def complete(
     temperature: float = 0.1,
     max_tokens: int | None = None,
     fast: bool = False,
+    timeout: float | None = None,
+    extra_body: dict[str, Any] | None = None,
 ) -> CompletionResult:
     """One-shot chat completion against DeepSeek.
 
@@ -143,6 +145,13 @@ def complete(
         max_tokens: cap on output length; None lets the model decide
             (capped server-side by the model's max_output).
         fast: route to V4-Flash for cheap classification / routing.
+        timeout: per-request wall-clock cap in seconds (SDK request option);
+            None uses the SDK default. Used by latency-critical callers
+            (e.g. the LLM router) that must bound their wait.
+        extra_body: provider-specific request fields passed through verbatim
+            (e.g. DeepSeek's `{"thinking": {"type": "disabled"}}` — V4 models
+            reason by default, which burns tokens+latency on tasks that
+            don't need it, like routing).
 
     Returns a CompletionResult including the raw text and token usage so
     the caller can log cost.
@@ -162,6 +171,10 @@ def complete(
     }
     if max_tokens is not None:
         kwargs["max_tokens"] = max_tokens
+    if timeout is not None:
+        kwargs["timeout"] = timeout
+    if extra_body is not None:
+        kwargs["extra_body"] = extra_body
 
     resp = client.chat.completions.create(**kwargs)
     choice = resp.choices[0]

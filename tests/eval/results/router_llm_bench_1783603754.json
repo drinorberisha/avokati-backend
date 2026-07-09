@@ -1,0 +1,1491 @@
+{
+  "n": 68,
+  "regex_accuracy": 0.8970588235294118,
+  "llm_accuracy": 0.9852941176470589,
+  "agreement": 0.8382352941176471,
+  "llm_latency_ms": {
+    "cold": 2125,
+    "warm_mean": 1272.402985074627,
+    "p50": 1326,
+    "p95": 1540
+  },
+  "projected_overhead_ms": {
+    "llm_first": 1272.402985074627,
+    "fallback": 711.048726953468
+  },
+  "total_cost_usd": 0.0016040639999999999,
+  "rows": [
+    {
+      "id": "s01",
+      "query": "tungjatjeta, a mundesh me m'ndihmu?",
+      "expected": [
+        "greeting",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 87.0,
+      "llm_intent": "greeting",
+      "llm_reason": "llm:greeting",
+      "llm_ok": true,
+      "llm_ms": 2125,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1477,
+      "agree": false
+    },
+    {
+      "id": "s02",
+      "query": "mirembrema avokat",
+      "expected": [
+        "greeting"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": false,
+      "regex_us": 55.2,
+      "llm_intent": "greeting",
+      "llm_reason": "llm:greeting",
+      "llm_ok": true,
+      "llm_ms": 1326,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1468,
+      "agree": false
+    },
+    {
+      "id": "s03",
+      "query": "flm shume per ndihmen",
+      "expected": [
+        "greeting"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": false,
+      "regex_us": 64.2,
+      "llm_intent": "greeting",
+      "llm_reason": "llm:greeting",
+      "llm_ok": true,
+      "llm_ms": 1232,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1469,
+      "agree": false
+    },
+    {
+      "id": "s04",
+      "query": "hej cka bon ti",
+      "expected": [
+        "greeting"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": false,
+      "regex_us": 47.7,
+      "llm_intent": "greeting",
+      "llm_reason": "llm:greeting",
+      "llm_ok": true,
+      "llm_ms": 1327,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1467,
+      "agree": false
+    },
+    {
+      "id": "s05",
+      "query": "a ka ndryshu ligji i familjes?",
+      "expected": [
+        "status_lookup",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 85.3,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1637,
+      "llm_citation": {
+        "law": "2004/32",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1473,
+      "agree": false
+    },
+    {
+      "id": "s06",
+      "query": "ligji 2004/32 a osht hala i vlefshem?",
+      "expected": [
+        "status_lookup"
+      ],
+      "regex_intent": "status_lookup",
+      "regex_reason": "citation+status_keyword",
+      "regex_ok": true,
+      "regex_us": 132.2,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1331,
+      "llm_citation": {
+        "law": "2004/32",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1479,
+      "agree": true
+    },
+    {
+      "id": "s07",
+      "query": "a e kane hjek ligjin per trashegimine?",
+      "expected": [
+        "status_lookup",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 88.2,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1023,
+      "llm_citation": {
+        "law": "2004/26",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1476,
+      "agree": false
+    },
+    {
+      "id": "s08",
+      "query": "pershendetje, a eshte ne fuqi ligji 03/L-212?",
+      "expected": [
+        "status_lookup"
+      ],
+      "regex_intent": "status_lookup",
+      "regex_reason": "citation+status_keyword",
+      "regex_ok": true,
+      "regex_us": 70.5,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 921,
+      "llm_citation": {
+        "law": "03/L-212",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1480,
+      "agree": true
+    },
+    {
+      "id": "s09",
+      "query": "Çfarë thotë neni 47 i ligjit 04/L-077?",
+      "expected": [
+        "citation_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 62.3,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1036,
+      "llm_citation": {
+        "law": "04/L-077",
+        "article": "47"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1480,
+      "agree": true
+    },
+    {
+      "id": "s10",
+      "query": "me trego çka shkruan te neni pese i kodit penal",
+      "expected": [
+        "citation_lookup",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 78.9,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1142,
+      "llm_citation": {
+        "law": "KUV-06/L-074-KOD",
+        "article": "5"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1479,
+      "agree": false
+    },
+    {
+      "id": "s11",
+      "query": "neni 12, ligji per punen",
+      "expected": [
+        "citation_lookup"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": false,
+      "regex_us": 80.2,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:citation_lookup_unresolved_ref",
+      "llm_ok": false,
+      "llm_ms": 1334,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1471,
+      "agree": true
+    },
+    {
+      "id": "s12",
+      "query": "what does article 49 of law 03/L-212 say?",
+      "expected": [
+        "citation_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 67.9,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1631,
+      "llm_citation": {
+        "law": "03/L-212",
+        "article": "49"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1475,
+      "agree": true
+    },
+    {
+      "id": "s13",
+      "query": "çka thote neni 37?",
+      "expected": [
+        "clarify"
+      ],
+      "regex_intent": "clarify",
+      "regex_reason": "article_without_law",
+      "regex_ok": true,
+      "regex_us": 69.4,
+      "llm_intent": "clarify",
+      "llm_reason": "llm:article_without_law",
+      "llm_ok": true,
+      "llm_ms": 1408,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1470,
+      "agree": true
+    },
+    {
+      "id": "s14",
+      "query": "me trego nenin 47 te ligjit 04",
+      "expected": [
+        "clarify"
+      ],
+      "regex_intent": "clarify",
+      "regex_reason": "bare_law_prefix",
+      "regex_ok": true,
+      "regex_us": 74.1,
+      "llm_intent": "clarify",
+      "llm_reason": "llm:bare_law_prefix",
+      "llm_ok": true,
+      "llm_ms": 1331,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1473,
+      "agree": true
+    },
+    {
+      "id": "s15",
+      "query": "a mundesh me me tregu per nenin 15?",
+      "expected": [
+        "clarify"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": false,
+      "regex_us": 97.7,
+      "llm_intent": "clarify",
+      "llm_reason": "llm:article_without_law",
+      "llm_ok": true,
+      "llm_ms": 1231,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1474,
+      "agree": false
+    },
+    {
+      "id": "s16",
+      "query": "çfare thote ligji gjerman per qirane?",
+      "expected": [
+        "out_of_scope"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": false,
+      "regex_us": 77.9,
+      "llm_intent": "out_of_scope",
+      "llm_reason": "llm:out_of_scope",
+      "llm_ok": true,
+      "llm_ms": 1070,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1474,
+      "agree": false
+    },
+    {
+      "id": "s17",
+      "query": "si funksionon gjykata evropiane e te drejtave te njeriut?",
+      "expected": [
+        "out_of_scope",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 102.1,
+      "llm_intent": "out_of_scope",
+      "llm_reason": "llm:out_of_scope",
+      "llm_ok": true,
+      "llm_ms": 1081,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1482,
+      "agree": false
+    },
+    {
+      "id": "s18",
+      "query": "kush ishte hans kelsen dhe cka mendonte per normat?",
+      "expected": [
+        "out_of_scope"
+      ],
+      "regex_intent": "out_of_scope",
+      "regex_reason": "matched_out_of_corpus",
+      "regex_ok": true,
+      "regex_us": 39.9,
+      "llm_intent": "out_of_scope",
+      "llm_reason": "llm:out_of_scope",
+      "llm_ok": true,
+      "llm_ms": 1345,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1478,
+      "agree": true
+    },
+    {
+      "id": "s19",
+      "query": "me trego receten e flijes",
+      "expected": [
+        "out_of_scope"
+      ],
+      "regex_intent": "out_of_scope",
+      "regex_reason": "matched_oos:'(?<![A-Za-zëçËÇ])(recet|kuzhin|gatim)'",
+      "regex_ok": true,
+      "regex_us": 11.9,
+      "llm_intent": "out_of_scope",
+      "llm_reason": "llm:out_of_scope",
+      "llm_ok": true,
+      "llm_ms": 1318,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1470,
+      "agree": true
+    },
+    {
+      "id": "s20",
+      "query": "a me ndihmon me nje diete per dobesim?",
+      "expected": [
+        "out_of_scope"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": false,
+      "regex_us": 79.9,
+      "llm_intent": "out_of_scope",
+      "llm_reason": "llm:out_of_scope",
+      "llm_ok": true,
+      "llm_ms": 1327,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1476,
+      "agree": false
+    },
+    {
+      "id": "s21",
+      "query": "sa dite pushimi me takojne ne vit?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 73.9,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1020,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1474,
+      "agree": true
+    },
+    {
+      "id": "s22",
+      "query": "a bon me punu pa kontrate pune?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 70.8,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 2052,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1472,
+      "agree": true
+    },
+    {
+      "id": "s23",
+      "query": "shoku im me ka borxh 5000 euro dhe spo ma kthen, cka me bo?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 107.0,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1126,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1484,
+      "agree": true
+    },
+    {
+      "id": "s24",
+      "query": "how do i register an NGO in kosovo?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 73.1,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1530,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1471,
+      "agree": true
+    },
+    {
+      "id": "s25",
+      "query": "a lejohet puna e femijeve nen moshen 15 vjec?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 92.8,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1228,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1480,
+      "agree": true
+    },
+    {
+      "id": "s26",
+      "query": "cka thote ligji i punes per pushimin e lehonise?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 100.7,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1330,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1477,
+      "agree": true
+    },
+    {
+      "id": "s27",
+      "query": "po neni 38 çka thote?",
+      "expected": [
+        "citation_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "followup_inherited_citation",
+      "regex_ok": true,
+      "regex_us": 66.5,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1126,
+      "llm_citation": {
+        "law": "03/L-212",
+        "article": "38"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1488,
+      "agree": true
+    },
+    {
+      "id": "s28",
+      "query": "a eshte ende ne fuqi ky ligj?",
+      "expected": [
+        "status_lookup"
+      ],
+      "regex_intent": "status_lookup",
+      "regex_reason": "followup_inherited_status",
+      "regex_ok": true,
+      "regex_us": 66.6,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1130,
+      "llm_citation": {
+        "law": "03/L-212",
+        "article": "37"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1489,
+      "agree": true
+    },
+    {
+      "id": "q001",
+      "query": "Më trego ligjin që rregullon kontratës.",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 77.8,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1326,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1478,
+      "agree": true
+    },
+    {
+      "id": "q002",
+      "query": "Më trego ligjin që rregullon gjuhën.",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 80.8,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1437,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1477,
+      "agree": true
+    },
+    {
+      "id": "q003",
+      "query": "Cilat janë dispozitat ligjore për mallrat?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 83.5,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1025,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1477,
+      "agree": true
+    },
+    {
+      "id": "q004",
+      "query": "Çfarë thotë legjislacioni për arkitektëve?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 80.4,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1018,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1479,
+      "agree": true
+    },
+    {
+      "id": "q005",
+      "query": "Çfarë përcakton Neni 34 i ligjit 04/L-175?",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 76.8,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1540,
+      "llm_citation": {
+        "law": "04/L-175",
+        "article": "34"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1482,
+      "agree": true
+    },
+    {
+      "id": "q006",
+      "query": "Më trego përmbajtjen e Nenit 2 të Ligjit 03/L-203.",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 66.1,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1328,
+      "llm_citation": {
+        "law": "03/L-203",
+        "article": "2"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1487,
+      "agree": true
+    },
+    {
+      "id": "q007",
+      "query": "Çfarë thotë legjislacioni për qeveritare?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 73.6,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 937,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1479,
+      "agree": true
+    },
+    {
+      "id": "q008",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 04/L-223?",
+      "expected": [
+        "status_lookup"
+      ],
+      "regex_intent": "status_lookup",
+      "regex_reason": "citation+status_keyword",
+      "regex_ok": true,
+      "regex_us": 70.7,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1313,
+      "llm_citation": {
+        "law": "04/L-223",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1481,
+      "agree": true
+    },
+    {
+      "id": "q009",
+      "query": "Çfarë thotë ligji për: Ndihma dhe mbrojtja e viktimave të trafikuara me njerëz?",
+      "expected": [
+        "citation_lookup",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 125.9,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1023,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1497,
+      "agree": true
+    },
+    {
+      "id": "q010",
+      "query": "Çfarë përcakton Neni 19 i ligjit 06/L-124?",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 76.0,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1338,
+      "llm_citation": {
+        "law": "06/L-124",
+        "article": "19"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1482,
+      "agree": true
+    },
+    {
+      "id": "q011",
+      "query": "Çfarë thotë ligji për: Ky Ligj ka për qëllim që të ratifikojë Marrëveshjen për financim ndërmjet Republikës së Kosovës?",
+      "expected": [
+        "citation_lookup",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 166.4,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1118,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1513,
+      "agree": true
+    },
+    {
+      "id": "q012",
+      "query": "Më trego ligjin që rregullon regjistrimit.",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 92.0,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1228,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1479,
+      "agree": true
+    },
+    {
+      "id": "q013",
+      "query": "Çfarë thotë Neni 2 i Ligjit 06/L-139?",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 72.2,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1535,
+      "llm_citation": {
+        "law": "06/L-139",
+        "article": "2"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1480,
+      "agree": true
+    },
+    {
+      "id": "q014",
+      "query": "Çfarë thotë legjislacioni për shkollës?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 82.4,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1023,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1480,
+      "agree": true
+    },
+    {
+      "id": "q015",
+      "query": "Çfarë thotë ligji për: Autorizim për furnizim me banderola me rastin e importit dhe prodhimit të?",
+      "expected": [
+        "citation_lookup",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 153.2,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1331,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1498,
+      "agree": true
+    },
+    {
+      "id": "q016",
+      "query": "A është abroguar Ligji 03/L-082?",
+      "expected": [
+        "status_lookup"
+      ],
+      "regex_intent": "status_lookup",
+      "regex_reason": "citation+status_keyword",
+      "regex_ok": true,
+      "regex_us": 68.1,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1240,
+      "llm_citation": {
+        "law": "03/L-082",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1479,
+      "agree": true
+    },
+    {
+      "id": "q017",
+      "query": "Cila është dispozita e Nenit 54 në Ligjin 08/L-275?",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 67.7,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1189,
+      "llm_citation": {
+        "law": "08/L-275",
+        "article": "54"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1487,
+      "agree": true
+    },
+    {
+      "id": "q018",
+      "query": "Çfarë përcakton Neni 4 i ligjit 08/L-299?",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 62.6,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1169,
+      "llm_citation": {
+        "law": "08/L-299",
+        "article": "4"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1482,
+      "agree": true
+    },
+    {
+      "id": "q019",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 04/L-106?",
+      "expected": [
+        "status_lookup"
+      ],
+      "regex_intent": "status_lookup",
+      "regex_reason": "citation+status_keyword",
+      "regex_ok": true,
+      "regex_us": 56.4,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1115,
+      "llm_citation": {
+        "law": "04/L-106",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1481,
+      "agree": true
+    },
+    {
+      "id": "q020",
+      "query": "Më trego përmbajtjen e Nenit 5 të Ligjit 03/L-001.",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 69.1,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1429,
+      "llm_citation": {
+        "law": "03/L-001",
+        "article": "5"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1487,
+      "agree": true
+    },
+    {
+      "id": "q021",
+      "query": "Cili ligj flet për ndërmjet?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 65.2,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1023,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1474,
+      "agree": true
+    },
+    {
+      "id": "q022",
+      "query": "Cili ligj flet për aftësi?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 66.5,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1148,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1473,
+      "agree": true
+    },
+    {
+      "id": "q023",
+      "query": "Çfarë thotë ligji për: 1. Kur produktet e përpunuara, të përftuara në kuadër të përpunimit te brendshëm, lëshohen?",
+      "expected": [
+        "citation_lookup",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 170.3,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1309,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1514,
+      "agree": true
+    },
+    {
+      "id": "q024",
+      "query": "Çfarë thotë ligji për: Anëtar korrespondent i Akademisë mund të zgjidhet punonjësi i shkencës ose i artit, shtetas i?",
+      "expected": [
+        "citation_lookup",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 178.4,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1331,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1510,
+      "agree": true
+    },
+    {
+      "id": "q025",
+      "query": "A është ende në fuqi Ligji 2004/22?",
+      "expected": [
+        "status_lookup"
+      ],
+      "regex_intent": "status_lookup",
+      "regex_reason": "citation+status_keyword",
+      "regex_ok": true,
+      "regex_us": 66.2,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1232,
+      "llm_citation": {
+        "law": "2004/22",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1480,
+      "agree": true
+    },
+    {
+      "id": "q026",
+      "query": "Çfarë thotë ligji për: 42.1. Kjo pjesë e ligjit vendos kushtet që do të pl otësohen nëse mënyrat e reja të pagesës?",
+      "expected": [
+        "citation_lookup",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 171.7,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1019,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1515,
+      "agree": true
+    },
+    {
+      "id": "q027",
+      "query": "A është ende në fuqi Ligji 03/L-120?",
+      "expected": [
+        "status_lookup"
+      ],
+      "regex_intent": "status_lookup",
+      "regex_reason": "citation+status_keyword",
+      "regex_ok": true,
+      "regex_us": 68.4,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1329,
+      "llm_citation": {
+        "law": "03/L-120",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1480,
+      "agree": true
+    },
+    {
+      "id": "q028",
+      "query": "Cilat janë dispozitat ligjore për vepron?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 78.7,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 923,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1478,
+      "agree": true
+    },
+    {
+      "id": "q029",
+      "query": "Çfarë thotë ligji për: Kuota e Republikës së Kosovës në Fondin Monetar Ndërkombëtar do të rritet nga pesëdhjetë e nëntë?",
+      "expected": [
+        "citation_lookup",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 183.1,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1333,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1513,
+      "agree": true
+    },
+    {
+      "id": "q030",
+      "query": "Cila është dispozita e Nenit 3 në Ligjin 05/L-113?",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 82.6,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1337,
+      "llm_citation": {
+        "law": "05/L-113",
+        "article": "3"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1487,
+      "agree": true
+    },
+    {
+      "id": "q031",
+      "query": "A është abroguar Ligji 03/L-165?",
+      "expected": [
+        "status_lookup"
+      ],
+      "regex_intent": "status_lookup",
+      "regex_reason": "citation+status_keyword",
+      "regex_ok": true,
+      "regex_us": 51.0,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1527,
+      "llm_citation": {
+        "law": "03/L-165",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1479,
+      "agree": true
+    },
+    {
+      "id": "q032",
+      "query": "Cili ligj e ka zëvendësuar Ligjin 04/L-102?",
+      "expected": [
+        "status_lookup"
+      ],
+      "regex_intent": "status_lookup",
+      "regex_reason": "citation+status_keyword",
+      "regex_ok": true,
+      "regex_us": 56.1,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1432,
+      "llm_citation": {
+        "law": "04/L-102",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1481,
+      "agree": true
+    },
+    {
+      "id": "q033",
+      "query": "Sipas Ligjit 02/L-95, Neni 35, çfarë rregullohet?",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 66.1,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1438,
+      "llm_citation": {
+        "law": "02/L-95",
+        "article": "35"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1485,
+      "agree": true
+    },
+    {
+      "id": "q034",
+      "query": "Më trego ligjin që rregullon paragrafi.",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 77.7,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1428,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1478,
+      "agree": true
+    },
+    {
+      "id": "q035",
+      "query": "Çfarë thotë legjislacioni për padisë?",
+      "expected": [
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 80.2,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1352,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1478,
+      "agree": true
+    },
+    {
+      "id": "q036",
+      "query": "Më trego përmbajtjen e Nenit 3 të Ligjit 08/L-035.",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 84.1,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1416,
+      "llm_citation": {
+        "law": "08/L-035",
+        "article": "3"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1487,
+      "agree": true
+    },
+    {
+      "id": "q037",
+      "query": "Çfarë thotë ligji për: 1. Çdo person, pavarësisht nga përkatësia, në bazë të racës, ngjyrës, gjinisë, gjuhës, fesë, mendimeve?",
+      "expected": [
+        "citation_lookup",
+        "semantic_question"
+      ],
+      "regex_intent": "semantic_question",
+      "regex_reason": "default_fallthrough",
+      "regex_ok": true,
+      "regex_us": 178.3,
+      "llm_intent": "semantic_question",
+      "llm_reason": "llm:semantic_question",
+      "llm_ok": true,
+      "llm_ms": 1224,
+      "llm_citation": null,
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1523,
+      "agree": true
+    },
+    {
+      "id": "q038",
+      "query": "Sipas Ligjit 2004/26, Neni 8, çfarë rregullohet?",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 81.1,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1433,
+      "llm_citation": {
+        "law": "2004/26",
+        "article": "8"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1485,
+      "agree": true
+    },
+    {
+      "id": "q039",
+      "query": "A është ende në fuqi Ligji 02/L-59?",
+      "expected": [
+        "status_lookup"
+      ],
+      "regex_intent": "status_lookup",
+      "regex_reason": "citation+status_keyword",
+      "regex_ok": true,
+      "regex_us": 52.6,
+      "llm_intent": "status_lookup",
+      "llm_reason": "llm:status_lookup",
+      "llm_ok": true,
+      "llm_ms": 1432,
+      "llm_citation": {
+        "law": "02/L-59",
+        "article": null
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1480,
+      "agree": true
+    },
+    {
+      "id": "q040",
+      "query": "Sipas Ligjit 05/L-084, Neni 49, çfarë rregullohet?",
+      "expected": [
+        "citation_lookup",
+        "status_lookup"
+      ],
+      "regex_intent": "citation_lookup",
+      "regex_reason": "citation_parsed",
+      "regex_ok": true,
+      "regex_us": 67.5,
+      "llm_intent": "citation_lookup",
+      "llm_reason": "llm:citation_lookup",
+      "llm_ok": true,
+      "llm_ms": 1330,
+      "llm_citation": {
+        "law": "05/L-084",
+        "article": "49"
+      },
+      "llm_fallback": null,
+      "llm_cached_tokens": 1408,
+      "llm_prompt_tokens": 1485,
+      "agree": true
+    }
+  ]
+}

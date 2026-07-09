@@ -50,9 +50,9 @@ from app.ai.router import (
     GREETING_RESPONSE,
     OUT_OF_SCOPE_RESPONSE,
     RoutingDecision,
-    classify,
     incomplete_reference,
 )
+from app.ai.router_llm import classify_with_fallback
 from app.ai.conversation import derive_context
 
 
@@ -334,8 +334,9 @@ def _localized_message(key: str, language: str) -> str:
 
 def _clarify_message_key(reason: str | None) -> str:
     """Pick the clarify wording for a pre-routed `clarify` intent from its reason.
-    `article_without_law` → ask for the law; anything else → ask for the full number."""
-    return "clarify_missing_law" if reason == "article_without_law" else "clarify"
+    `article_without_law` → ask for the law; anything else → ask for the full number.
+    Substring match: LLM-router reasons carry a prefix ("llm:article_without_law")."""
+    return "clarify_missing_law" if "article_without_law" in (reason or "") else "clarify"
 
 
 def _refusal_message(query: str, language: str) -> str:
@@ -552,7 +553,10 @@ def answer(
     ns = namespace or DEFAULT_NAMESPACE
     lang = _normalize_response_language(response_language)
     context = derive_context(conversation_history)
-    decision = classify(query, context=context)
+    # Regex-first routing; a V4-Flash intent call ONLY on regex fall-through
+    # (paraphrased greetings, dialect status queries, foreign-law refusals the
+    # patterns miss). See router_llm.classify_with_fallback for the benchmark.
+    decision, router_llm_trace = classify_with_fallback(query, context=context)
     trace: dict[str, Any] = {
         "intent": decision.intent,
         "reason": decision.reason,
@@ -566,6 +570,8 @@ def answer(
             else None
         ),
     }
+    if router_llm_trace is not None:
+        trace["router_llm"] = router_llm_trace
 
     # No-retrieval routes return immediately.
     if decision.intent == "greeting":
@@ -897,7 +903,12 @@ async def answer_stream(
     ns = namespace or DEFAULT_NAMESPACE
     lang = _normalize_response_language(response_language)
     context = derive_context(conversation_history)
-    decision = classify(query, context=context)
+    # Regex-first routing; a V4-Flash intent call ONLY on regex fall-through.
+    # Sync (blocking) call with an internal timeout — offload like retrieval so
+    # the event loop (and the SSE heartbeat) keeps running.
+    decision, router_llm_trace = await asyncio.to_thread(
+        classify_with_fallback, query, context
+    )
     trace: dict[str, Any] = {
         "intent": decision.intent,
         "reason": decision.reason,
@@ -911,6 +922,8 @@ async def answer_stream(
             else None
         ),
     }
+    if router_llm_trace is not None:
+        trace["router_llm"] = router_llm_trace
     yield ("route", dict(trace))
 
     # --- non-LLM short-circuit paths ----------------------------------
