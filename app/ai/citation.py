@@ -131,14 +131,18 @@ def canonicalize_law_number(raw: str) -> str:
 
     Strips whitespace, uppercases, and — crucially — rebuilds the "NN/L-NNN"
     shape from however the user separated the parts, so "02 L10", "02L10",
-    "02/L10", "02-L-10", "02_L-10" all collapse to "02/L-10". UNMIK-era
-    "YYYY/N" numbers (no "L") pass through unchanged.
+    "02/L10", "02-L-10", "02_L-10" all collapse to "02/L-10". The legislature
+    series is zero-padded to 2 digits ("4/L-77" → "04/L-77") — the gazette
+    always writes it padded, users often don't. The law NUMBER is left as
+    given: the gazette is inconsistent there ("02/L-10" but "04/L-077"), so
+    padded/stripped number forms are probed via `law_number_variants` instead.
+    UNMIK-era "YYYY/N" numbers (no "L") pass through unchanged.
     """
     s = re.sub(r"\s+", "", raw).upper().replace("_", "/")
     m = _LAW_SHAPE_RE.fullmatch(s)
     if m:
         prefix, series, num, suffix = m.group(1) or "", m.group(2), m.group(3), m.group(4) or ""
-        return f"{prefix}{series}/L-{num}{suffix}"
+        return f"{prefix}{series.zfill(2)}/L-{num}{suffix}"
     return s
 
 
@@ -182,22 +186,46 @@ def _law_inner(canonical: str) -> str:
     return m.group(1) if m else canonical
 
 
+def _number_form_alternates(canonical: str) -> list[str]:
+    """Law-NUMBER formatting alternates for an "NN/L-NNN" canonical.
+
+    The gazette zero-pads some law numbers and not others ("02/L-10" vs
+    "04/L-077"), and users type either — "4 l 77" must still find "04/L-077".
+    Returns the canonical first, then the 3-digit-padded and zero-stripped
+    forms. Probe-based callers try each until one hits, so extra forms are
+    risk-free. Non-"NN/L" shapes (UNMIK years) return just the canonical.
+    """
+    m = _LAW_SHAPE_RE.fullmatch(canonical)
+    if not m:
+        return [canonical]
+    prefix, series, num, suffix = m.group(1) or "", m.group(2), m.group(3), m.group(4) or ""
+    forms: list[str] = []
+    for n in (num, num.zfill(3), num.lstrip("0") or "0"):
+        f = f"{prefix}{series}/L-{n}{suffix}"
+        if f not in forms:
+            forms.append(f)
+    return forms
+
+
 def law_number_variants(law_number: str) -> list[str]:
     """Yield the small set of metadata-name variants observed in the live index.
 
     The index is inconsistent — some entries store `NR.03/L-094`, others store
-    `03/L-094`. Querying must try both. Variants are returned in priority order;
+    `03/L-094`; some numbers are zero-padded ("04/L-077"), some not ("02/L-10").
+    Querying must try each shape. Variants are returned in priority order;
     the caller should stop at the first one that yields hits.
     """
     canonical = canonicalize_law_number(law_number)
-    variants = [
-        canonical,
-        f"NR.{canonical}",
-        f"Nr.{canonical}",
-        canonical.lower(),
-        # Some indexed laws have a stray space, e.g. "05/L -011"
-        canonical.replace("/L-", "/L -"),
-    ]
+    variants: list[str] = []
+    for form in _number_form_alternates(canonical):
+        variants.extend([
+            form,
+            f"NR.{form}",
+            f"Nr.{form}",
+            form.lower(),
+            # Some indexed laws have a stray space, e.g. "05/L -011"
+            form.replace("/L-", "/L -"),
+        ])
     # Kuvendi code wrappers ("KUV-08/L-032-KOD") and their inner number ("08/L-032")
     # are the same law under two naming conventions — the index may store either, so
     # probe both. Add the inner form (and its NR. variant) when a wrapper is present.
