@@ -53,6 +53,7 @@ from app.ai.router import (
     incomplete_reference,
 )
 from app.ai.router_llm import classify_with_fallback
+from app.ai.clarifier import generate_clarify_request
 from app.ai.conversation import derive_context
 
 
@@ -339,18 +340,44 @@ def _clarify_message_key(reason: str | None) -> str:
     return "clarify_missing_law" if "article_without_law" in (reason or "") else "clarify"
 
 
-def _refusal_message(query: str, language: str) -> str:
+def _refusal_message(query: str, language: str, trace: dict[str, Any] | None = None) -> str:
     """Message for a semantic-path refusal (relevance floor / no sources).
 
-    Post-retrieval safety net: if the query is a structurally incomplete legal
-    reference (article with no law, or a bare/partial law number) that retrieval
-    couldn't answer, steer the user with the matching clarify wording instead of
-    the dead-end "not enough info". Loose form — retrieval has already failed, so
-    this only improves wording and can never refuse an answerable query."""
+    Post-retrieval safety net, two layers:
+      1. If the query is a structurally incomplete legal reference (article with
+         no law, or a bare/partial law number), steer with the matching clarify
+         wording instead of the dead-end "not enough info". Loose form — retrieval
+         has already failed, so this can never refuse an answerable query.
+      2. Otherwise (vague / complex / long queries): keep the canonical refusal
+         sentence VERBATIM (refusal-detection markers depend on it) and append an
+         LLM-generated request for the specific missing information (legal field,
+         law/article if known, concrete facts). Guard rails + discard rules live
+         in app.ai.clarifier; on any failure the plain refusal ships unchanged.
+
+    `trace` (the route_trace dict) is read for the gate tier and gains a
+    `refusal_clarify` observability block when the clarifier runs. Blocking
+    (one Flash call) — the stream path must call this off the event loop."""
     kind = incomplete_reference(query, strict=False)
     if kind is not None:
         return _localized_message(_clarify_message_key(kind), language)
-    return _localized_message("insufficient_context", language)
+
+    base = _localized_message("insufficient_context", language)
+    tier = (trace or {}).get("relevance_floor_tier")
+    parts = (
+        _split_query_parts(query)[:LONGQUERY_MAX_PARTS]
+        if tier == "decomposed_all_below"
+        else None
+    )
+    t0 = time.time()
+    extra = generate_clarify_request(
+        query, _normalize_response_language(language), gate_tier=tier, parts=parts
+    )
+    if trace is not None:
+        trace["refusal_clarify"] = {
+            "used": extra is not None,
+            "elapsed_ms": int((time.time() - t0) * 1000),
+        }
+    return f"{base}\n\n{extra}" if extra else base
 
 
 def _status_answer(info: Any, language: str) -> str:
@@ -711,8 +738,9 @@ def answer(
             final_answer = "⚠️ KUJDES: " + warnings[0] + ". " + final_answer
     elif relevance_gated:
         # Best source below the relevance floor → refuse rather than fabricate.
-        # If the query is an incomplete reference, steer instead of dead-ending.
-        final_answer = _refusal_message(query, lang)
+        # If the query is an incomplete reference, steer instead of dead-ending;
+        # otherwise append a targeted ask-for-more-information (clarifier).
+        final_answer = _refusal_message(query, lang, trace)
     elif multilaw_gated:
         # Bare-article query matched the same article across many laws → ask which.
         final_answer = _localized_message("clarify_missing_law", lang)
@@ -720,7 +748,7 @@ def answer(
         # Retrieval-only mode (used by retrieval eval). Stub out generation.
         final_answer = "[retrieval-only mode; no LLM answer generated]"
     elif not sources:
-        final_answer = _refusal_message(query, lang)
+        final_answer = _refusal_message(query, lang, trace)
     else:
         try:
             from app.ai.llm import complete
@@ -1100,8 +1128,10 @@ async def answer_stream(
         yield ("delta", {"text": final_answer})
     elif relevance_gated:
         # Best source below the relevance floor → refuse rather than fabricate.
-        # If the query is an incomplete reference, steer instead of dead-ending.
-        final_answer = _refusal_message(query, lang)
+        # If the query is an incomplete reference, steer instead of dead-ending;
+        # otherwise append a targeted ask-for-more-information (clarifier).
+        # Blocking Flash call inside → off the event loop, like retrieval.
+        final_answer = await asyncio.to_thread(_refusal_message, query, lang, trace)
         yield ("delta", {"text": final_answer})
     elif multilaw_gated:
         # Bare-article query matched the same article across many laws → ask which.
@@ -1111,7 +1141,7 @@ async def answer_stream(
         final_answer = "[retrieval-only mode; no LLM answer generated]"
         yield ("delta", {"text": final_answer})
     elif not sources:
-        final_answer = _refusal_message(query, lang)
+        final_answer = await asyncio.to_thread(_refusal_message, query, lang, trace)
         yield ("delta", {"text": final_answer})
     else:
         try:
